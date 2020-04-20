@@ -32,5 +32,5 @@ jobs:
         CODECOV_TOKEN: ${{secrets.CODECOV_TOKEN}}
       run: |
         mvn clean verify -Pcoverage -Ppack --file pom.xml --batch-mode -Dsytle.colors=always --errors
-        bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN -F unittests -f ./github-client/target/site/jacoco/jacoco.xml -n codecov-umbrella
+        bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN -F unittests -f ./target/site/jacoco/jacoco.xml -n codecov-umbrella
 
