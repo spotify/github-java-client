@@ -1,0 +1,143 @@
+{
+  "ahead_by": 0,
+  "base_commit": {
+    "author": {
+      "avatar_url": "https://github.com/avatars/u/2450?",
+      "events_url": "https://github.com/api/v3/users/sla/events{/privacy}",
+      "followers_url": "https://github.com/api/v3/users/sla/followers",
+      "following_url": "https://github.com/api/v3/users/sla/following{/other_user}",
+      "gists_url": "https://github.com/api/v3/users/sla/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sla",
+      "id": 2450,
+      "ldap_dn": "uid=sla,cn=users,dc=carmen,dc=int,dc=sto,dc=spotify,dc=net",
+      "login": "sla",
+      "organizations_url": "https://github.com/api/v3/users/sla/orgs",
+      "received_events_url": "https://github.com/api/v3/users/sla/received_events",
+      "repos_url": "https://github.com/api/v3/users/sla/repos",
+      "site_admin": false,
+      "starred_url": "https://github.com/api/v3/users/sla/starred{/owner}{/repo}",
+      "subscriptions_url": "https://github.com/api/v3/users/sla/subscriptions",
+      "type": "User",
+      "url": "https://github.com/api/v3/users/sla"
+    },
+    "comments_url": "https://github.com/api/v3/repos/johndoe/governator/commits/493b8934db4eb02353ecb91a58e8cb353018777c/comments",
+    "commit": {
+      "author": {
+        "date": "2017-09-06T12:23:37Z",
+        "email": "sla@spotify.com",
+        "name": "Staffan Larsen"
+      },
+      "comment_count": 0,
+      "committer": {
+        "date": "2017-09-06T12:23:37Z",
+        "email": "noreply+johndoe@foo.com",
+        "name": "GitHub Enterprise"
+      },
+      "message": "Merge pull request #107 from johndoe/should_deploy-parameter\n\nshould_deploy-parameter",
+      "tree": {
+        "sha": "ce9303b82041324e070e9802e652fae5ce245fed",
+        "url": "https://github.com/api/v3/repos/johndoe/governator/git/trees/ce9303b82041324e070e9802e652fae5ce245fed"
+      },
+      "url": "https://github.com/api/v3/repos/johndoe/governator/git/commits/493b8934db4eb02353ecb91a58e8cb353018777c"
+    },
+    "committer": null,
+    "html_url": "https://github.com/johndoe/governator/commit/493b8934db4eb02353ecb91a58e8cb353018777c",
+    "parents": [
+      {
+        "html_url": "https://github.com/johndoe/governator/commit/1f58ef86021f60375dfed8d228e8d45afd516821",
+        "sha": "1f58ef86021f60375dfed8d228e8d45afd516821",
+        "url": "https://github.com/api/v3/repos/johndoe/governator/commits/1f58ef86021f60375dfed8d228e8d45afd516821"
+      },
+      {
+        "html_url": "https://github.com/johndoe/governator/commit/01a0298b8a805406e42499481594a37dc39ba8f8",
+        "sha": "01a0298b8a805406e42499481594a37dc39ba8f8",
+        "url": "https://github.com/api/v3/repos/johndoe/governator/commits/01a0298b8a805406e42499481594a37dc39ba8f8"
+      }
+    ],
+    "sha": "493b8934db4eb02353ecb91a58e8cb353018777c",
+    "url": "https://github.com/api/v3/repos/johndoe/governator/commits/493b8934db4eb02353ecb91a58e8cb353018777c"
+  },
+  "behind_by": 2,
+  "commits": [],
+  "diff_url": "https://github.com/johndoe/governator/compare/493b8934db4eb02353ecb91a58e8cb353018777c...01a0298b8a805406e42499481594a37dc39ba8f8.diff",
+  "files": [],
+  "html_url": "https://github.com/johndoe/governator/compare/493b8934db4eb02353ecb91a58e8cb353018777c...01a0298b8a805406e42499481594a37dc39ba8f8",
+  "merge_base_commit": {
+    "author": {
+      "avatar_url": "https://github.com/avatars/u/2450?",
+      "events_url": "https://github.com/api/v3/users/sla/events{/privacy}",
+      "followers_url": "https://github.com/api/v3/users/sla/followers",
+      "following_url": "https://github.com/api/v3/users/sla/following{/other_user}",
+      "gists_url": "https://github.com/api/v3/users/sla/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sla",
+      "id": 2450,
+      "ldap_dn": "uid=sla,cn=users,dc=carmen,dc=int,dc=sto,dc=spotify,dc=net",
+      "login": "sla",
+      "organizations_url": "https://github.com/api/v3/users/sla/orgs",
+      "received_events_url": "https://github.com/api/v3/users/sla/received_events",
+      "repos_url": "https://github.com/api/v3/users/sla/repos",
+      "site_admin": false,
+      "starred_url": "https://github.com/api/v3/users/sla/starred{/owner}{/repo}",
+      "subscriptions_url": "https://github.com/api/v3/users/sla/subscriptions",
+      "type": "User",
+      "url": "https://github.com/api/v3/users/sla"
+    },
+    "comments_url": "https://github.com/api/v3/repos/johndoe/governator/commits/01a0298b8a805406e42499481594a37dc39ba8f8/comments",
+    "commit": {
+      "author": {
+        "date": "2017-09-06T12:21:53Z",
+        "email": "sla@spotify.com",
+        "name": "Staffan Larsen"
+      },
+      "comment_count": 0,
+      "committer": {
+        "date": "2017-09-06T12:21:53Z",
+        "email": "sla@spotify.com",
+        "name": "Staffan Larsen"
+      },
+      "message": "Wrong parameter name",
+      "tree": {
+        "sha": "ce9303b82041324e070e9802e652fae5ce245fed",
+        "url": "https://github.com/api/v3/repos/johndoe/governator/git/trees/ce9303b82041324e070e9802e652fae5ce245fed"
+      },
+      "url": "https://github.com/api/v3/repos/johndoe/governator/git/commits/01a0298b8a805406e42499481594a37dc39ba8f8"
+    },
+    "committer": {
+      "avatar_url": "https://github.com/avatars/u/2450?",
+      "events_url": "https://github.com/api/v3/users/sla/events{/privacy}",
+      "followers_url": "https://github.com/api/v3/users/sla/followers",
+      "following_url": "https://github.com/api/v3/users/sla/following{/other_user}",
+      "gists_url": "https://github.com/api/v3/users/sla/gists{/gist_id}",
+      "gravatar_id": "",
+      "html_url": "https://github.com/sla",
+      "id": 2450,
+      "ldap_dn": "uid=sla,cn=users,dc=carmen,dc=int,dc=sto,dc=spotify,dc=net",
+      "login": "sla",
+      "organizations_url": "https://github.com/api/v3/users/sla/orgs",
+      "received_events_url": "https://github.com/api/v3/users/sla/received_events",
+      "repos_url": "https://github.com/api/v3/users/sla/repos",
+      "site_admin": false,
+      "starred_url": "https://github.com/api/v3/users/sla/starred{/owner}{/repo}",
+      "subscriptions_url": "https://github.com/api/v3/users/sla/subscriptions",
+      "type": "User",
+      "url": "https://github.com/api/v3/users/sla"
+    },
+    "html_url": "https://github.com/johndoe/governator/commit/01a0298b8a805406e42499481594a37dc39ba8f8",
+    "parents": [
+      {
+        "html_url": "https://github.com/johndoe/governator/commit/45dfc2e8a7f2e870fd3f6c90a85397c7ef5d738f",
+        "sha": "45dfc2e8a7f2e870fd3f6c90a85397c7ef5d738f",
+        "url": "https://github.com/api/v3/repos/johndoe/governator/commits/45dfc2e8a7f2e870fd3f6c90a85397c7ef5d738f"
+      }
+    ],
+    "sha": "01a0298b8a805406e42499481594a37dc39ba8f8",
+    "url": "https://github.com/api/v3/repos/johndoe/governator/commits/01a0298b8a805406e42499481594a37dc39ba8f8"
+  },
+  "patch_url": "https://github.com/johndoe/governator/compare/493b8934db4eb02353ecb91a58e8cb353018777c...01a0298b8a805406e42499481594a37dc39ba8f8.patch",
+  "permalink_url": "https://github.com/johndoe/governator/compare/johndoe:493b893...johndoe:01a0298",
+  "status": "behind",
+  "total_commits": 0,
+  "url": "https://github.com/api/v3/repos/johndoe/governator/compare/493b8934db4eb02353ecb91a58e8cb353018777c...01a0298b8a805406e42499481594a37dc39ba8f8"
+}

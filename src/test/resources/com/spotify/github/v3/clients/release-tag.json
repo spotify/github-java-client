@@ -1,0 +1,23 @@
+{
+  "node_id": "MDM6VGFnODc0MTU6ODI3MjEwNjI1YjU1MTIwMGU3ZDNkYzYwODkzNWIxNDU0NTIzZWFhOA==",
+  "sha": "827210625b551200e7d3dc608935b1454523eaa8",
+  "url": "https://github.com/api/v3/repos/someowner/somerepo/git/tags/827210625b551200e7d3dc608935b1454523eaa8",
+  "tagger": {
+    "name": "tingle",
+    "email": "janedoe@foo.com",
+    "date": "2018-12-28T21:44:33Z"
+  },
+  "object": {
+    "sha": "5926dd300de5fee31d445c57be223f00e128a634",
+    "type": "commit",
+    "url": "https://github.com/api/v3/repos/someowner/somerepo/git/commits/5926dd300de5fee31d445c57be223f00e128a634"
+  },
+  "tag": "1.0.0",
+  "message": "7.0.0\n",
+  "verification": {
+    "verified": false,
+    "reason": "unsigned",
+    "signature": null,
+    "payload": null
+  }
+}

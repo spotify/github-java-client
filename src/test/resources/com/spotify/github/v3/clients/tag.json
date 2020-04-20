@@ -1,0 +1,9 @@
+{
+  "ref": "refs/tags/0.0.1",
+  "url": "https://github.com/api/v3/repos/someorg/somerepo/git/refs/tags/0.0.1",
+  "object": {
+    "sha": "5926dd300de5fee31d445c57be223f00e128a634",
+    "type": "commit",
+    "url": "https://github.com/api/v3/repos/someorg/somerepo/git/commits/5926dd300de5fee31d445c57be223f00e128a634"
+  }
+}
