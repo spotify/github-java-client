@@ -33,3 +33,11 @@ jobs:
       run: |
         mvn clean verify -Pcoverage -Ppack --file pom.xml --batch-mode -Dsytle.colors=always --errors
         bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN -F unittests -f ./target/site/jacoco/jacoco.xml -n codecov-umbrella
+      - name: Release
+        # if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        uses: samuelmeuli/action-maven-publish@v1
+        with:
+          gpg_private_key: ${{ secrets.gpg_private_key }}
+          gpg_passphrase: ${{ secrets.gpg_passphrase }}
+          nexus_username: ${{ secrets.nexus_username }}
+          nexus_password: ${{ secrets.nexus_password }}
