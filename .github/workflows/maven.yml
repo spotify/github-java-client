@@ -27,17 +27,19 @@ jobs:
         server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
         settings-path: ${{ github.workspace }} # location for the settings.xml file
 
-    - name: Build with Maven
+    - name: Build
       env:
         CODECOV_TOKEN: ${{secrets.CODECOV_TOKEN}}
-      run: |
-        mvn clean verify -Pcoverage -Ppack --file pom.xml --batch-mode -Dsytle.colors=always --errors
-        bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN -F unittests -f ./target/site/jacoco/jacoco.xml -n codecov-umbrella
-    - name: Release
-      # if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-      uses: samuelmeuli/action-maven-publish@v1
+      run: mvn -B package --file pom.xml -Pcoverage -Dsytle.colors=always --errors
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v1
       with:
-        gpg_private_key: ${{ secrets.gpg_private_key }}
-        gpg_passphrase: ${{ secrets.gpg_passphrase }}
-        nexus_username: ${{ secrets.nexus_username }}
-        nexus_password: ${{ secrets.nexus_password }}
+        token: ${{ secrets.CODECOV_TOKEN }}
+    - name: Release
+        # if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        uses: samuelmeuli/action-maven-publish@v1
+        with:
+          gpg_private_key: ${{ secrets.gpg_private_key }}
+          gpg_passphrase: ${{ secrets.gpg_passphrase }}
+          nexus_username: ${{ secrets.nexus_username }}
+          nexus_password: ${{ secrets.nexus_password }}
