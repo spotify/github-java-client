@@ -355,6 +355,19 @@
                                 </goals>
                             </execution>
                         </executions>
+                        <configuration>
+                            <sourcepath>${project.build.sourceDirectory}:${project.build.directory}/generated-sources/annotations</sourcepath>
+                            <additionalDependencies>
+                                <additionalDependency>
+                                    <groupId>javax.annotation</groupId>
+                                    <artifactId>javax.annotation-api</artifactId>
+                                    <version>1.3.2</version>
+                                </additionalDependency>
+
+                            </additionalDependencies>
+                            <doclint>none</doclint>
+                        </configuration>
+
                     </plugin>
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>
