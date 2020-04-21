@@ -25,7 +25,6 @@ jobs:
         settings-path: ${{ github.workspace }} # location for the settings.xml file
 
     - name: Release
-      # if: github.event_name == 'push' && github.ref == 'refs/heads/master'
       uses: samuelmeuli/action-maven-publish@v1
       with:
         gpg_private_key: ${{ secrets.gpg_private_key }}
