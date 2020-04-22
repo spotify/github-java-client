@@ -66,15 +66,15 @@ public class GitHubClient {
 
   static final Consumer<Response> IGNORE_RESPONSE_CONSUMER = (ignore) -> {};
   static final TypeReference<List<Comment>> LIST_COMMENT_TYPE_REFERENCE =
-      new TypeReference<List<Comment>>() {};
+      new TypeReference<>() {};
   static final TypeReference<List<CommitItem>> LIST_COMMIT_TYPE_REFERENCE =
-      new TypeReference<List<CommitItem>>() {};
+      new TypeReference<>() {};
   static final TypeReference<List<Status>> LIST_STATUS_TYPE_REFERENCE =
-      new TypeReference<List<Status>>() {};
+      new TypeReference<>() {};
   static final TypeReference<List<FolderContent>> LIST_FOLDERCONTENT_TYPE_REFERENCE =
-      new TypeReference<List<FolderContent>>() {};
+      new TypeReference<>() {};
   static final TypeReference<List<PullRequestItem>> LIST_PR_TYPE_REFERENCE =
-      new TypeReference<List<PullRequestItem>>() {};
+      new TypeReference<>() {};
 
   private static final String GET_ACCESS_TOKEN_URL = "app/installations/%s/access_tokens";
 
