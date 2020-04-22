@@ -1,5 +1,5 @@
 ![maven](https://github.com/spotify/github-client/workflows/maven/badge.svg)
-[![codecov.io](https://codecov.io/github/spotify/github-client/coverage.svg?branch=master)](https://codecov.io/github/spotify/github-client?branch=master)
+[![codecov.io](https://codecov.io/github/spotify/github-java-client/coverage.svg?branch=master)](https://codecov.io/github/spotify/github-java-client?branch=master)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![lifecycle: beta](https://img.shields.io/badge/lifecycle-beta-509bf5.svg)
 ![Maven Central](https://img.shields.io/maven-central/v/com.spotify/github-client)

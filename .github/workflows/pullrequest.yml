@@ -22,8 +22,6 @@ jobs:
         settings-path: ${{ github.workspace }} # location for the settings.xml file
 
     - name: Build
-      env:
-        CODECOV_TOKEN: ${{secrets.CODECOV_TOKEN}}
       run: mvn -B package --file pom.xml -Pcoverage -Dsytle.colors=always --errors
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
