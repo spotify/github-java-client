@@ -52,7 +52,7 @@ public class GitHubAuthTest {
                       "com/spotify/github/v3/github-private-key"))
               .getFile());
   private URI url;
-  private MockWebServer mockServer = new MockWebServer();
+  private final MockWebServer mockServer = new MockWebServer();
   private OkHttpClient client;
   private ChecksClient checksClient;
 
