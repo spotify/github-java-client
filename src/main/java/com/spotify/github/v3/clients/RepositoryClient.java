@@ -37,6 +37,7 @@ import com.spotify.github.v3.repos.CommitItem;
 import com.spotify.github.v3.repos.CommitStatus;
 import com.spotify.github.v3.repos.Content;
 import com.spotify.github.v3.repos.FolderContent;
+import com.spotify.github.v3.repos.Languages;
 import com.spotify.github.v3.repos.Repository;
 import com.spotify.github.v3.repos.Status;
 import com.spotify.github.v3.repos.requests.RepositoryCreateStatus;
@@ -65,6 +66,7 @@ public class RepositoryClient {
   private static final String BRANCH_TEMPLATE = "/repos/%s/%s/branches/%s";
   private static final String CREATE_COMMENT_TEMPLATE = "/repos/%s/%s/commits/%s/comments";
   private static final String COMMENT_TEMPLATE = "/repos/%s/%s/comments/%s";
+  private static final String LANGUAGES_TEMPLATE = "/repos/%s/%s/languages";
 
   private final String owner;
   private final String repo;
@@ -338,6 +340,16 @@ public class RepositoryClient {
     return github
         .patch(path, github.json().toJsonUnchecked(ImmutableMap.of("body", body)))
         .thenAccept(IGNORE_RESPONSE_CONSUMER);
+  }
+
+  /**
+   * Get repository language stats.
+   *
+   * @return {@link Languages Languages}
+   */
+  public CompletableFuture<Languages> getLanguages() {
+    final String path = String.format(LANGUAGES_TEMPLATE, owner, repo);
+    return github.request(path, Languages.class);
   }
 
   private String getContentPath(final String path, final String query) {
