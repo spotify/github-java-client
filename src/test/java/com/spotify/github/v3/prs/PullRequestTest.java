@@ -28,21 +28,14 @@ import static org.hamcrest.core.Is.is;
 import com.google.common.io.Resources;
 import com.spotify.github.jackson.Json;
 import java.io.IOException;
-import org.junit.Before;
 import org.junit.Test;
 
 public class PullRequestTest {
 
-  private String fixture;
-
-  @Before
-  public void setUp() throws Exception {
-    fixture =
-        Resources.toString(getResource(this.getClass(), "pull_request.json"), defaultCharset());
-  }
-
   @Test
-  public void testDeserialization() throws IOException {
+  public void testDeserializationPr() throws IOException {
+    String fixture =
+        Resources.toString(getResource(this.getClass(), "pull_request.json"), defaultCharset());
     final PullRequest pr = Json.create().fromJson(fixture, PullRequest.class);
     assertThat(pr.mergeCommitSha().get(), is("e5bd3914e2e596debea16f433f57875b5b90bcd6"));
     assertThat(pr.merged(), is(false));
@@ -51,5 +44,22 @@ public class PullRequestTest {
     assertThat(pr.additions(), is(100));
     assertThat(pr.deletions(), is(3));
     assertThat(pr.changedFiles(), is(5));
+  }
+
+  @Test
+  public void testSerializationMergeParams() throws IOException {
+    String fixture =
+        Resources.toString(getResource(this.getClass(), "merge_params_full.json"), defaultCharset());
+    final MergeParameters fixtureParams = Json.create().fromJson(fixture, MergeParameters.class);
+
+    final MergeParameters params = ImmutableMergeParameters.builder()
+        .commitTitle("a title")
+        .commitMessage("a message")
+        .sha("6dcb09b5b57875f334f61aebed695e2e4193db5e")
+        .build();
+    assertThat(params.commitMessage(), is(fixtureParams.commitMessage()));
+    assertThat(params.commitTitle(), is(fixtureParams.commitTitle()));
+    assertThat(params.sha(), is(fixtureParams.sha()));
+    assertThat(params.mergeMethod(), is(MergeMethod.merge));
   }
 }
