@@ -155,8 +155,8 @@ public class PullRequestClient {
    * @param itemsPerPage number of items per page
    * @return iterator of reviews
    */
-  public Iterator<AsyncPage<Review>> listReviews(int number, int itemsPerPage) {
-    // TODO: Use itemsPerPage property
+  public Iterator<AsyncPage<Review>> listReviews(final int number, final int itemsPerPage) {
+    // FIXME Use itemsPerPage property
     final String path = String.format(PR_REVIEWS_TEMPLATE, owner, repo, number);
     log.debug("Fetching pull request reviews from " + path);
     return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_REVIEW_TYPE_REFERENCE));

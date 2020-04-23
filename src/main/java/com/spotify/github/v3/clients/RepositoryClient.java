@@ -207,7 +207,7 @@ public class RepositoryClient {
    * @return iterator of Status
    */
   public Iterator<AsyncPage<Status>> listCommitStatuses(final String sha, final int itemsPerPage) {
-    // TODO: Use itemsPerPage property
+    // FIXME Use itemsPerPage property
     final String path = String.format(STATUS_URI_TEMPLATE, owner, repo, sha);
     log.debug("Fetching commits from " + path);
     return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_STATUS_TYPE_REFERENCE));
