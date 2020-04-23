@@ -21,9 +21,13 @@
 package com.spotify.github.v3.clients;
 
 import static com.google.common.io.Resources.getResource;
+import static com.spotify.github.FixtureHelper.loadFixture;
 import static com.spotify.github.v3.UserTest.assertUser;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_FOLDERCONTENT_TYPE_REFERENCE;
+import static com.spotify.github.v3.clients.MockHelper.createMockResponse;
+import static com.spotify.github.v3.clients.RepositoryClient.STATUS_URI_TEMPLATE;
+import static java.lang.String.format;
 import static java.nio.charset.Charset.defaultCharset;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -32,6 +36,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.comment.Comment;
@@ -44,12 +49,21 @@ import com.spotify.github.v3.repos.Content;
 import com.spotify.github.v3.repos.FolderContent;
 import com.spotify.github.v3.repos.Repository;
 import com.spotify.github.v3.repos.RepositoryTest;
+import com.spotify.github.v3.repos.Status;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import okhttp3.Headers;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({ Headers.class, ResponseBody.class, Response.class})
 public class RepositoryClientTest {
 
   private GitHubClient github;
@@ -206,5 +220,37 @@ public class RepositoryClientTest {
 
     assertThat(comment.id(), is(123));
     assertThat(comment.commitId().get(), is("6dcb09b5b57875f334f61aebed695e2e4193db5e"));
+  }
+
+  @Test
+  public void testStatusesPaginationForeach() throws Exception {
+    final String firstPageLink =
+        "<https://github.com/api/v3/repos/someowner/somerepo/statuses/553c2077f0edc3d5dc5d17262f6aa498e69d6f8e?page=2>; rel=\"next\", <https://github.com/api/v3/repos/someowner/somerepo/statuses/553c2077f0edc3d5dc5d17262f6aa498e69d6f8e?page=2>; rel=\"last\"";
+    final String firstPageBody = loadFixture("clients/statuses_page1.json");
+
+    final Response firstPageResponse = createMockResponse(firstPageLink, firstPageBody);
+
+    final String lastPageLink =
+        "<https://github.com/api/v3/repos/someowner/somerepo/statuses/553c2077f0edc3d5dc5d17262f6aa498e69d6f8e>; rel=\"first\", <https://github.com/api/v3/repos/someowner/somerepo/statuses/553c2077f0edc3d5dc5d17262f6aa498e69d6f8e>; rel=\"prev\"";
+    final String lastPageBody = loadFixture("clients/statuses_page2.json");
+    final Response lastPageResponse = createMockResponse(lastPageLink, lastPageBody);
+
+    when(github.urlFor("")).thenReturn("https://github.com/api/v3");
+
+    when(github.request(
+        format(STATUS_URI_TEMPLATE, "someowner", "somerepo", "553c2077f0edc3d5dc5d17262f6aa498e69d6f8e")))
+        .thenReturn(completedFuture(firstPageResponse));
+    when(github.request(
+        format(STATUS_URI_TEMPLATE + "?page=2", "someowner", "somerepo", "553c2077f0edc3d5dc5d17262f6aa498e69d6f8e")))
+        .thenReturn(completedFuture(lastPageResponse));
+
+    final List<Status> listStatuses = Lists.newArrayList();
+    repoClient.listCommitStatuses("553c2077f0edc3d5dc5d17262f6aa498e69d6f8e", 10)
+        .forEachRemaining(page -> page.iterator()
+            .forEachRemaining(listStatuses::add));
+
+    assertThat(listStatuses.size(), is(12));
+    assertThat(listStatuses.get(0).id(), is(61764535L));
+    assertThat(listStatuses.get(listStatuses.size() - 1).id(), is(61756641L));
   }
 }

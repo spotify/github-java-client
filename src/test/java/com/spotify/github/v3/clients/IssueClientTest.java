@@ -23,6 +23,7 @@ package com.spotify.github.v3.clients;
 import static com.google.common.io.Resources.getResource;
 import static com.spotify.github.FixtureHelper.loadFixture;
 import static com.spotify.github.v3.clients.IssueClient.COMMENTS_URI_NUMBER_TEMPLATE;
+import static com.spotify.github.v3.clients.MockHelper.createMockResponse;
 import static java.lang.String.format;
 import static java.nio.charset.Charset.defaultCharset;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -64,20 +65,6 @@ public class IssueClientTest {
     when(github.json()).thenReturn(Json.create());
     when(github.urlFor("")).thenReturn("https://github.com/api/v3");
     issueClient = new IssueClient(github, "someowner", "somerepo");
-  }
-
-  private Response createMockResponse(final String headerLinksFixture, final String bodyFixture)
-      throws IOException {
-    final ResponseBody body = mock(ResponseBody.class);
-    when(body.string()).thenReturn(bodyFixture);
-
-    final Headers headers = mock(Headers.class);
-    when(headers.get("Link")).thenReturn(headerLinksFixture);
-
-    final Response response = mock(Response.class);
-    when(response.headers()).thenReturn(headers);
-    when(response.body()).thenReturn(body);
-    return response;
   }
 
   @Test

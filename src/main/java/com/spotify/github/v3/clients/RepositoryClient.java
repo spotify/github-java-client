@@ -26,6 +26,7 @@ import static com.spotify.github.v3.clients.GitHubClient.LIST_FOLDERCONTENT_TYPE
 import static com.spotify.github.v3.clients.GitHubClient.LIST_STATUS_TYPE_REFERENCE;
 
 import com.google.common.collect.ImmutableMap;
+import com.spotify.github.async.AsyncPage;
 import com.spotify.github.v3.comment.Comment;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.git.Tree;
@@ -41,6 +42,7 @@ import com.spotify.github.v3.repos.Repository;
 import com.spotify.github.v3.repos.Status;
 import com.spotify.github.v3.repos.requests.RepositoryCreateStatus;
 import java.lang.invoke.MethodHandles;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -56,7 +58,7 @@ public class RepositoryClient {
   private static final String REPOSITORY_URI_TEMPLATE = "/repos/%s/%s";
   private static final String HOOK_URI_TEMPLATE = "/repos/%s/%s/hooks";
   private static final String CONTENTS_URI_TEMPLATE = "/repos/%s/%s/contents/%s%s";
-  private static final String STATUS_URI_TEMPLATE = "/repos/%s/%s/statuses/%s";
+  public static final String STATUS_URI_TEMPLATE = "/repos/%s/%s/statuses/%s";
   private static final String COMMITS_URI_TEMPLATE = "/repos/%s/%s/commits";
   private static final String COMMIT_SHA_URI_TEMPLATE = "/repos/%s/%s/commits/%s";
   private static final String COMMIT_STATUS_URI_TEMPLATE = "/repos/%s/%s/commits/%s/status";
@@ -186,13 +188,29 @@ public class RepositoryClient {
   }
 
   /**
-   * List statuses for a specific ref.
+   * List statuses for a specific ref. Statuses are returned in reverse chronological order.
+   * The first status in the list will be the latest one.
    *
    * @param sha the commit sha to list the statuses for
    */
   public CompletableFuture<List<Status>> listCommitStatuses(final String sha) {
     final String path = String.format(STATUS_URI_TEMPLATE, owner, repo, sha);
     return github.request(path, LIST_STATUS_TYPE_REFERENCE);
+  }
+
+  /**
+   * List statuses for a specific ref. Statuses are returned in reverse chronological order. The
+   * first status in the list will be the latest one.
+   *
+   * @param sha the commit sha to list the statuses for
+   * @param itemsPerPage number of items per page
+   * @return iterator of Status
+   */
+  public Iterator<AsyncPage<Status>> listCommitStatuses(final String sha, final int itemsPerPage) {
+    // TODO: Use itemsPerPage property
+    final String path = String.format(STATUS_URI_TEMPLATE, owner, repo, sha);
+    log.debug("Fetching commits from " + path);
+    return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_STATUS_TYPE_REFERENCE));
   }
 
   /**
