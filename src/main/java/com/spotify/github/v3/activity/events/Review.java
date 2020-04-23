@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.spotify.github.GitHubInstant;
 import com.spotify.github.GithubStyle;
 import com.spotify.github.v3.User;
+import com.spotify.github.v3.prs.ReviewState;
 import java.net.URI;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -58,7 +59,7 @@ public interface Review {
 
   /** State. */
   @Nullable
-  String state();
+  ReviewState state();
 
   /** Html URL. */
   @Nullable

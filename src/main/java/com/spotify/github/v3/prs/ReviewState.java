@@ -18,17 +18,14 @@
  * -/-/-
  */
 
-package com.spotify.github.v3.activity.events;
+package com.spotify.github.v3.prs;
 
-/** Helpful constants for common Review states. */
-public class ReviewState {
-
-  public static final String PENDING = "pending";
-  public static final String COMMENTED = "commented";
-  public static final String APPROVED = "approved";
-  public static final String REJECTED = "rejected";
-  public static final String CHANGES_REQUESTED = "changes_requested";
-  public static final String DISMISSED = "dismissed";
-
-  private ReviewState() {}
+/** Represents Review states. */
+public enum ReviewState {
+  PENDING,
+  COMMENTED,
+  APPROVED,
+  REJECTED,
+  CHANGES_REQUESTED,
+  DISMISSED
 }

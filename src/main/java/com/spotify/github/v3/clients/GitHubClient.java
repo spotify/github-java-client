@@ -25,6 +25,7 @@ import static okhttp3.MediaType.parse;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.spotify.github.jackson.Json;
+import com.spotify.github.v3.activity.events.Review;
 import com.spotify.github.v3.checks.AccessToken;
 import com.spotify.github.v3.comment.Comment;
 import com.spotify.github.v3.exceptions.ReadOnlyRepositoryException;
@@ -69,6 +70,7 @@ public class GitHubClient {
       new TypeReference<>() {};
   static final TypeReference<List<CommitItem>> LIST_COMMIT_TYPE_REFERENCE =
       new TypeReference<>() {};
+  static final TypeReference<List<Review>> LIST_REVIEW_TYPE_REFERENCE = new TypeReference<>() {};
   static final TypeReference<List<Status>> LIST_STATUS_TYPE_REFERENCE =
       new TypeReference<>() {};
   static final TypeReference<List<FolderContent>> LIST_FOLDERCONTENT_TYPE_REFERENCE =
