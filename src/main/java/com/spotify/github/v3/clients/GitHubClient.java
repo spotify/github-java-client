@@ -580,6 +580,7 @@ public class GitHubClient {
               response.code(), response.message()));
     }
     final String text = response.body().string();
+    response.body().close();
     return Json.create().fromJson(text, AccessToken.class);
   }
 
