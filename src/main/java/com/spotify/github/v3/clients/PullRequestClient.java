@@ -137,8 +137,7 @@ public class PullRequestClient {
   }
 
   /**
-   * Merges a pull request with a specific commit message.
-   * List pull request reviews.
+   * List pull request reviews. Reviews are returned in chronological order.
    *
    * @param number pull request number
    * @return list of reviews
@@ -164,7 +163,7 @@ public class PullRequestClient {
   }
 
   /**
-   * Merges this pull request.
+   * Merges a pull request.
    *
    * @param number pull request number
    * @param properties the properties on merging the PR, such as title, message and sha
