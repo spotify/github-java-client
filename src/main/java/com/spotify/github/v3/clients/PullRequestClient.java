@@ -25,7 +25,6 @@ import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERE
 import static com.spotify.github.v3.clients.GitHubClient.LIST_PR_TYPE_REFERENCE;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableMap;
 import com.spotify.github.v3.prs.MergeParameters;
 import com.spotify.github.v3.prs.PullRequest;
 import com.spotify.github.v3.prs.PullRequestItem;
@@ -130,20 +129,6 @@ public class PullRequestClient {
     final String path = String.format(PR_COMMITS_TEMPLATE, owner, repo, number);
     log.debug("Fetching pull request commits from " + path);
     return github.request(path, LIST_COMMIT_TYPE_REFERENCE);
-  }
-
-  /**
-   * Merges this pull request.
-   *
-   * @param number pull request number
-   * @param sha the sha that should match this PR for the merge to happen
-   */
-  public CompletableFuture<Void> merge(final int number, final String sha) {
-    final String path = String.format(PR_NUMBER_TEMPLATE + "/merge", owner, repo, number);
-    log.debug("Merging pr, running: {}", path);
-    return github
-        .put(path, github.json().toJsonUnchecked(ImmutableMap.of("sha", sha)))
-        .thenAccept(IGNORE_RESPONSE_CONSUMER);
   }
 
   /**
