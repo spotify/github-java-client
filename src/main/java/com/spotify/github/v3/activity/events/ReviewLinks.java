@@ -23,7 +23,6 @@ package com.spotify.github.v3.activity.events;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.spotify.github.GithubStyle;
-import com.spotify.github.ImmutableHref;
 import java.net.URI;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;

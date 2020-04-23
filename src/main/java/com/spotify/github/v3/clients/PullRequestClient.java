@@ -23,8 +23,10 @@ package com.spotify.github.v3.clients;
 import static com.spotify.github.v3.clients.GitHubClient.IGNORE_RESPONSE_CONSUMER;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_PR_TYPE_REFERENCE;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_REVIEW_TYPE_REFERENCE;
 
 import com.google.common.base.Strings;
+import com.spotify.github.v3.activity.events.Review;
 import com.spotify.github.v3.prs.MergeParameters;
 import com.spotify.github.v3.prs.PullRequest;
 import com.spotify.github.v3.prs.PullRequestItem;
@@ -45,6 +47,7 @@ public class PullRequestClient {
   private static final String PR_TEMPLATE = "/repos/%s/%s/pulls";
   private static final String PR_NUMBER_TEMPLATE = "/repos/%s/%s/pulls/%s";
   private static final String PR_COMMITS_TEMPLATE = "/repos/%s/%s/pulls/%s/commits";
+  private static final String PR_REVIEWS_TEMPLATE = "/repos/%s/%s/pulls/%s/reviews";
 
   private final GitHubClient github;
   private final String owner;
@@ -132,7 +135,23 @@ public class PullRequestClient {
   }
 
   /**
+<<<<<<< HEAD
    * Merges a pull request with a specific commit message.
+=======
+   * List pull request reviews.
+   *
+   * @param number pull request number
+   * @return list of reviews
+   */
+   public CompletableFuture<List<Review>> listReviews(final int number) {
+   final String path = String.format(PR_REVIEWS_TEMPLATE, owner, repo, number);
+   log.debug("Fetching pull request reviews from " + path);
+   return github.request(path, LIST_REVIEW_TYPE_REFERENCE);
+  }
+
+  /**
+   * Merges this pull request.
+>>>>>>> Add list reviews
    *
    * @param number pull request number
    * @param properties the properties on merging the PR, such as title, message and sha
