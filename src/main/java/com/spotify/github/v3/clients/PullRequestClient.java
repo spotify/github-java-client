@@ -25,7 +25,7 @@ import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERE
 import static com.spotify.github.v3.clients.GitHubClient.LIST_PR_TYPE_REFERENCE;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableMap;
+import com.spotify.github.v3.prs.MergeParameters;
 import com.spotify.github.v3.prs.PullRequest;
 import com.spotify.github.v3.prs.PullRequestItem;
 import com.spotify.github.v3.prs.requests.PullRequestCreate;
@@ -132,17 +132,17 @@ public class PullRequestClient {
   }
 
   /**
-   * Merges this pull request.
+   * Merges a pull request with a specific commit message.
    *
    * @param number pull request number
-   * @param sha the sha that should match this PR for the merge to happen
+   * @param properties the properties on merging the PR, such as title, message and sha
+   * @see "https://developer.github.com/v3/pulls/#merge-a-pull-request-merge-button"
    */
-  public CompletableFuture<Void> merge(final int number, final String sha) {
+  public CompletableFuture<Void> merge(final int number, final MergeParameters properties) {
     final String path = String.format(PR_NUMBER_TEMPLATE + "/merge", owner, repo, number);
+    final String jsonPayload = github.json().toJsonUnchecked(properties);
     log.debug("Merging pr, running: {}", path);
-    return github
-        .put(path, github.json().toJsonUnchecked(ImmutableMap.of("sha", sha)))
-        .thenAccept(IGNORE_RESPONSE_CONSUMER);
+    return github.put(path, jsonPayload).thenAccept(IGNORE_RESPONSE_CONSUMER);
   }
 
   private CompletableFuture<List<PullRequestItem>> list(final String parameterPath) {
