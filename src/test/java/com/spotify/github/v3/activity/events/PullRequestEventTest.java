@@ -33,11 +33,9 @@ import org.junit.Test;
 
 public class PullRequestEventTest {
 
-  private String fixture;
-
   @Test
   public void testDeserialization() throws IOException {
-    fixture =
+    String fixture =
         Resources.toString(
             getResource(this.getClass(), "fixtures/pull_request_event.json"), defaultCharset());
     final PullRequestEvent prEvent = Json.create().fromJson(fixture, PullRequestEvent.class);
