@@ -25,7 +25,7 @@ import static okhttp3.MediaType.parse;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.spotify.github.jackson.Json;
-import com.spotify.github.v3.activity.events.Review;
+import com.spotify.github.v3.prs.Review;
 import com.spotify.github.v3.checks.AccessToken;
 import com.spotify.github.v3.comment.Comment;
 import com.spotify.github.v3.exceptions.ReadOnlyRepositoryException;

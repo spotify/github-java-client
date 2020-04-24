@@ -18,21 +18,21 @@
  * -/-/-
  */
 
-package com.spotify.github.v3.prs;
+package com.spotify.github.v3.activity.events;
 
 /**
- * Helpful constants for common Review states in reviews.
+ * Helpful constants for common Review states in reviews events.
  *
- * @see "https://developer.github.com/v3/pulls/reviews/#list-reviews-on-a-pull-request"
+ * @see "https://developer.github.com/v3/activity/events/types/#pullrequestreviewevent"
  */
 public class ReviewState {
 
-  public static final String PENDING = "PENDING";
-  public static final String COMMENTED = "COMMENTED";
-  public static final String APPROVED = "APPROVED";
-  public static final String REJECTED = "REJECTED";
-  public static final String CHANGES_REQUESTED = "CHANGES_REQUESTED";
-  public static final String DISMISSED = "DISMISSED";
+  public static final String PENDING = "pending";
+  public static final String COMMENTED = "commented";
+  public static final String APPROVED = "approved";
+  public static final String REJECTED = "rejected";
+  public static final String CHANGES_REQUESTED = "changes_requested";
+  public static final String DISMISSED = "dismissed";
 
   private ReviewState() {}
 }
