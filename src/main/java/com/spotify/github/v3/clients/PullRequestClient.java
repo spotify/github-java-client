@@ -27,7 +27,7 @@ import static com.spotify.github.v3.clients.GitHubClient.LIST_REVIEW_TYPE_REFERE
 
 import com.google.common.base.Strings;
 import com.spotify.github.async.AsyncPage;
-import com.spotify.github.v3.activity.events.Review;
+import com.spotify.github.v3.prs.Review;
 import com.spotify.github.v3.prs.MergeParameters;
 import com.spotify.github.v3.prs.PullRequest;
 import com.spotify.github.v3.prs.PullRequestItem;

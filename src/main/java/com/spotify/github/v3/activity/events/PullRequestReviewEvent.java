@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.spotify.github.GithubStyle;
 import com.spotify.github.v3.prs.PullRequestItem;
+import com.spotify.github.v3.prs.Review;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
