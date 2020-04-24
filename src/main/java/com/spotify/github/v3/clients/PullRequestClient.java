@@ -26,6 +26,7 @@ import static com.spotify.github.v3.clients.GitHubClient.LIST_PR_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_REVIEW_TYPE_REFERENCE;
 
 import com.google.common.base.Strings;
+import com.spotify.github.async.AsyncPage;
 import com.spotify.github.v3.activity.events.Review;
 import com.spotify.github.v3.prs.MergeParameters;
 import com.spotify.github.v3.prs.PullRequest;
@@ -35,6 +36,7 @@ import com.spotify.github.v3.prs.requests.PullRequestParameters;
 import com.spotify.github.v3.prs.requests.PullRequestUpdate;
 import com.spotify.github.v3.repos.CommitItem;
 import java.lang.invoke.MethodHandles;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
@@ -135,10 +137,7 @@ public class PullRequestClient {
   }
 
   /**
-<<<<<<< HEAD
-   * Merges a pull request with a specific commit message.
-=======
-   * List pull request reviews.
+   * List pull request reviews. Reviews are returned in chronological order.
    *
    * @param number pull request number
    * @return list of reviews
@@ -150,8 +149,21 @@ public class PullRequestClient {
   }
 
   /**
-   * Merges this pull request.
->>>>>>> Add list reviews
+   * List pull request reviews paginated. Reviews are returned in chronological order.
+   *
+   * @param number pull request number
+   * @param itemsPerPage number of items per page
+   * @return iterator of reviews
+   */
+  public Iterator<AsyncPage<Review>> listReviews(final int number, final int itemsPerPage) {
+    // FIXME Use itemsPerPage property
+    final String path = String.format(PR_REVIEWS_TEMPLATE, owner, repo, number);
+    log.debug("Fetching pull request reviews from " + path);
+    return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_REVIEW_TYPE_REFERENCE));
+  }
+
+  /**
+   * Merges a pull request.
    *
    * @param number pull request number
    * @param properties the properties on merging the PR, such as title, message and sha
