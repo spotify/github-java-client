@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -61,5 +61,21 @@ public class PullRequestTest {
     assertThat(params.commitTitle(), is(fixtureParams.commitTitle()));
     assertThat(params.sha(), is(fixtureParams.sha()));
     assertThat(params.mergeMethod(), is(MergeMethod.merge));
+  }
+
+  @Test
+  public void testDeserializationMergeParams() throws IOException {
+    final MergeParameters params = ImmutableMergeParameters.builder()
+        .commitMessage("a message")
+        .sha("6dcb09b5b57875f334f61aebed695e2e4193db5e")
+        .build();
+    final String json = Json.create().toJson(params);
+
+    assertThat(
+        json,
+        is(
+            "{\"sha\":\"6dcb09b5b57875f334f61aebed695e2e4193db5e\",\"commit_message\":\"a message\",\"merge_method\":\"merge\"}"));
+
+    System.out.println(json);
   }
 }
