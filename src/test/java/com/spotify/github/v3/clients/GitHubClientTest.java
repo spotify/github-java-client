@@ -20,14 +20,22 @@
 
 package com.spotify.github.v3.clients;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.spotify.github.v3.exceptions.ReadOnlyRepositoryException;
+import com.spotify.github.v3.exceptions.RequestNotOkException;
+import com.spotify.github.v3.repos.CommitItem;
 import java.net.URI;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.MediaType;
@@ -88,6 +96,40 @@ public class GitHubClientTest {
       maybeSucceeded.get();
     } catch (Exception e) {
       throw e.getCause();
+    }
+  }
+
+  @Test
+  public void testRequestNotOkException() throws Throwable {
+    final Call call = mock(Call.class);
+    final ArgumentCaptor<Callback> capture = ArgumentCaptor.forClass(Callback.class);
+    doNothing().when(call).enqueue(capture.capture());
+
+    final Response response = new okhttp3.Response.Builder()
+        .code(409) // Conflict
+        .body(
+            ResponseBody.create(
+                MediaType.get("application/json"),
+                "{\n  \"message\": \"Merge Conflict\"\n}"
+            ))
+        .message("")
+        .protocol(Protocol.HTTP_1_1)
+        .request(new Request.Builder().url("http://localhost/").build())
+        .build();
+
+    when(client.newCall(any())).thenReturn(call);
+    RepositoryClient repoApi = github.createRepositoryClient("testorg", "testrepo");
+
+    CompletableFuture<Optional<CommitItem>> future = repoApi.merge("basebranch", "headbranch");
+    capture.getValue().onResponse(call, response);
+    try {
+      future.get();
+      fail("Did not throw");
+    } catch (ExecutionException e) {
+      assertThat(e.getCause() instanceof RequestNotOkException, is(true));
+      RequestNotOkException e1 = (RequestNotOkException) e.getCause();
+      assertThat(e1.statusCode(), is(409));
+      assertThat(e1.getMessage(), containsString("Merge Conflict"));
     }
   }
 }

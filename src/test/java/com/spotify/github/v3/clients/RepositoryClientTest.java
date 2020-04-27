@@ -32,6 +32,7 @@ import static java.nio.charset.Charset.defaultCharset;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -52,8 +53,12 @@ import com.spotify.github.v3.repos.RepositoryTest;
 import com.spotify.github.v3.repos.Status;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import okhttp3.Headers;
+import okhttp3.MediaType;
+import okhttp3.Protocol;
+import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import org.junit.Before;
@@ -252,5 +257,46 @@ public class RepositoryClientTest {
     assertThat(listStatuses.size(), is(12));
     assertThat(listStatuses.get(0).id(), is(61764535L));
     assertThat(listStatuses.get(listStatuses.size() - 1).id(), is(61756641L));
+  }
+
+  @Test
+  public void merge() throws IOException {
+    CompletableFuture<Response> okResponse = completedFuture(
+        new Response.Builder()
+            .request(new Request.Builder().url("http://example.com/whatever").build())
+            .protocol(Protocol.HTTP_1_1)
+            .message("")
+            .code(201)
+            .body(
+                ResponseBody.create(
+                    MediaType.get("application/json"),
+                    getFixture("merge_commit_item.json")
+                ))
+            .build());
+    final String expectedRequestBody = json.toJsonUnchecked(ImmutableMap.of(
+        "base", "basebranch",
+        "head", "headbranch"));
+    when(github
+        .post("/repos/someowner/somerepo/merges", expectedRequestBody))
+        .thenReturn(okResponse);
+    final CommitItem commit = repoClient.merge("basebranch", "headbranch").join().get();
+
+    assertThat(commit.parents().size(), is(2));
+    assertThat(commit.parents().get(0).sha(), is("553c2077f0edc3d5dc5d17262f6aa498e69d6f8e"));
+    assertThat(commit.parents().get(1).sha(), is("762941318ee16e59dabbacb1b4049eec22f0d303"));
+  }
+
+  @Test
+  public void mergeNoop() {
+    CompletableFuture<Response> okResponse = completedFuture(
+        new Response.Builder()
+            .request(new Request.Builder().url("http://example.com/whatever").build())
+            .protocol(Protocol.HTTP_1_1)
+            .message("")
+            .code(204) // No Content
+            .build());
+    when(github.post(any(), any())).thenReturn(okResponse);
+    final Optional<CommitItem> maybeCommit = repoClient.merge("basebranch", "headbranch").join();
+    assertThat(maybeCommit, is(Optional.empty()));
   }
 }
