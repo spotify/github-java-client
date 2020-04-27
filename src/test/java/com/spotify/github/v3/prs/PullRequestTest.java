@@ -62,4 +62,20 @@ public class PullRequestTest {
     assertThat(params.sha(), is(fixtureParams.sha()));
     assertThat(params.mergeMethod(), is(MergeMethod.merge));
   }
+
+  @Test
+  public void testDeserializationMergeParamsOmitsFields() throws IOException {
+    final MergeParameters params = ImmutableMergeParameters.builder()
+        .commitMessage("a message")
+        .sha("6dcb09b5b57875f334f61aebed695e2e4193db5e")
+        .build();
+    final String json = Json.create().toJson(params);
+
+    assertThat(
+        json,
+        is(
+            "{\"sha\":\"6dcb09b5b57875f334f61aebed695e2e4193db5e\",\"commit_message\":\"a message\",\"merge_method\":\"merge\"}"));
+
+    System.out.println(json);
+  }
 }

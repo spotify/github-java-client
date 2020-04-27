@@ -20,6 +20,7 @@
 
 package com.spotify.github.v3.prs;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.spotify.github.GithubStyle;
@@ -35,6 +36,7 @@ import org.immutables.value.Value;
 @GithubStyle
 @JsonSerialize(as = ImmutableMergeParameters.class)
 @JsonDeserialize(as = ImmutableMergeParameters.class)
+@JsonInclude(JsonInclude.Include.NON_ABSENT)
 public abstract class MergeParameters {
   /**
    * SHA that pull request head must match to allow merge.
