@@ -45,6 +45,7 @@ import com.spotify.github.v3.repos.requests.RepositoryCreateStatus;
 import java.lang.invoke.MethodHandles;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import org.slf4j.Logger;
@@ -56,6 +57,8 @@ public class RepositoryClient {
   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private static final int CONFLICT = 409;
   private static final int UNPROCESSABLE_ENTITY = 422;
+  private static final int NO_CONTENT = 204;
+
   private static final String REPOSITORY_URI_TEMPLATE = "/repos/%s/%s";
   private static final String HOOK_URI_TEMPLATE = "/repos/%s/%s/hooks";
   private static final String CONTENTS_URI_TEMPLATE = "/repos/%s/%s/contents/%s%s";
@@ -69,6 +72,7 @@ public class RepositoryClient {
   private static final String CREATE_COMMENT_TEMPLATE = "/repos/%s/%s/commits/%s/comments";
   private static final String COMMENT_TEMPLATE = "/repos/%s/%s/comments/%s";
   private static final String LANGUAGES_TEMPLATE = "/repos/%s/%s/languages";
+  private static final String MERGE_TEMPLATE = "/repos/%s/%s/merges";
 
   private final String owner;
   private final String repo;
@@ -368,6 +372,58 @@ public class RepositoryClient {
   public CompletableFuture<Languages> getLanguages() {
     final String path = String.format(LANGUAGES_TEMPLATE, owner, repo);
     return github.request(path, Languages.class);
+  }
+
+  /**
+   * Perform a merge.
+   *
+   * @see "https://developer.github.com/enterprise/2.18/v3/repos/merging/"
+   *
+   * @param base branch name or sha
+   * @param head branch name or sha
+   * @return resulting merge commit, or empty if base already contains the head (nothing to merge)
+   */
+  public CompletableFuture<Optional<CommitItem>> merge(final String base, final String head) {
+    return merge(base, head, null);
+  }
+
+  /**
+   * Perform a merge.
+   *
+   * @see "https://developer.github.com/enterprise/2.18/v3/repos/merging/"
+   *
+   * @param base branch name that the head will be merged into
+   * @param head branch name or sha to merge
+   * @param commitMessage commit message to use for the merge commit
+   * @return resulting merge commit, or empty if base already contains the head (nothing to merge)
+   */
+  public CompletableFuture<Optional<CommitItem>> merge(
+      String base, String head, String commitMessage) {
+    final String path = String.format(MERGE_TEMPLATE, owner, repo);
+    final ImmutableMap<String, String> params =
+        (commitMessage == null)
+            ? ImmutableMap.of("base", base, "head", head)
+            : ImmutableMap.of("base", base, "head", head, "commit_message", commitMessage);
+    final String body = github.json().toJsonUnchecked(params);
+
+    return github
+        .post(path, body)
+        .thenApply(
+            response -> {
+              // Non-successful statuses result in an RequestNotOkException exception and this code
+              // not being called.
+
+              if (response.code() == NO_CONTENT) {
+                // Base already contains the head, nothing to merge
+                return Optional.empty();
+              }
+              final CommitItem commitItem =
+                  github
+                      .json()
+                      .fromJsonUnchecked(
+                          GitHubClient.responseBodyUnchecked(response), CommitItem.class);
+              return Optional.of(commitItem);
+            });
   }
 
   private String getContentPath(final String path, final String query) {
