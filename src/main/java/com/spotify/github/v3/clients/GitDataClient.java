@@ -33,6 +33,7 @@ import java.util.concurrent.CompletableFuture;
 /** Reference Api client */
 public class GitDataClient {
 
+  private static final String BRANCH_REFERENCE_URI = "/repos/%s/%s/git/refs/heads/%s";
   private static final String TAG_REFERENCE_URI = "/repos/%s/%s/git/refs/tags/%s";
   private static final String TAG_URI = "/repos/%s/%s/git/tags/%s";
   private static final String CREATE_REFERENCE_URI = "/repos/%s/%s/git/refs";
@@ -63,6 +64,16 @@ public class GitDataClient {
   }
 
   /**
+   * Get a git branch reference
+   *
+   * @param branch branch name
+   */
+  public CompletableFuture<Reference> getBranchReference(final String branch) {
+    final String path = format(BRANCH_REFERENCE_URI, owner, repo, branch);
+    return github.request(path, Reference.class);
+  }
+
+  /**
    * Get a git tag reference.
    *
    * @param tag tag name
@@ -80,6 +91,21 @@ public class GitDataClient {
   public CompletableFuture<Tag> getTag(final String tag) {
     final String path = format(TAG_URI, owner, repo, tag);
     return github.request(path, Tag.class);
+  }
+
+  /**
+   * Create a git branch reference. It must not include the refs/heads.
+   *
+   * @param branch tag name
+   * @param sha commit to branch from
+   */
+  public CompletableFuture<Reference> createBranchReference(final String branch, final String sha) {
+    final String path = format(CREATE_REFERENCE_URI, owner, repo);
+    final ImmutableMap<String, String> body = of(
+        "ref", format("refs/heads/%s", branch),
+        "sha", sha
+    );
+    return github.post(path, github.json().toJsonUnchecked(body), Reference.class);
   }
 
   /**
