@@ -398,7 +398,7 @@ public class RepositoryClient {
    * @return resulting merge commit, or empty if base already contains the head (nothing to merge)
    */
   public CompletableFuture<Optional<CommitItem>> merge(
-      String base, String head, String commitMessage) {
+      final String base, final String head, final String commitMessage) {
     final String path = String.format(MERGE_TEMPLATE, owner, repo);
     final ImmutableMap<String, String> params =
         (commitMessage == null)
