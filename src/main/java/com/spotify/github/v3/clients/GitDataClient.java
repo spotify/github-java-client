@@ -68,7 +68,7 @@ public class GitDataClient {
    *
    * @param branch branch name
    */
-  public CompletableFuture<Reference> getBranchReference(String branch) {
+  public CompletableFuture<Reference> getBranchReference(final String branch) {
     final String path = format(BRANCH_REFERENCE_URI, owner, repo, branch);
     return github.request(path, Reference.class);
   }
@@ -99,7 +99,7 @@ public class GitDataClient {
    * @param branch tag name
    * @param sha commit to branch from
    */
-  public CompletableFuture<Reference> createBranchReference(String branch, String sha) {
+  public CompletableFuture<Reference> createBranchReference(final String branch, final String sha) {
     final String path = format(CREATE_REFERENCE_URI, owner, repo);
     final ImmutableMap<String, String> body = of(
         "ref", format("refs/heads/%s", branch),
