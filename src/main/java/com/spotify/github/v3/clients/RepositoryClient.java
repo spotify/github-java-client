@@ -24,6 +24,7 @@ import static com.spotify.github.v3.clients.GitHubClient.IGNORE_RESPONSE_CONSUME
 import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_FOLDERCONTENT_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_STATUS_TYPE_REFERENCE;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_BRANCHES;
 
 import com.google.common.collect.ImmutableMap;
 import com.spotify.github.async.AsyncPage;
@@ -69,6 +70,7 @@ public class RepositoryClient {
   private static final String TREE_SHA_URI_TEMPLATE = "/repos/%s/%s/git/trees/%s";
   private static final String COMPARE_COMMIT_TEMPLATE = "/repos/%s/%s/compare/%s...%s";
   private static final String BRANCH_TEMPLATE = "/repos/%s/%s/branches/%s";
+  private static final String LIST_BRANCHES_TEMPLATE = "/repos/%s/%s/branches";
   private static final String CREATE_COMMENT_TEMPLATE = "/repos/%s/%s/commits/%s/comments";
   private static final String COMMENT_TEMPLATE = "/repos/%s/%s/comments/%s";
   private static final String LANGUAGES_TEMPLATE = "/repos/%s/%s/languages";
@@ -339,6 +341,16 @@ public class RepositoryClient {
   public CompletableFuture<Branch> getBranch(final String branch) {
     final String path = String.format(BRANCH_TEMPLATE, owner, repo, branch);
     return github.request(path, Branch.class);
+  }
+
+  /**
+   * Get a specific branch.
+   *
+   * @return list of all branches in repository
+   */
+  public CompletableFuture<List<Branch>> listBranches() {
+    final String path = String.format(LIST_BRANCHES_TEMPLATE, owner, repo);
+    return github.request(path, LIST_BRANCHES);
   }
 
   /**

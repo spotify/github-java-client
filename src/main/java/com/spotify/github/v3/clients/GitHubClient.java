@@ -31,6 +31,7 @@ import com.spotify.github.v3.comment.Comment;
 import com.spotify.github.v3.exceptions.ReadOnlyRepositoryException;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.prs.PullRequestItem;
+import com.spotify.github.v3.repos.Branch;
 import com.spotify.github.v3.repos.CommitItem;
 import com.spotify.github.v3.repos.FolderContent;
 import com.spotify.github.v3.repos.Status;
@@ -76,6 +77,8 @@ public class GitHubClient {
   static final TypeReference<List<FolderContent>> LIST_FOLDERCONTENT_TYPE_REFERENCE =
       new TypeReference<>() {};
   static final TypeReference<List<PullRequestItem>> LIST_PR_TYPE_REFERENCE =
+      new TypeReference<>() {};
+  static final TypeReference<List<Branch>> LIST_BRANCHES =
       new TypeReference<>() {};
 
   private static final String GET_ACCESS_TOKEN_URL = "app/installations/%s/access_tokens";
