@@ -287,6 +287,29 @@ public class RepositoryClientTest {
   }
 
   @Test
+  public void createFork() throws IOException {
+    CompletableFuture<Response> okResponse = completedFuture(
+        new Response.Builder()
+            .request(new Request.Builder().url("http://example.com/whatever").build())
+            .protocol(Protocol.HTTP_1_1)
+            .message("")
+            .code(202)
+            .body(
+                ResponseBody.create(
+                    MediaType.get("application/json"),
+                    getFixture("fork_create_item.json")
+                ))
+            .build());
+    final String expectedRequestBody = json.toJsonUnchecked(ImmutableMap.of());
+    when(github
+        .post("/repos/someowner/somerepo/forks", expectedRequestBody))
+        .thenReturn(okResponse);
+
+    final Repository repo = repoClient.createFork(null).join();
+    assertThat(repo.id(), is(1296269));
+  }
+
+  @Test
   public void mergeNoop() {
     CompletableFuture<Response> okResponse = completedFuture(
         new Response.Builder()

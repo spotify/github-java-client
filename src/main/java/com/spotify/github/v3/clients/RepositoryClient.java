@@ -73,6 +73,7 @@ public class RepositoryClient {
   private static final String COMMENT_TEMPLATE = "/repos/%s/%s/comments/%s";
   private static final String LANGUAGES_TEMPLATE = "/repos/%s/%s/languages";
   private static final String MERGE_TEMPLATE = "/repos/%s/%s/merges";
+  private static final String FORK_TEMPLATE = "/repos/%s/%s/forks";
 
   private final String owner;
   private final String repo;
@@ -423,6 +424,35 @@ public class RepositoryClient {
                       .fromJsonUnchecked(
                           GitHubClient.responseBodyUnchecked(response), CommitItem.class);
               return Optional.of(commitItem);
+            });
+  }
+
+    /**
+   * Create a fork.
+   *
+   * @see "https://developer.github.com/v3/repos/forks/#create-a-fork"
+   *
+   * @param organization the organization where the fork will be created
+   * @return resulting repository
+   */
+  public CompletableFuture<Repository> createFork(final String organization) {
+    final String path = String.format(FORK_TEMPLATE, owner, repo);
+    final ImmutableMap<String, String> params =
+        (organization == null)
+            ? ImmutableMap.of()
+            : ImmutableMap.of("organization", organization);
+    final String body = github.json().toJsonUnchecked(params);
+
+    return github
+        .post(path, body)
+        .thenApply(
+            response -> {
+              final Repository repositoryItem =
+                  github
+                      .json()
+                      .fromJsonUnchecked(
+                          GitHubClient.responseBodyUnchecked(response), Repository.class);
+              return repositoryItem;
             });
   }
 
