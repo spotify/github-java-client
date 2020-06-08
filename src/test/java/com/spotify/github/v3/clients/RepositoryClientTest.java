@@ -24,6 +24,7 @@ import static com.google.common.io.Resources.getResource;
 import static com.spotify.github.FixtureHelper.loadFixture;
 import static com.spotify.github.v3.UserTest.assertUser;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERENCE;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_BRANCHES;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_FOLDERCONTENT_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.MockHelper.createMockResponse;
 import static com.spotify.github.v3.clients.RepositoryClient.STATUS_URI_TEMPLATE;
@@ -197,6 +198,18 @@ public class RepositoryClientTest {
     final Branch branch = repoClient.getBranch("somebranch").get();
     assertThat(branch.commit().sha(), is("6dcb09b5b57875f334f61aebed695e2e4193db5e"));
   }
+
+  @Test
+  public void listBranches() throws Exception {
+    final CompletableFuture<List<Branch>> fixture =
+        completedFuture(json.fromJson(getFixture("list_branches.json"), LIST_BRANCHES));
+    when(github.request("/repos/someowner/somerepo/branches", LIST_BRANCHES))
+        .thenReturn(fixture);
+    final List<Branch> branches = repoClient.listBranches().get();
+    assertThat(branches.get(0).commit().sha(), is("c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc"));
+    assertThat(branches.size(), is(1));
+  }
+
 
   @Test
   public void testCommentCreated() throws IOException {
