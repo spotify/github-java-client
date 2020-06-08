@@ -25,6 +25,7 @@ import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERE
 import static com.spotify.github.v3.clients.GitHubClient.LIST_FOLDERCONTENT_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_STATUS_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_BRANCHES;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_REPOSITORY;
 
 import com.google.common.collect.ImmutableMap;
 import com.spotify.github.async.AsyncPage;
@@ -76,6 +77,7 @@ public class RepositoryClient {
   private static final String LANGUAGES_TEMPLATE = "/repos/%s/%s/languages";
   private static final String MERGE_TEMPLATE = "/repos/%s/%s/merges";
   private static final String FORK_TEMPLATE = "/repos/%s/%s/forks";
+  private static final String LIST_REPOSITORY_TEMPLATE = "/orgs/%s/repos";
 
   private final String owner;
   private final String repo;
@@ -138,6 +140,16 @@ public class RepositoryClient {
   public CompletableFuture<Repository> getRepository() {
     final String path = String.format(REPOSITORY_URI_TEMPLATE, owner, repo);
     return github.request(path, Repository.class);
+  }
+
+  /**
+   * List all repositories in this organization.
+   *
+   * @return list of all repositories under organization
+   */
+  public CompletableFuture<List<Repository>> listOrganizationRepositories() {
+    final String path = String.format(LIST_REPOSITORY_TEMPLATE, owner);
+    return github.request(path, LIST_REPOSITORY);
   }
 
   /**
