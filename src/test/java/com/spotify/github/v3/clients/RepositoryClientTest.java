@@ -26,6 +26,7 @@ import static com.spotify.github.v3.UserTest.assertUser;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_BRANCHES;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_FOLDERCONTENT_TYPE_REFERENCE;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_REPOSITORY;
 import static com.spotify.github.v3.clients.MockHelper.createMockResponse;
 import static com.spotify.github.v3.clients.RepositoryClient.STATUS_URI_TEMPLATE;
 import static java.lang.String.format;
@@ -100,6 +101,16 @@ public class RepositoryClientTest {
     assertThat(repository.fullName(), is(repository.owner().login() + "/Hello-World"));
     assertThat(repository.isPrivate(), is(false));
     assertThat(repository.fork(), is(false));
+  }
+
+  @Test
+  public void listOrganizationRepositories() throws Exception {
+    final CompletableFuture<List<Repository>> fixture =
+        completedFuture(json.fromJson(getFixture("list_of_repos_for_org.json"), LIST_REPOSITORY));
+    when(github.request("/orgs/someowner/repos", LIST_REPOSITORY)).thenReturn(fixture);
+    final List<Repository> repositories = repoClient.listOrganizationRepositories().get();
+    assertThat(repositories.get(0).id(), is(1296269));
+    assertThat(repositories.size(), is(1));
   }
 
   @Test

@@ -34,6 +34,7 @@ import com.spotify.github.v3.prs.PullRequestItem;
 import com.spotify.github.v3.repos.Branch;
 import com.spotify.github.v3.repos.CommitItem;
 import com.spotify.github.v3.repos.FolderContent;
+import com.spotify.github.v3.repos.Repository;
 import com.spotify.github.v3.repos.Status;
 import java.io.File;
 import java.io.IOException;
@@ -68,6 +69,8 @@ public class GitHubClient {
 
   static final Consumer<Response> IGNORE_RESPONSE_CONSUMER = (ignore) -> {};
   static final TypeReference<List<Comment>> LIST_COMMENT_TYPE_REFERENCE =
+      new TypeReference<>() {};
+  static final TypeReference<List<Repository>> LIST_REPOSITORY =
       new TypeReference<>() {};
   static final TypeReference<List<CommitItem>> LIST_COMMIT_TYPE_REFERENCE =
       new TypeReference<>() {};
