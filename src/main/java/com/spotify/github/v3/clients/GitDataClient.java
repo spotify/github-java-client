@@ -59,7 +59,7 @@ public class GitDataClient {
    */
   public CompletableFuture<Void> delete(final String ref) {
     final String path =
-        format("/repos/%s/%s/git/refs/heads/%s", owner, repo, ref.replaceAll("refs/heads/", ""));
+        format(BRANCH_REFERENCE_URI, owner, repo, ref.replaceAll("refs/heads/", ""));
     return github.delete(path).thenAccept(IGNORE_RESPONSE_CONSUMER);
   }
 
