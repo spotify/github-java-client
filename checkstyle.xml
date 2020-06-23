@@ -74,8 +74,6 @@
             <property name="scope" value="public"/>
             <property name="allowMissingReturnTag" value="true"/>
             <property name="allowMissingParamTags" value="true"/>
-            <property name="allowMissingThrowsTags" value="true"/>
-            <property name="allowMissingPropertyJavadoc" value="true"/>
         </module>
         <module name="JavadocType">
             <property name="scope" value="public"/>
@@ -106,12 +104,6 @@
         <module name="RedundantImport"/>
         <module name="UnusedImports"/>
 
-
-        <!-- Checks for Size Violations.                    -->
-        <!-- See http://checkstyle.sf.net/config_sizes.html -->
-        <module name="LineLength">
-            <property name="max" value="120"/>
-        </module>
         <module name="MethodLength"/>
         <module name="ParameterNumber"/>
 
