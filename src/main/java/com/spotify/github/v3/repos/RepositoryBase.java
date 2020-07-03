@@ -154,7 +154,7 @@ public interface RepositoryBase extends UpdateTracking {
   URI hooksUrl();
 
   /** Homepage URL */
-  Optional<URI> homepage();
+  Optional<String> homepage();
 
   /** Language */
   Optional<String> language();
