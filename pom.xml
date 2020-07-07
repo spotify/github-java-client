@@ -50,6 +50,13 @@
             <organization>Spotify AB</organization>
             <organizationUrl>http://www.spotify.com</organizationUrl>
         </developer>
+        <developer>
+            <id>hewhomustnotbenamed</id>
+            <name>Abhimanyu Shegokar</name>
+            <email>abhimanyus@spotify.com</email>
+            <organization>Spotify AB</organization>
+            <organizationUrl>http://www.spotify.com</organizationUrl>
+        </developer>
     </developers>
 
     <repositories>
