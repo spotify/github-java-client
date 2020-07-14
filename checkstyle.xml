@@ -178,7 +178,12 @@
         <module name="TodoComment"/>
         <module name="UpperEll"/>
 
+        <!-- Enable suppressing warnings using the @SuppressWarning annotation -->
+        <module name="SuppressWarningsHolder" />
     </module>
+
+    <!-- Enable suppressing warnings using the @SuppressWarning annotation -->
+    <module name="SuppressWarningsFilter" />
 
     <!-- Allow turning checks off in the code -->
     <!-- See http://checkstyle.sourceforge.net/config.html#SuppressionCommentFilter -->

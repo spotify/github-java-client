@@ -33,9 +33,22 @@ public class JwtTokenIssuerTest {
   private static final URL DER_KEY_RESOURCE =
       Resources.getResource("com/spotify/github/v3/github-private-key");
 
+  // generated using this command: "openssl genrsa -out fake-github-app-key.pem 2048"
+  private static final URL PEM_KEY_RESOURCE =
+      Resources.getResource("com/spotify/github/v3/fake-github-app-key.pem");
+
   @Test
   public void loadsDERFileWithPKCS8Key() throws Exception {
     final byte[] key = Resources.toByteArray(DER_KEY_RESOURCE);
+    final JwtTokenIssuer tokenIssuer = JwtTokenIssuer.fromPrivateKey(key);
+
+    final String token = tokenIssuer.getToken(42);
+    assertThat(token, not(nullValue()));
+  }
+
+  @Test
+  public void loadsPEMFile() throws Exception {
+    final byte[] key = Resources.toByteArray(PEM_KEY_RESOURCE);
     final JwtTokenIssuer tokenIssuer = JwtTokenIssuer.fromPrivateKey(key);
 
     final String token = tokenIssuer.getToken(42);
