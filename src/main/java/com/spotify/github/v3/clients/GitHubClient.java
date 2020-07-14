@@ -525,7 +525,7 @@ public class GitHubClient {
     } else if (getPrivateKey().isPresent()) {
       final String jwtToken;
       try {
-        jwtToken = new JwtTokenIssuer(privateKey).getToken(appId);
+        jwtToken = JwtTokenIssuer.fromFile(privateKey).getToken(appId);
       } catch (Exception e) {
         throw new RuntimeException("There was an error generating JWT token", e);
       }

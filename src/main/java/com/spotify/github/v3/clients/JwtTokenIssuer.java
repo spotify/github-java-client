@@ -36,9 +36,13 @@ import org.apache.commons.io.FileUtils;
 public class JwtTokenIssuer {
 
   private static final SignatureAlgorithm SIGNATURE_ALGORITHM = SignatureAlgorithm.RS256;
+  private static final long TOKEN_TTL = 600000;
 
   private final PrivateKey signingKey;
-  private static final long TOKEN_TTL = 600000;
+
+  private JwtTokenIssuer(final PrivateKey signingKey) {
+    this.signingKey = signingKey;
+  }
 
   /**
    * Instantiates a new Jwt token issuer.
@@ -48,12 +52,25 @@ public class JwtTokenIssuer {
    * @throws InvalidKeySpecException the invalid key spec exception
    * @throws IOException the io exception
    */
-  public JwtTokenIssuer(final File privateKeyFile)
+  public static JwtTokenIssuer fromFile(final File privateKeyFile)
       throws NoSuchAlgorithmException, InvalidKeySpecException, IOException {
     byte[] apiKeySecretBytes = FileUtils.readFileToByteArray(privateKeyFile);
-    PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(apiKeySecretBytes);
+    return fromPrivateKey(apiKeySecretBytes);
+  }
+
+  /**
+   * Instantiates a new Jwt token issuer.
+   *
+   * @param privateKey the private key to use
+   * @throws NoSuchAlgorithmException the no such algorithm exception
+   * @throws InvalidKeySpecException the invalid key spec exception
+   */
+  public static JwtTokenIssuer fromPrivateKey(final byte[] privateKey)
+      throws NoSuchAlgorithmException, InvalidKeySpecException {
+    PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(privateKey);
     KeyFactory kf = KeyFactory.getInstance("RSA");
-    signingKey = kf.generatePrivate(spec);
+    PrivateKey signingKey = kf.generatePrivate(spec);
+    return new JwtTokenIssuer(signingKey);
   }
 
   /**
