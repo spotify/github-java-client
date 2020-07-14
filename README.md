@@ -8,7 +8,7 @@
 
 A small Java library for talking to Github/Github Enterprise and interacting with projects.
 
-It supports authentication via simple access tokens, JWT endpoints and Github Apps (via DER private key).
+It supports authentication via simple access tokens, JWT endpoints and Github Apps (via private key).
 
 It is also very light on GitHub, doing as few requests as necessary.
 
@@ -51,7 +51,7 @@ To authenticate as a Github App, you must provide a private key and the App ID, 
 final GitHubClient github =
   GitHubClient.create(
     URI.create("https://github.com/api/v3/"),
-    new File("/path-to-the/private-key.der"),
+    new File("/path-to-the/private-key.pem"),
     APP_ID);
 ```
 
@@ -68,14 +68,6 @@ scoped.createRepositoryClient("my-org", "my-repo").getCommit("sha");
 It is also possible to provide the installation to the root client.
 
 Refer to [Github App Authentication Guide](https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/) for more information.
-
-#### Making the private key readable for Java
-
-Java does not natively support the PEM private keys that GitHub provides, without a third-party library. To convert it to the DER, java-friendly format, run:
-
-```bash
-openssl pkcs8 -topk8 -inform PEM -outform DER -in <path-to-private-key.pem> -out <path-to-private_key.der> -nocrypt
-```
 
 ## Usage
 

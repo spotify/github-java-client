@@ -28,6 +28,7 @@ import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Date;
 import org.apache.commons.io.FileUtils;
@@ -36,9 +37,13 @@ import org.apache.commons.io.FileUtils;
 public class JwtTokenIssuer {
 
   private static final SignatureAlgorithm SIGNATURE_ALGORITHM = SignatureAlgorithm.RS256;
+  private static final long TOKEN_TTL = 600000;
 
   private final PrivateKey signingKey;
-  private static final long TOKEN_TTL = 600000;
+
+  private JwtTokenIssuer(final PrivateKey signingKey) {
+    this.signingKey = signingKey;
+  }
 
   /**
    * Instantiates a new Jwt token issuer.
@@ -48,12 +53,28 @@ public class JwtTokenIssuer {
    * @throws InvalidKeySpecException the invalid key spec exception
    * @throws IOException the io exception
    */
-  public JwtTokenIssuer(final File privateKeyFile)
+  public static JwtTokenIssuer fromFile(final File privateKeyFile)
       throws NoSuchAlgorithmException, InvalidKeySpecException, IOException {
     byte[] apiKeySecretBytes = FileUtils.readFileToByteArray(privateKeyFile);
-    PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(apiKeySecretBytes);
+    return fromPrivateKey(apiKeySecretBytes);
+  }
+
+  /**
+   * Instantiates a new Jwt token issuer.
+   *
+   * @param privateKey the private key to use
+   * @throws NoSuchAlgorithmException the no such algorithm exception
+   * @throws InvalidKeySpecException the invalid key spec exception
+   */
+  public static JwtTokenIssuer fromPrivateKey(final byte[] privateKey)
+      throws NoSuchAlgorithmException, InvalidKeySpecException {
+
+    KeySpec keySpec = PKCS1PEMKey.loadKeySpec(privateKey)
+        .orElseGet(() -> new PKCS8EncodedKeySpec(privateKey));
+
     KeyFactory kf = KeyFactory.getInstance("RSA");
-    signingKey = kf.generatePrivate(spec);
+    PrivateKey signingKey = kf.generatePrivate(keySpec);
+    return new JwtTokenIssuer(signingKey);
   }
 
   /**
