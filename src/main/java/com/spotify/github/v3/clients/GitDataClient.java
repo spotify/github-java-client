@@ -35,6 +35,7 @@ import java.util.concurrent.CompletableFuture;
 /** Reference Api client */
 public class GitDataClient {
 
+  private static final String REFERENCE_URI = "/repos/%s/%s/git/refs/%s";
   private static final String BRANCH_REFERENCE_URI = "/repos/%s/%s/git/refs/heads/%s";
   private static final String TAG_REFERENCE_URI = "/repos/%s/%s/git/refs/tags/%s";
   private static final String TAG_URI = "/repos/%s/%s/git/tags/%s";
@@ -60,10 +61,28 @@ public class GitDataClient {
    *
    * @param ref search parameters
    */
-  public CompletableFuture<Void> delete(final String ref) {
+  public CompletableFuture<Void> deleteReference(final String ref) {
     final String path =
-        format(BRANCH_REFERENCE_URI, owner, repo, ref.replaceAll("refs/heads/", ""));
+        format(REFERENCE_URI, owner, repo, ref);
     return github.delete(path).thenAccept(IGNORE_RESPONSE_CONSUMER);
+  }
+
+  /**
+   * Deletes a git branch.
+   *
+   * @param branch search parameters
+   */
+  public CompletableFuture<Void> deleteBranch(final String branch) {
+    return deleteReference("refs/heads/" + branch.replaceAll("refs/heads/", ""));
+  }
+
+  /**
+   * Deletes a git tag.
+   *
+   * @param tag search parameters
+   */
+  public CompletableFuture<Void> deleteTag(final String tag) {
+    return deleteReference("refs/tags/" + tag.replaceAll("refs/tags/", ""));
   }
 
   /**
