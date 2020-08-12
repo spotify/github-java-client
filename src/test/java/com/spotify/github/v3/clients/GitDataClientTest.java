@@ -22,10 +22,12 @@ package com.spotify.github.v3.clients;
 
 import static com.google.common.collect.ImmutableMap.of;
 import static com.google.common.io.Resources.getResource;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_REFERENCES;
 import static java.nio.charset.Charset.defaultCharset;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.StringContains.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -38,6 +40,7 @@ import com.spotify.github.v3.git.Reference;
 import com.spotify.github.v3.git.Tag;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.junit.Before;
 import org.junit.Test;
@@ -82,6 +85,22 @@ public class GitDataClientTest {
     assertThat(tag.object().sha(), is("ee959eb71f7041260dc864fb24574eec4caa8019"));
     assertThat(tag.object().type(), is("commit"));
   }
+
+  @Test
+  public void listMatchingReferences() throws Exception {
+    final CompletableFuture<List<Reference>> fixture =
+        completedFuture(json.fromJson(getFixture("reference_list.json"), LIST_REFERENCES));
+    when(github.request(
+            "/repos/someowner/somerepo/git/matching-refs/heads/feature",
+            LIST_REFERENCES))
+        .thenReturn(fixture);
+    final List<Reference> matchingReferences = gitDataClient.listMatchingReferences("heads/feature").get();
+    assertThat(matchingReferences.size(), is(2));
+    for (Reference ref : matchingReferences) {
+        assertThat(ref.ref(), containsString("heads/feature"));
+    }
+  }
+
 
   @Test
   public void createBranchReference() throws Exception {
