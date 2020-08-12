@@ -22,12 +22,14 @@ package com.spotify.github.v3.clients;
 
 import static com.google.common.collect.ImmutableMap.of;
 import static com.spotify.github.v3.clients.GitHubClient.IGNORE_RESPONSE_CONSUMER;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_REFERENCES;
 import static java.lang.String.format;
 
 import com.google.common.collect.ImmutableMap;
 import com.spotify.github.v3.git.Reference;
 import com.spotify.github.v3.git.Tag;
 import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /** Reference Api client */
@@ -38,6 +40,7 @@ public class GitDataClient {
   private static final String TAG_URI = "/repos/%s/%s/git/tags/%s";
   private static final String CREATE_REFERENCE_URI = "/repos/%s/%s/git/refs";
   private static final String CREATE_REFERENCE_TAG = "/repos/%s/%s/git/tags";
+  private static final String LIST_MATCHING_REFERENCES_URI = "/repos/%s/%s/git/matching-refs/%s";
   private final GitHubClient github;
   private final String owner;
   private final String repo;
@@ -91,6 +94,16 @@ public class GitDataClient {
   public CompletableFuture<Tag> getTag(final String tag) {
     final String path = format(TAG_URI, owner, repo, tag);
     return github.request(path, Tag.class);
+  }
+
+  /**
+   * List matching references.
+   *
+   * @param ref reference name
+   */
+  public CompletableFuture<List<Reference>> listMatchingReferences(final String ref) {
+    final String path = format(LIST_MATCHING_REFERENCES_URI, owner, repo, ref);
+    return github.request(path, LIST_REFERENCES);
   }
 
   /**
