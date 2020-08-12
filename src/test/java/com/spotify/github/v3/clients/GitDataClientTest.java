@@ -102,6 +102,23 @@ public class GitDataClientTest {
   }
 
 
+  public void createReference() throws Exception {
+    final CompletableFuture<Reference> fixture =
+        completedFuture(json.fromJson(getFixture("reference.json"), Reference.class));
+    final ImmutableMap<String, String> body = of(
+        "ref", "featureA",
+        "sha", "aa218f56b14c9653891f9e74264a383fa43fefbd"
+    );
+    when(github.post("/repos/someowner/somerepo/git/refs",
+        github.json().toJsonUnchecked(body),
+        Reference.class))
+        .thenReturn(fixture);
+    final Reference reference =
+        gitDataClient.createReference("featureA", "aa218f56b14c9653891f9e74264a383fa43fefbd").get();
+    assertThat(reference.ref(), is("featureA"));
+    assertThat(reference.object().sha(), is("aa218f56b14c9653891f9e74264a383fa43fefbd"));
+  }
+
   @Test
   public void createBranchReference() throws Exception {
     final CompletableFuture<Reference> fixture =
