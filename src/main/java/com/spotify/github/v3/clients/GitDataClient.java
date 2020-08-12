@@ -94,18 +94,28 @@ public class GitDataClient {
   }
 
   /**
+   * Create a git reference.
+   *
+   * @param reference tag name
+   * @param sha commit to branch from
+   */
+  public CompletableFuture<Reference> createReference(final String reference, final String sha) {
+    final String path = format(CREATE_REFERENCE_URI, owner, repo);
+    final ImmutableMap<String, String> body = of(
+        "ref", reference,
+        "sha", sha
+    );
+    return github.post(path, github.json().toJsonUnchecked(body), Reference.class);
+  }
+
+  /**
    * Create a git branch reference. It must not include the refs/heads.
    *
    * @param branch tag name
    * @param sha commit to branch from
    */
   public CompletableFuture<Reference> createBranchReference(final String branch, final String sha) {
-    final String path = format(CREATE_REFERENCE_URI, owner, repo);
-    final ImmutableMap<String, String> body = of(
-        "ref", format("refs/heads/%s", branch),
-        "sha", sha
-    );
-    return github.post(path, github.json().toJsonUnchecked(body), Reference.class);
+    return createReference(format("refs/heads/%s", branch), sha);
   }
 
   /**
@@ -115,9 +125,7 @@ public class GitDataClient {
    * @param sha commit to tag
    */
   public CompletableFuture<Reference> createTagReference(final String tag, final String sha) {
-    final String path = format(CREATE_REFERENCE_URI, owner, repo);
-    final ImmutableMap<String, String> body = of("ref", format("refs/tags/%s", tag), "sha", sha);
-    return github.post(path, github.json().toJsonUnchecked(body), Reference.class);
+    return createReference(format("refs/tags/%s", tag), sha);
   }
 
   /**
