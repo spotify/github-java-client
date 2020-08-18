@@ -170,7 +170,6 @@ public class GitDataClient {
   public CompletableFuture<Reference> createBranchReference(final String branch, final String sha) {
     return createReference(format("refs/heads/%s", branch), sha);
   }
-  
 
   /**
    * Create a git tag reference. It must not include the refs/tags.
