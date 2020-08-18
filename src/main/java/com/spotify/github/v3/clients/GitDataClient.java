@@ -126,6 +126,27 @@ public class GitDataClient {
   }
 
   /**
+   * List references. (Replaced by listMatchingReferences for github version > 2.18)
+   *
+   * @param ref reference name
+   */
+  @Deprecated
+  public CompletableFuture<List<Reference>> listReferences(final String ref) {
+    final String path = format(REFERENCE_URI, owner, repo, ref.replaceAll("refs/", ""));
+    return github.request(path, LIST_REFERENCES);
+  }
+
+  /**
+   * List references. (Replaced by listMatchingReferences for github version > 2.18)
+   *
+   */
+  @Deprecated
+  public CompletableFuture<List<Reference>> listReferences() {
+    return listReferences("");
+  }
+
+
+  /**
    * Create a git reference.
    *
    * @param ref reference name
@@ -149,6 +170,7 @@ public class GitDataClient {
   public CompletableFuture<Reference> createBranchReference(final String branch, final String sha) {
     return createReference(format("refs/heads/%s", branch), sha);
   }
+  
 
   /**
    * Create a git tag reference. It must not include the refs/tags.
