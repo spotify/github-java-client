@@ -63,7 +63,7 @@ public class GitDataClient {
    */
   public CompletableFuture<Void> deleteReference(final String ref) {
     final String path =
-        format(REFERENCE_URI, owner, repo, ref);
+        format(REFERENCE_URI, owner, repo, ref.replaceAll("refs/", ""));
     return github.delete(path).thenAccept(IGNORE_RESPONSE_CONSUMER);
   }
 
@@ -73,7 +73,7 @@ public class GitDataClient {
    * @param branch search parameters
    */
   public CompletableFuture<Void> deleteBranch(final String branch) {
-    return deleteReference("refs/heads/" + branch.replaceAll("refs/heads/", ""));
+    return deleteReference("heads/" + branch.replaceAll("refs/heads/", ""));
   }
 
   /**
@@ -82,7 +82,7 @@ public class GitDataClient {
    * @param tag search parameters
    */
   public CompletableFuture<Void> deleteTag(final String tag) {
-    return deleteReference("refs/tags/" + tag.replaceAll("refs/tags/", ""));
+    return deleteReference("tags/" + tag.replaceAll("refs/tags/", ""));
   }
 
   /**
