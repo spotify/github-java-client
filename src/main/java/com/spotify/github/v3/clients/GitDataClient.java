@@ -126,7 +126,7 @@ public class GitDataClient {
   }
 
   /**
-   * List references. (Replaced by listMatchingReferences for github version > 2.18)
+   * List references. (Replaced by listMatchingReferences for github enterprise version > 2.18)
    *
    * @param ref reference name
    */
@@ -137,7 +137,7 @@ public class GitDataClient {
   }
 
   /**
-   * List references. (Replaced by listMatchingReferences for github version > 2.18)
+   * List references. (Replaced by listMatchingReferences for github enterprise version > 2.18)
    *
    */
   @Deprecated
