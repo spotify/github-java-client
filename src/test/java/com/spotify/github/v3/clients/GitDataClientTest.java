@@ -101,6 +101,21 @@ public class GitDataClientTest {
     }
   }
 
+  @Test
+  public void listReferences() throws Exception {
+    final CompletableFuture<List<Reference>> fixture =
+        completedFuture(json.fromJson(getFixture("tags_list.json"), LIST_REFERENCES));
+    when(github.request(
+            "/repos/someowner/somerepo/git/refs/tags",
+            LIST_REFERENCES))
+        .thenReturn(fixture);
+    final List<Reference> matchingReferences = gitDataClient.listReferences("refs/tags").get();
+    assertThat(matchingReferences.size(), is(1));
+    for (Reference ref : matchingReferences) {
+        assertThat(ref.ref(), containsString("refs/tags"));
+    }
+  }
+
 
   public void createReference() throws Exception {
     final CompletableFuture<Reference> fixture =
