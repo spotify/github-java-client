@@ -27,10 +27,7 @@ import static com.spotify.github.v3.clients.GitHubClient.LIST_REVIEW_TYPE_REFERE
 
 import com.google.common.base.Strings;
 import com.spotify.github.async.AsyncPage;
-import com.spotify.github.v3.prs.Review;
-import com.spotify.github.v3.prs.MergeParameters;
-import com.spotify.github.v3.prs.PullRequest;
-import com.spotify.github.v3.prs.PullRequestItem;
+import com.spotify.github.v3.prs.*;
 import com.spotify.github.v3.prs.requests.PullRequestCreate;
 import com.spotify.github.v3.prs.requests.PullRequestParameters;
 import com.spotify.github.v3.prs.requests.PullRequestUpdate;
@@ -160,6 +157,20 @@ public class PullRequestClient {
     final String path = String.format(PR_REVIEWS_TEMPLATE, owner, repo, number);
     log.debug("Fetching pull request reviews from " + path);
     return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_REVIEW_TYPE_REFERENCE));
+  }
+
+  /**
+   * Creates a review for a pull request.
+   *
+   * @param number pull request number
+   * @param properties properties for reviewing the PR, such as sha, body and event
+   * @see "https://developer.github.com/v3/pulls/reviews/#create-a-review-for-a-pull-request"
+   */
+  public CompletableFuture<Review> createReview(final int number, final ReviewParameters properties) {
+    final String path = String.format(PR_REVIEWS_TEMPLATE, owner, repo, number);
+    final String jsonPayload = github.json().toJsonUnchecked(properties);
+    log.debug("Creating review for PR: " + path);
+    return github.post(path, jsonPayload, Review.class);
   }
 
   /**
