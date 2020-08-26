@@ -1,6 +1,6 @@
 /*-
  * -\-\-
- * github-api
+ * github-client
  * --
  * Copyright (C) 2016 - 2020 Spotify AB
  * --
@@ -24,48 +24,37 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.spotify.github.GithubStyle;
-
-import java.util.List;
-import java.util.Optional;
 import org.immutables.value.Value;
 
 /**
- * The parameters for creating a review for a Pull Request.
+ * Comment parameters for a draft review.
  *
  * @see "https://developer.github.com/v3/pulls/reviews/#input"
  */
 @Value.Immutable
 @GithubStyle
-@JsonSerialize(as = ImmutableReviewParameters.class)
-@JsonDeserialize(as = ImmutableReviewParameters.class)
+@JsonSerialize(as = ImmutableReviewComment.class)
+@JsonDeserialize(as = ImmutableReviewComment.class)
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
-public abstract class ReviewParameters {
+public abstract class ReviewComment {
     /**
-     * SHA of the commit that needs a review. If not the latest, the review may be outdated.
-     * Defaults to the most recent commit in the PR when you do not specify a value.
+     * Relative path to the file that necessitates a review comment.
      *
-     * @return the optional commitId.
+     * @return the path to the file.
      */
-    public abstract Optional<String> commitId();
+    public abstract String path();
 
     /**
-     * **required** when using REQUEST_CHANGES or COMMENT for the event.
+     * Position in the diff where you want to add a review comment.
      *
-     * @return the optional body for REQUEST_CHANGES or COMMENT events.
+     * @return the position in the diff.
      */
-    public abstract Optional<String> body();
+    public abstract int position();
 
     /**
-     * Review action you want to perform. Should be one of: APPROVE, REQUEST_CHANGES or COMMENT.
+     * Text of the review comment.
      *
-     * @return the review action to perform.
+     * @return the text of the review.
      */
-    public abstract String event();
-
-    /**
-     * List of comments for a non-approve review.
-     *
-     * @return the list of comments for the review.
-     */
-    public abstract List<ReviewComment> comments();
+    public abstract String body();
 }
