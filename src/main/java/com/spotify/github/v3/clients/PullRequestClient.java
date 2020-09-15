@@ -23,6 +23,7 @@ package com.spotify.github.v3.clients;
 import static com.spotify.github.v3.clients.GitHubClient.IGNORE_RESPONSE_CONSUMER;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_PR_TYPE_REFERENCE;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_REVIEW_REQUEST_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_REVIEW_TYPE_REFERENCE;
 
 import com.google.common.base.Strings;
@@ -47,6 +48,7 @@ public class PullRequestClient {
   private static final String PR_NUMBER_TEMPLATE = "/repos/%s/%s/pulls/%s";
   private static final String PR_COMMITS_TEMPLATE = "/repos/%s/%s/pulls/%s/commits";
   private static final String PR_REVIEWS_TEMPLATE = "/repos/%s/%s/pulls/%s/reviews";
+  private static final String PR_REVIEW_REQUESTS_TEMPLATE = "/repos/%s/%s/pulls/%s/requested_reviewers";
 
   private final GitHubClient github;
   private final String owner;
@@ -174,6 +176,46 @@ public class PullRequestClient {
   }
 
   /**
+   * List pull request requested reviews.
+   *
+   * @param number pull request number
+   * @return list of reviews
+   */
+  public CompletableFuture<ReviewRequests> listReviewRequests(final int number) {
+    final String path = String.format(PR_REVIEW_REQUESTS_TEMPLATE, owner, repo, number);
+    log.debug("Fetching pull request requested reviews from " + path);
+    return github.request(path, LIST_REVIEW_REQUEST_TYPE_REFERENCE);
+  }
+
+  /**
+   * Requests a review for a pull request.
+   *
+   * @param number pull request number
+   * @param properties properties for reviewing the PR, such as reviewers and team_reviewers.
+   * @see "https://docs.github.com/en/rest/reference/pulls#request-reviewers-for-a-pull-request"
+   */
+  public CompletableFuture<PullRequest> requestReview(final int number, final RequestReviewParameters properties) {
+    final String path = String.format(PR_REVIEW_REQUESTS_TEMPLATE, owner, repo, number);
+    final String jsonPayload = github.json().toJsonUnchecked(properties);
+    log.debug("Requesting reviews for PR: " + path);
+    return github.post(path, jsonPayload, PullRequest.class);
+  }
+
+  /**
+   * Remove a request for review for a pull request.
+   *
+   * @param number pull request number
+   * @param properties properties for reviewing the PR, such as reviewers and team_reviewers.
+   * @see "https://docs.github.com/en/rest/reference/pulls#request-reviewers-for-a-pull-request"
+   */
+  public CompletableFuture<Void> removeRequestedReview(final int number, final RequestReviewParameters properties) {
+    final String path = String.format(PR_REVIEW_REQUESTS_TEMPLATE, owner, repo, number);
+    final String jsonPayload = github.json().toJsonUnchecked(properties);
+    log.debug("Requesting reviews for PR: " + path);
+    return github.delete(path, jsonPayload).thenAccept(IGNORE_RESPONSE_CONSUMER);
+  }
+
+  /**
    * Merges a pull request.
    *
    * @param number pull request number
@@ -192,4 +234,6 @@ public class PullRequestClient {
     log.debug("Fetching pull requests from " + path);
     return github.request(path, LIST_PR_TYPE_REFERENCE);
   }
+
+
 }

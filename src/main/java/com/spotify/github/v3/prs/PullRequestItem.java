@@ -133,6 +133,16 @@ public interface PullRequestItem extends CloseTracking {
   @JsonProperty("_links")
   PullRequestLinks links();
 
+  /** Requested reviewers (users) */
+  @Nullable
+  @JsonProperty("requested_reviewers")
+  List<User> requestedReviewers();
+
+  /** Requested reviewers (teams) */
+  @Nullable
+  @JsonProperty("requested_teams")
+  List<User> requestedTeams();
+
   /** @Deprecated the merge commit sha. */
   Optional<String> mergeCommitSha();
 }

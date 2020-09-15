@@ -32,6 +32,7 @@ import com.spotify.github.v3.exceptions.ReadOnlyRepositoryException;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.git.Reference;
 import com.spotify.github.v3.prs.PullRequestItem;
+import com.spotify.github.v3.prs.ReviewRequests;
 import com.spotify.github.v3.repos.Branch;
 import com.spotify.github.v3.repos.CommitItem;
 import com.spotify.github.v3.repos.FolderContent;
@@ -76,6 +77,8 @@ public class GitHubClient {
   static final TypeReference<List<CommitItem>> LIST_COMMIT_TYPE_REFERENCE =
       new TypeReference<>() {};
   static final TypeReference<List<Review>> LIST_REVIEW_TYPE_REFERENCE = new TypeReference<>() {};
+  static final TypeReference<ReviewRequests> LIST_REVIEW_REQUEST_TYPE_REFERENCE =
+      new TypeReference<>() {};
   static final TypeReference<List<Status>> LIST_STATUS_TYPE_REFERENCE =
       new TypeReference<>() {};
   static final TypeReference<List<FolderContent>> LIST_FOLDERCONTENT_TYPE_REFERENCE =
@@ -489,6 +492,21 @@ public class GitHubClient {
    */
   CompletableFuture<Response> delete(final String path) {
     final Request request = requestBuilder(path).delete().build();
+    log.debug("Making DELETE request to {}", request.url().toString());
+    return call(request);
+  }
+
+  /**
+   * Make an http DELETE request for the given path.
+   *
+   * @param path relative to the Github base url
+   * @return response body as String
+   */
+  CompletableFuture<Response> delete(final String path, final String data) {
+    final Request request =
+        requestBuilder(path)
+            .method("DELETE", RequestBody.create(parse(MediaType.APPLICATION_JSON), data))
+            .build();
     log.debug("Making DELETE request to {}", request.url().toString());
     return call(request);
   }
