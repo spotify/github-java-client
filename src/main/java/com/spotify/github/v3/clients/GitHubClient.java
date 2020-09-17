@@ -500,6 +500,7 @@ public class GitHubClient {
    * Make an http DELETE request for the given path.
    *
    * @param path relative to the Github base url
+   * @param data request body as stringified JSON
    * @return response body as String
    */
   CompletableFuture<Response> delete(final String path, final String data) {
@@ -654,7 +655,7 @@ public class GitHubClient {
 
   private RequestNotOkException mapException(final Response res, final Request request)
       throws IOException {
-    String bodyString = res.body().string();
+    String bodyString = res.body() != null ? res.body().string() : "";
     if (res.code() == FORBIDDEN) {
       if (bodyString.contains("Repository was archived so is read-only")) {
         return new ReadOnlyRepositoryException(request.url().encodedPath(), res.code(), bodyString);

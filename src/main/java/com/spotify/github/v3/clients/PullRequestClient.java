@@ -211,7 +211,7 @@ public class PullRequestClient {
   public CompletableFuture<Void> removeRequestedReview(final int number, final RequestReviewParameters properties) {
     final String path = String.format(PR_REVIEW_REQUESTS_TEMPLATE, owner, repo, number);
     final String jsonPayload = github.json().toJsonUnchecked(properties);
-    log.debug("Requesting reviews for PR: " + path);
+    log.debug("Removing requested reviews for PR: " + path);
     return github.delete(path, jsonPayload).thenAccept(IGNORE_RESPONSE_CONSUMER);
   }
 
@@ -234,6 +234,5 @@ public class PullRequestClient {
     log.debug("Fetching pull requests from " + path);
     return github.request(path, LIST_PR_TYPE_REFERENCE);
   }
-
 
 }
