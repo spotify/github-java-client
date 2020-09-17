@@ -28,7 +28,7 @@ In Maven:
 Start talking to Github API.
 
 ```java
-final GitHubClient github = GithubClient.create(URI.create("https://github.com/api/v3/"));
+final GitHubClient github = GitHubClient.create(URI.create("https://github.com/api/v3/"));
 final IssueApi issueClient = github.createRepositoryClient("my-org", "my-repo").createIssueClient();
 issueClient.listComments(ISSUE_ID).get().forEach(comment -> log.info(comment.body()));
 ```
@@ -38,7 +38,7 @@ issueClient.listComments(ISSUE_ID).get().forEach(comment -> log.info(comment.bod
 ### Simple access token
 
 ```java
-final GitHubClient github = GithubClient.create(URI.create("https://github.com/api/v3/"));
+final GitHubClient github = GitHubClient.create(URI.create("https://github.com/api/v3/"));
 // Do the requests
 github.createRepositoryClient("my-org", "my-repo").getCommit("sha");
 ```
@@ -75,7 +75,7 @@ This library attempts to mirror the structure of GitHub API endpoints. As an exa
 the `GET /repos/:owner/:repo/commits` API call, under the `repos` API. Therefore, the `getCommit` method lives in the RepositoryClient.
 
 ```java
-final GitHubClient github = GithubClient.create(URI.create("https://github.com/api/v3/"));
+final GitHubClient github = GitHubClient.create(URI.create("https://github.com/api/v3/"));
 github.createRepositoryClient("my-org", "my-repo").getCommit("sha");
 ```
 
