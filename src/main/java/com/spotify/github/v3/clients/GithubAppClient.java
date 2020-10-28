@@ -22,6 +22,7 @@ package com.spotify.github.v3.clients;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.ImmutableMap;
+import com.spotify.github.v3.apps.InstallationRepositoriesResponse;
 import com.spotify.github.v3.checks.AccessToken;
 import com.spotify.github.v3.checks.Installation;
 import java.util.List;
@@ -35,6 +36,7 @@ public class GithubAppClient {
   private static final String GET_ACCESS_TOKEN_URL = "/app/installations/%s/access_tokens";
   private static final String GET_INSTALLATIONS_URL = "/app/installations?per_page=100";
   private static final String GET_INSTALLATION_REPO_URL = "/repos/%s/%s/installation";
+  private static final String LIST_ACCESSIBLE_REPOS_URL = "/installation/repositories";
 
   private final GitHubClient github;
   private final String owner;
@@ -62,7 +64,7 @@ public class GithubAppClient {
   }
 
   /**
-   * Get Installation of a.repo
+   * Get Installation of a repo
    *
    * @return a list of Installation
    */
@@ -79,5 +81,18 @@ public class GithubAppClient {
   public CompletableFuture<AccessToken> getAccessToken(final Integer installationId) {
     final String path = String.format(GET_ACCESS_TOKEN_URL, installationId);
     return github.post(path, "", AccessToken.class, extraHeaders);
+  }
+
+  /**
+   * Lists the repositories that an app installation can access.
+   *
+   * <p>see
+   * https://docs.github.com/en/free-pro-team@latest/rest/reference/apps#list-repositories-accessible-to-the-app-installation
+   */
+  public CompletableFuture<InstallationRepositoriesResponse> listAccessibleRepositories(
+      final int installationId) {
+
+    return GitHubClient.scopeForInstallationId(github, installationId)
+        .request(LIST_ACCESSIBLE_REPOS_URL, InstallationRepositoriesResponse.class, extraHeaders);
   }
 }
