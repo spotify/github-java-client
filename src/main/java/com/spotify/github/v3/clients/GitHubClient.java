@@ -25,13 +25,13 @@ import static okhttp3.MediaType.parse;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.spotify.github.jackson.Json;
-import com.spotify.github.v3.prs.Review;
 import com.spotify.github.v3.checks.AccessToken;
 import com.spotify.github.v3.comment.Comment;
 import com.spotify.github.v3.exceptions.ReadOnlyRepositoryException;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.git.Reference;
 import com.spotify.github.v3.prs.PullRequestItem;
+import com.spotify.github.v3.prs.Review;
 import com.spotify.github.v3.prs.ReviewRequests;
 import com.spotify.github.v3.repos.Branch;
 import com.spotify.github.v3.repos.CommitItem;
