@@ -22,9 +22,12 @@ package com.spotify.github.v3.clients;
 
 import static com.spotify.github.v3.clients.ChecksClientTest.loadResource;
 import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThrows;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.spotify.github.jackson.Json;
@@ -33,8 +36,10 @@ import com.spotify.github.v3.checks.ImmutableAccessToken;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -72,7 +77,12 @@ public class GitHubAuthTest {
 
   @Before
   public void setUp() throws IOException {
-    client = new OkHttpClient();
+    client =
+        new OkHttpClient.Builder()
+            .connectTimeout(Duration.ofSeconds(1))
+            .readTimeout(Duration.ofSeconds(1))
+            .build();
+
     mockServer.start();
     url = mockServer.url("/").uri();
     checksClient =
@@ -139,10 +149,20 @@ public class GitHubAuthTest {
     assertThat(mockServer.takeRequest().getPath(), is("/repos/foo/bar/check-runs/123"));
   }
 
-  @Test(expected = Exception.class)
-  public void throwsIfFetchingInstallationTokenRequestIsUnsuccessful() {
+  @Test
+  public void throwsIfFetchingInstallationTokenRequestIsUnsuccessful() throws Exception {
     mockServer.enqueue(new MockResponse().setResponseCode(500));
-    checksClient.getCheckRun(123).join();
+    RuntimeException ex =
+        assertThrows(RuntimeException.class, () -> checksClient.getCheckRun(123).join());
+
+    assertThat(ex.getMessage(), is("Could not generate access token for github app"));
+
+    assertThat(ex.getCause(), is(notNullValue()));
+    assertThat(ex.getCause().getMessage(), startsWith("Got non-2xx status 500 when getting an access token from GitHub"));
+
+    RecordedRequest recordedRequest = mockServer.takeRequest(1, TimeUnit.MILLISECONDS);
+    // make sure it was the expected request that threw
+    assertThat(recordedRequest.getRequestUrl().encodedPath(), is("/app/installations/1/access_tokens"));
   }
 
   @Test
@@ -178,16 +198,24 @@ public class GitHubAuthTest {
     assertThat(request2.getMethod(), is("PATCH"));
   }
 
-  @Test(expected = Exception.class)
+  @Test
   public void assertInstallationEndpointWithoutInstallationThrows() {
     final GitHubClient github = GitHubClient.create(client, url, key, 123);
-    github.createRepositoryClient("foo", "bar").createChecksApiClient().getCheckRun(123).join();
+    final RuntimeException ex = assertThrows(RuntimeException.class,
+        () -> github.createRepositoryClient("foo", "bar").createChecksApiClient().getCheckRun(123)
+            .join());
+    assertThat(ex.getMessage(), is("This endpoint needs a client with an installation ID"));
   }
 
-  @Test(expected = Exception.class)
+  @Test
   public void assertJwtEndpointWithNoKeyThrows() {
     final GitHubClient github = GitHubClient.create(client, url, "a-token");
-    github.createRepositoryClient("foo", "bar").createGithubAppClient().getInstallations().join();
+
+    final IllegalStateException ex = assertThrows(IllegalStateException.class,
+        () -> github.createRepositoryClient("foo", "bar").createGithubAppClient().getInstallations()
+            .join());
+
+    assertThat(ex.getMessage(), is("This endpoint needs a client with a private key for an App"));
   }
 
   @Test

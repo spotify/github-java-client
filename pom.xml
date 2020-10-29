@@ -92,7 +92,7 @@
         <guava.version>28.0-jre</guava.version>
         <jsr305.version>3.0.2</jsr305.version>
         <jsr311-api.version>1.1.1</jsr311-api.version>
-        <junit.version>4.13</junit.version>
+        <junit.version>4.13.1</junit.version>
         <slf4j-api.version>1.7.12</slf4j-api.version>
         <mockito-core.version>3.2.4</mockito-core.version>
         <commons-io.version>2.6</commons-io.version>
