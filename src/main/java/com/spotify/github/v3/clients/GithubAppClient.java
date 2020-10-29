@@ -46,7 +46,7 @@ public class GithubAppClient {
       ImmutableMap.of(HttpHeaders.ACCEPT, "application/vnd.github.machine-man-preview+json");
 
   private static final TypeReference<List<Installation>> INSTALLATION_LIST_TYPE_REFERENCE =
-      new TypeReference<List<Installation>>() {};
+      new TypeReference<>() {};
 
   GithubAppClient(final GitHubClient github, final String owner, final String repo) {
     this.github = github;
