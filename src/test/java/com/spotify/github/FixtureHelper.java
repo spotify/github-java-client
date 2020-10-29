@@ -24,8 +24,11 @@ import static com.google.common.io.Resources.getResource;
 import static java.nio.charset.Charset.defaultCharset;
 
 import com.google.common.io.Resources;
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URISyntaxException;
+import java.net.URL;
 
 public class FixtureHelper {
 
@@ -36,6 +39,16 @@ public class FixtureHelper {
       return Resources.toString(getResource(FIXTURE_ROOT + path), defaultCharset());
     } catch (IOException e) {
       throw new UncheckedIOException(e);
+    }
+  }
+
+  /** Return a File pointing to the resource on the classpath */
+  public static File loadFile(final String path) {
+    URL resource = getResource(FIXTURE_ROOT + path);
+    try {
+      return new File(resource.toURI());
+    } catch (URISyntaxException e) {
+      throw new RuntimeException(e);
     }
   }
 }

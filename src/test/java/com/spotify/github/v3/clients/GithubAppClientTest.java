@@ -20,61 +20,106 @@
 
 package com.spotify.github.v3.clients;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-import com.google.common.io.Resources;
-import com.spotify.github.jackson.Json;
-import com.spotify.github.v3.checks.AccessToken;
-import com.spotify.github.v3.checks.InstallationList;
-import java.io.IOException;
-import java.io.UncheckedIOException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.spotify.github.FixtureHelper;
+import com.spotify.github.v3.apps.InstallationRepositoriesResponse;
+import com.spotify.github.v3.checks.Installation;
+import java.io.File;
+import java.net.URI;
 import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 public class GithubAppClientTest {
 
-  private static final String FIXTURES_PATH = "com/spotify/github/v3/githubapp/";
-  private Json json;
+  @Rule
+  public final MockWebServer mockServer = new MockWebServer();
 
-  public static String loadResource(final String path) {
-    try {
-      return Resources.toString(Resources.getResource(path), UTF_8);
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
-  }
+  private final ObjectMapper objectMapper = new ObjectMapper();
+  private final int appId = 42;
+  private GithubAppClient client;
 
   @Before
-  public void setUp() {
-    final GitHubClient github = mock(GitHubClient.class);
-    final GithubAppClient client = new GithubAppClient(github, "org", "repo");
-    json = Json.create();
-    when(github.json()).thenReturn(json);
+  public void setUp() throws Exception {
+    URI uri = mockServer.url("").uri();
+    File key = FixtureHelper.loadFile("githubapp/key.pem");
+
+    GitHubClient rootclient = GitHubClient.create(uri, key, appId);
+    client = rootclient.createRepositoryClient("", "").createGithubAppClient();
   }
 
   @Test
   public void getInstallationsList() throws Exception {
-    final InstallationList installations =
-        json.fromJson(
-            loadResource(FIXTURES_PATH + "installations-list.json"), InstallationList.class);
+    mockServer.enqueue(
+        new MockResponse()
+            .setResponseCode(200)
+            .setBody(FixtureHelper.loadFixture("githubapp/installations-list.json")));
 
-    assertThat(installations.totalCount(), is(2));
-    assertThat(installations.installations().get(0).account().login(), is("github"));
-    assertThat(installations.installations().get(0).id(), is(1));
-    assertThat(installations.installations().get(1).account().login(), is("octocat"));
-    assertThat(installations.installations().get(1).id(), is(3));
+    List<Installation> installations = client.getInstallations().join();
+
+    assertThat(installations.size(), is(2));
+    assertThat(installations.get(0).account().login(), is("github"));
+    assertThat(installations.get(0).id(), is(1));
+    assertThat(installations.get(1).account().login(), is("octocat"));
+    assertThat(installations.get(1).id(), is(3));
+
+    RecordedRequest recordedRequest = mockServer.takeRequest(1, TimeUnit.MILLISECONDS);
+    assertThat(recordedRequest.getRequestUrl().encodedPath(), is("/app/installations"));
+    assertThat(recordedRequest.getRequestUrl().queryParameter("per_page"), is("100"));
+
+    assertThat(
+        recordedRequest.getHeaders().values("Accept"),
+        containsInAnyOrder("application/json", "application/vnd.github.machine-man-preview+json"));
   }
 
   @Test
-  public void canDeserializeToken() throws IOException {
-    final AccessToken accessToken =
-        json.fromJson(loadResource(FIXTURES_PATH + "access-token.json"), AccessToken.class);
-    assertThat(accessToken.token(), is("v1.1f699f1069f60xxx"));
-    assertThat(accessToken.expiresAt(), is(ZonedDateTime.parse("2016-07-11T22:14:10Z")));
+  public void listAccessibleRepositories() throws Exception {
+    // response for POST /app/installations/:id/access_tokens
+    final String installationAccessToken = "abc123-secret";
+    mockServer.enqueue(
+        new MockResponse()
+            .setResponseCode(201)
+            // this might not serialize 100% the same as the Json class's ObjectMapper but should be
+            // fine for this test
+            .setBody(
+                objectMapper
+                    .createObjectNode()
+                    .put("token", installationAccessToken)
+                    .put("expires_at", ZonedDateTime.now().plusHours(1).toString())
+                    .toString()));
+
+    // response for GET /installation/repositories
+    mockServer.enqueue(
+        new MockResponse()
+            .setResponseCode(200)
+            .setBody(FixtureHelper.loadFixture("githubapp/accessible-repositories.json")));
+
+    InstallationRepositoriesResponse response =
+        client.listAccessibleRepositories(1234).join();
+
+    assertThat(response.totalCount(), is(2));
+    assertThat(response.repositories().size(), is(2));
+    assertThat(response.repositories().get(0).id(), is(1));
+    assertThat(response.repositories().get(1).id(), is(2));
+
+    RecordedRequest accessTokenRequest = mockServer.takeRequest(1, TimeUnit.MILLISECONDS);
+    assertThat(accessTokenRequest.getMethod(), is("POST"));
+    assertThat(
+        accessTokenRequest.getRequestUrl().encodedPath(),
+        is("/app/installations/1234/access_tokens"));
+
+    RecordedRequest listReposRequest = mockServer.takeRequest(1, TimeUnit.MILLISECONDS);
+    assertThat(listReposRequest.getMethod(), is("GET"));
+    assertThat(listReposRequest.getRequestUrl().encodedPath(), is("/installation/repositories"));
   }
 }
