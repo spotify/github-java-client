@@ -26,7 +26,6 @@ import static org.hamcrest.core.Is.is;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.spotify.github.FixtureHelper;
-import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.apps.InstallationRepositoriesResponse;
 import com.spotify.github.v3.checks.Installation;
 import java.io.File;
@@ -38,19 +37,20 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 public class GithubAppClientTest {
 
-  private final MockWebServer mockServer = new MockWebServer();
+  @Rule
+  public final MockWebServer mockServer = new MockWebServer();
+
   private final ObjectMapper objectMapper = new ObjectMapper();
   private final int appId = 42;
   private GithubAppClient client;
 
   @Before
   public void setUp() throws Exception {
-    mockServer.start();
-
     URI uri = mockServer.url("").uri();
     File key = FixtureHelper.loadFile("githubapp/key.pem");
 
