@@ -65,7 +65,7 @@ public class GithubAppClientTest {
             .setResponseCode(200)
             .setBody(FixtureHelper.loadFixture("githubapp/installations-list.json")));
 
-    List<Installation> installations = client.getInstallations().toCompletableFuture().join();
+    List<Installation> installations = client.getInstallations().join();
 
     assertThat(installations.size(), is(2));
     assertThat(installations.get(0).account().login(), is("github"));
@@ -105,7 +105,7 @@ public class GithubAppClientTest {
             .setBody(FixtureHelper.loadFixture("githubapp/accessible-repositories.json")));
 
     InstallationRepositoriesResponse response =
-        client.listAccessibleRepositories(1234).toCompletableFuture().join();
+        client.listAccessibleRepositories(1234).join();
 
     assertThat(response.totalCount(), is(2));
     assertThat(response.repositories().size(), is(2));
