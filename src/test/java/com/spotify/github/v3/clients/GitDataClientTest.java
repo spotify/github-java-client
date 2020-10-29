@@ -102,6 +102,7 @@ public class GitDataClientTest {
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   public void listReferences() throws Exception {
     final CompletableFuture<List<Reference>> fixture =
         completedFuture(json.fromJson(getFixture("tags_list.json"), LIST_REFERENCES));
