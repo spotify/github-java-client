@@ -542,6 +542,9 @@ public class GitHubClient {
    (3) Installation Token, generated from the JWT token. Also used in Github Apps.
   */
   private String getAuthorizationHeader(final String path) {
+    if (isJwtRequest(path) && getPrivateKey().isEmpty()) {
+      throw new IllegalStateException("This endpoint needs a client with a private key for an App");
+    }
     if (getAccessToken().isPresent()) {
       return String.format("token %s", token);
     } else if (getPrivateKey().isPresent()) {
@@ -603,11 +606,18 @@ public class GitHubClient {
 
     final Response response = client.newCall(request).execute();
 
+    if (!response.isSuccessful()) {
+      throw new Exception(
+          String.format(
+              "Got non-2xx status %s when getting an access token from GitHub: %s",
+              response.code(), response.message()));
+    }
+
     if (response.body() == null) {
       throw new Exception(
           String.format(
-              "Got status %s when getting an access token from GitHub: %s",
-              response.code(), response.message()));
+              "Got empty response body when getting an access token from GitHub, HTTP status was: %s",
+              response.message()));
     }
     final String text = response.body().string();
     response.body().close();
