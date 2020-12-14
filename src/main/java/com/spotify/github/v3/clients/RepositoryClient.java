@@ -27,6 +27,7 @@ import static com.spotify.github.v3.clients.GitHubClient.LIST_STATUS_TYPE_REFERE
 import static com.spotify.github.v3.clients.GitHubClient.LIST_BRANCHES;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_REPOSITORY;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.spotify.github.async.AsyncPage;
 import com.spotify.github.v3.comment.Comment;
@@ -44,6 +45,7 @@ import com.spotify.github.v3.repos.Languages;
 import com.spotify.github.v3.repos.Repository;
 import com.spotify.github.v3.repos.Status;
 import com.spotify.github.v3.repos.requests.RepositoryCreateStatus;
+import com.spotify.github.v3.repos.requests.AuthenticatedUserRepositoriesFilter;
 import java.lang.invoke.MethodHandles;
 import java.util.Iterator;
 import java.util.List;
@@ -78,6 +80,7 @@ public class RepositoryClient {
   private static final String MERGE_TEMPLATE = "/repos/%s/%s/merges";
   private static final String FORK_TEMPLATE = "/repos/%s/%s/forks";
   private static final String LIST_REPOSITORY_TEMPLATE = "/orgs/%s/repos";
+  private static final String LIST_REPOSITORIES_FOR_AUTHENTICATED_USER = "/user/repos";
 
   private final String owner;
   private final String repo;
@@ -150,6 +153,18 @@ public class RepositoryClient {
   public CompletableFuture<List<Repository>> listOrganizationRepositories() {
     final String path = String.format(LIST_REPOSITORY_TEMPLATE, owner);
     return github.request(path, LIST_REPOSITORY);
+  }
+
+  /**
+   * List repositories for the authenticated user.
+   *
+   * @param filter filter parameters
+   * @return list of repositories for the authenticated user
+   */
+  public Iterator<AsyncPage<Repository>> listAuthenticatedUserRepositories(final AuthenticatedUserRepositoriesFilter filter) {
+    final String serial = filter.serialize();
+    final String path = LIST_REPOSITORIES_FOR_AUTHENTICATED_USER + (Strings.isNullOrEmpty(serial) ? "" : "?" + serial);
+    return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_REPOSITORY));
   }
 
   /**
