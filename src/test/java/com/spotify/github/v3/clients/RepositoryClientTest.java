@@ -37,10 +37,12 @@ import static org.hamcrest.core.Is.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static java.util.stream.StreamSupport.stream;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
+import com.spotify.github.async.AsyncPage;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.comment.Comment;
 import com.spotify.github.v3.repos.Branch;
@@ -53,10 +55,12 @@ import com.spotify.github.v3.repos.FolderContent;
 import com.spotify.github.v3.repos.Repository;
 import com.spotify.github.v3.repos.RepositoryTest;
 import com.spotify.github.v3.repos.Status;
+import com.spotify.github.v3.repos.requests.ImmutableAuthenticatedUserRepositoriesFilter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 import okhttp3.Headers;
 import okhttp3.MediaType;
 import okhttp3.Protocol;
@@ -109,6 +113,24 @@ public class RepositoryClientTest {
         completedFuture(json.fromJson(getFixture("list_of_repos_for_org.json"), LIST_REPOSITORY));
     when(github.request("/orgs/someowner/repos", LIST_REPOSITORY)).thenReturn(fixture);
     final List<Repository> repositories = repoClient.listOrganizationRepositories().get();
+    assertThat(repositories.get(0).id(), is(1296269));
+    assertThat(repositories.size(), is(1));
+  }
+
+  @Test
+  public void listAuthenticatedUserRepositories() throws Exception {
+    final String pageLink = "<https://github.com/api/v3/user/repos>; rel=\"first\"";
+    final String pageBody = getFixture("list_of_repos_for_authenticated_user.json");
+    final Response pageResponse = createMockResponse(pageLink, pageBody);
+
+    when(github.request("/user/repos")).thenReturn(completedFuture(pageResponse));
+
+    final Iterable<AsyncPage<Repository>> pageIterator = () -> repoClient.listAuthenticatedUserRepositories(ImmutableAuthenticatedUserRepositoriesFilter.builder().build());
+    final List<Repository> repositories =
+        stream(pageIterator.spliterator(), false)
+            .flatMap(page -> stream(page.spliterator(), false))
+            .collect(Collectors.toList());
+
     assertThat(repositories.get(0).id(), is(1296269));
     assertThat(repositories.size(), is(1));
   }
