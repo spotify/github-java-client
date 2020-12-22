@@ -54,12 +54,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
+
+import okhttp3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -232,8 +228,8 @@ public class GitHubClient {
   }
 
   static String responseBodyUnchecked(final Response response) {
-    try {
-      return response.body().string();
+    try (ResponseBody body = response.body()) {
+      return body.string();
     } catch (IOException e) {
       throw new UncheckedIOException("Failed getting response body for: " + response, e);
     }
@@ -651,6 +647,10 @@ public class GitHubClient {
                           future.completeExceptionally(mapException(res, request));
                         } catch (final Throwable e) {
                           future.completeExceptionally(e);
+                        } finally {
+                          if (res.body() != null) {
+                            res.body().close();
+                          }
                         }
                       } else {
                         future.complete(res);
