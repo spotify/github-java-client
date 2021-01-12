@@ -34,6 +34,7 @@ import static java.nio.charset.Charset.defaultCharset;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -133,6 +134,15 @@ public class RepositoryClientTest {
 
     assertThat(repositories.get(0).id(), is(1296269));
     assertThat(repositories.size(), is(1));
+  }
+
+  @Test
+  public void isCollaborator() throws Exception {
+    final Response response = mock(Response.class);
+    when(response.code()).thenReturn(204);
+    when(github.request("/repos/someowner/somerepo/collaborators/user")).thenReturn(completedFuture(response));
+    boolean isCollaborator = repoClient.isCollaborator("user").get();
+    assertTrue(isCollaborator);
   }
 
   @Test
