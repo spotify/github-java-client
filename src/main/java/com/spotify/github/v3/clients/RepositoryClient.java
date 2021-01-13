@@ -81,7 +81,7 @@ public class RepositoryClient {
   private static final String FORK_TEMPLATE = "/repos/%s/%s/forks";
   private static final String LIST_REPOSITORY_TEMPLATE = "/orgs/%s/repos";
   private static final String LIST_REPOSITORIES_FOR_AUTHENTICATED_USER = "/user/repos";
-
+  private static final String IS_USER_COLLABORATOR_OF_REPO = "/repos/%s/%s/collaborators/%s";
   private final String owner;
   private final String repo;
   private final GitHubClient github;
@@ -165,6 +165,17 @@ public class RepositoryClient {
     final String serial = filter.serialize();
     final String path = LIST_REPOSITORIES_FOR_AUTHENTICATED_USER + (Strings.isNullOrEmpty(serial) ? "" : "?" + serial);
     return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_REPOSITORY));
+  }
+
+  /**
+   * Check if a user is collaborator of the repo.
+   *
+   * @param user the user to check
+   * @return boolean indicating if user is collaborator
+   */
+  public CompletableFuture<Boolean> isCollaborator(final String user) {
+    final String path = String.format(IS_USER_COLLABORATOR_OF_REPO, owner, repo, user);
+    return github.request(path).thenApply(response -> response.code() == NO_CONTENT);
   }
 
   /**
