@@ -58,5 +58,16 @@ public interface PullRequestParameters extends Parameters {
    */
   Optional<String> direction();
 
+  /**
+   * Results per page (max 100)
+   */
+  @SuppressWarnings("checkstyle:methodname")
+  Optional<Integer> per_page();
+
+  /**
+   * Page number of the results to fetch.
+   */
+  Optional<Integer> page();
+
   /** Serialize declared non-Object methods as key=value joined by & */
 }
