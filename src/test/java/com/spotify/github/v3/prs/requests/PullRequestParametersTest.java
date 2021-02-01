@@ -36,11 +36,14 @@ public class PullRequestParametersTest {
             .head("bogus-head")
             .sort("bogus-sort")
             .state("bogus-state")
+            .page(2)
+            .per_page(5)
             .build();
 
     assertThat(
         params.serialize(),
         is(
-            "base=bogus-base&direction=bogus-direction&head=bogus-head&sort=bogus-sort&state=bogus-state"));
+            "base=bogus-base&direction=bogus-direction&head=bogus-head&page=2" +
+                    "&per_page=5&sort=bogus-sort&state=bogus-state"));
   }
 }
