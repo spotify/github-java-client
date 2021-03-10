@@ -157,13 +157,18 @@ public class GithubPage<T> implements AsyncPage<T> {
     return github
         .request(path)
         .thenApply(
-            response ->
-                Optional.ofNullable(response.headers().get("Link"))
+            response -> {
+                final Map<String, Link> linkMap = Optional.ofNullable(response.headers().get("Link"))
                     .map(linkHeader -> stream(linkHeader.split(",")))
                     .orElseGet(Stream::empty)
                     .map(linkString -> Link.from(linkString.split(";")))
                     .filter(link -> link.rel().isPresent())
-                    .collect(toMap(link -> link.rel().get(), identity())));
+                    .collect(toMap(link -> link.rel().get(), identity()));
+                if (response.body() != null) {
+                  response.close();
+                }
+                return linkMap;
+            });
   }
 
   private Optional<Integer> pageNumberFromUri(final String uri) {
