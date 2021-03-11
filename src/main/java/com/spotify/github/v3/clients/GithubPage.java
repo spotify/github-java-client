@@ -38,6 +38,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
+import okhttp3.ResponseBody;
 
 /**
  * Async page implementation for github resources
@@ -158,16 +159,13 @@ public class GithubPage<T> implements AsyncPage<T> {
         .request(path)
         .thenApply(
             response -> {
-                final Map<String, Link> linkMap = Optional.ofNullable(response.headers().get("Link"))
+                Optional.ofNullable(response.body()).ifPresent(ResponseBody::close);
+                return Optional.ofNullable(response.headers().get("Link"))
                     .map(linkHeader -> stream(linkHeader.split(",")))
                     .orElseGet(Stream::empty)
                     .map(linkString -> Link.from(linkString.split(";")))
                     .filter(link -> link.rel().isPresent())
                     .collect(toMap(link -> link.rel().get(), identity()));
-                if (response.body() != null) {
-                  response.close();
-                }
-                return linkMap;
             });
   }
 
