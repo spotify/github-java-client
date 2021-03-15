@@ -55,4 +55,10 @@ public interface PullRequestCreate {
    */
   @Nullable
   String base();
+
+  /**
+   * Indicates whether the pull request is a draft.
+   */
+  @Nullable
+  Boolean draft();
 }
