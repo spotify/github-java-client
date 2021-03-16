@@ -28,6 +28,7 @@ import static org.hamcrest.core.Is.is;
 import com.google.common.io.Resources;
 import com.spotify.github.jackson.Json;
 import java.io.IOException;
+import java.util.Optional;
 import org.junit.Test;
 
 public class PullRequestTest {
@@ -44,6 +45,7 @@ public class PullRequestTest {
     assertThat(pr.additions(), is(100));
     assertThat(pr.deletions(), is(3));
     assertThat(pr.changedFiles(), is(5));
+    assertThat(pr.draft(), is(Optional.of(false)));
   }
 
   @Test

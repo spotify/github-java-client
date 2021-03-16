@@ -75,4 +75,7 @@ public interface PullRequest extends PullRequestItem {
   /** The mergeable state of this PR. */
   @Nullable
   String mergeableState();
+
+  /** Is it a draft PR? */
+  Optional<Boolean> draft();
 }
