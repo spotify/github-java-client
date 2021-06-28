@@ -22,8 +22,7 @@ package com.spotify.github.v3.clients;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import java.io.File;
-import java.io.IOException;
+
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -31,7 +30,6 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Date;
-import org.apache.commons.io.FileUtils;
 
 /** The helper Jwt token issuer. */
 public class JwtTokenIssuer {
@@ -43,20 +41,6 @@ public class JwtTokenIssuer {
 
   private JwtTokenIssuer(final PrivateKey signingKey) {
     this.signingKey = signingKey;
-  }
-
-  /**
-   * Instantiates a new Jwt token issuer.
-   *
-   * @param privateKeyFile the private key file
-   * @throws NoSuchAlgorithmException the no such algorithm exception
-   * @throws InvalidKeySpecException the invalid key spec exception
-   * @throws IOException the io exception
-   */
-  public static JwtTokenIssuer fromFile(final File privateKeyFile)
-      throws NoSuchAlgorithmException, InvalidKeySpecException, IOException {
-    byte[] apiKeySecretBytes = FileUtils.readFileToByteArray(privateKeyFile);
-    return fromPrivateKey(apiKeySecretBytes);
   }
 
   /**
