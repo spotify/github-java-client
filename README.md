@@ -6,9 +6,9 @@
 
 # github-client
 
-A small Java library for talking to Github/Github Enterprise and interacting with projects.
+A small Java library for talking to GitHub/GitHub Enterprise and interacting with projects.
 
-It supports authentication via simple access tokens, JWT endpoints and Github Apps (via private key).
+It supports authentication via simple access tokens, JWT endpoints and GitHub Apps (via private key).
 
 It is also very light on GitHub, doing as few requests as necessary.
 
@@ -25,10 +25,10 @@ In Maven:
 </dependency>
 ```
 
-Start talking to Github API.
+Start talking to GitHub API.
 
 ```java
-final GitHubClient github = GitHubClient.create(URI.create("https://github.com/api/v3/"));
+final GitHubClient github = GitHubClient.create(URI.create("https://api.github.com/"));
 final IssueApi issueClient = github.createRepositoryClient("my-org", "my-repo").createIssueClient();
 issueClient.listComments(ISSUE_ID).get().forEach(comment -> log.info(comment.body()));
 ```
@@ -38,19 +38,19 @@ issueClient.listComments(ISSUE_ID).get().forEach(comment -> log.info(comment.bod
 ### Simple access token
 
 ```java
-final GitHubClient github = GitHubClient.create(URI.create("https://github.com/api/v3/"), "my-access-token");
+final GitHubClient github = GitHubClient.create(URI.create("https://api.github.com/"), "my-access-token");
 // Do the requests
 github.createRepositoryClient("my-org", "my-repo").getCommit("sha");
 ```
 
 ### Private key
 
-To authenticate as a Github App, you must provide a private key and the App ID, together with the API URL.
+To authenticate as a GitHub App, you must provide a private key and the App ID, together with the API URL.
 
 ```java
 final GitHubClient github =
   GitHubClient.create(
-    URI.create("https://github.com/api/v3/"),
+    URI.create("https://api.github.com/"),
     new File("/path-to-the/private-key.pem"),
     APP_ID);
 ```
@@ -67,7 +67,7 @@ scoped.createRepositoryClient("my-org", "my-repo").getCommit("sha");
 
 It is also possible to provide the installation to the root client.
 
-Refer to [Github App Authentication Guide](https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/) for more information.
+Refer to [GitHub App Authentication Guide](https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/) for more information.
 
 ## Usage
 
@@ -75,7 +75,7 @@ This library attempts to mirror the structure of GitHub API endpoints. As an exa
 the `GET /repos/:owner/:repo/commits` API call, under the `repos` API. Therefore, the `getCommit` method lives in the RepositoryClient.
 
 ```java
-final GitHubClient github = GitHubClient.create(URI.create("https://github.com/api/v3/"), "my-access-token");
+final GitHubClient github = GitHubClient.create(URI.create("https://api.github.com/"), "my-access-token");
 github.createRepositoryClient("my-org", "my-repo").getCommit("sha");
 ```
 
@@ -84,10 +84,10 @@ Some APIs, such as Checks API are nested in the Repository API. Endpoints such a
 ```java
 final GitHubClient github =
   GitHubClient.create(
-    URI.create("https://github.com/api/v3/"),
+    URI.create("https://api.github.com/"),
     new File("/path-to-the/private-key.der"),
     APP_ID);
-// Checks API need to be used by Github Apps
+// Checks API need to be used by GitHub Apps
 GitHubClient.scopeForInstallationId(github, INSTALLATION_ID)
   .createRepositoryClient("my-org", "my-repo")
   .createChecksApiClient()
@@ -106,8 +106,8 @@ mvn clean verify
 
 This module was created after existing libraries were evaluated and dismissed, and we found that we were writing similar
 code in multiple projects. As such, it at least initially only contains enough functionality for our internal requirements
-which reflect that we were working on build system integration with the Github pull requests. It has been widely used for 4+ 
-years. It's important to notice that it does not cover all Github v3 API. Adding missing endpoints should be very straightforward.
+which reflect that we were working on build system integration with the GitHub pull requests. It has been widely used for 4+ 
+years. It's important to notice that it does not cover all GitHub v3 API. Adding missing endpoints should be very straightforward.
 Pull Requests are welcome.
 
 ## Code of conduct
