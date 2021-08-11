@@ -221,7 +221,11 @@ public class RepositoryClient {
     final String path = String.format(STATUS_URI_TEMPLATE, owner, repo, sha);
     return github
         .post(path, github.json().toJsonUnchecked(request))
-        .thenAccept(IGNORE_RESPONSE_CONSUMER);
+        .thenAccept(response -> {
+          if (response.body() != null) {
+            response.body().close();
+          }
+        });
   }
 
   /**
