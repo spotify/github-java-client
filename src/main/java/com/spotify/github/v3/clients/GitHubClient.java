@@ -65,7 +65,11 @@ import org.slf4j.LoggerFactory;
  */
 public class GitHubClient {
 
-  static final Consumer<Response> IGNORE_RESPONSE_CONSUMER = (ignore) -> {};
+  static final Consumer<Response> IGNORE_RESPONSE_CONSUMER = (response) -> {
+    if (response.body() != null) {
+      response.body().close();
+    }
+  };
   static final TypeReference<List<Comment>> LIST_COMMENT_TYPE_REFERENCE =
       new TypeReference<>() {};
   static final TypeReference<List<Repository>> LIST_REPOSITORY =
