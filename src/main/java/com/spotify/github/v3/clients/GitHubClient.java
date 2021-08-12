@@ -38,9 +38,8 @@ import com.spotify.github.v3.repos.CommitItem;
 import com.spotify.github.v3.repos.FolderContent;
 import com.spotify.github.v3.repos.Repository;
 import com.spotify.github.v3.repos.Status;
-import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
+
+import java.io.*;
 import java.lang.invoke.MethodHandles;
 import java.net.URI;
 import java.time.ZonedDateTime;
@@ -56,6 +55,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 
 import okhttp3.*;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,7 +103,7 @@ public class GitHubClient {
   private final OkHttpClient client;
   private final String token;
 
-  private final File privateKey;
+  private final byte[] privateKey;
   private final Integer appId;
   private final Integer installationId;
 
@@ -113,7 +113,7 @@ public class GitHubClient {
       final OkHttpClient client,
       final URI baseUrl,
       final String accessToken,
-      final File privateKey,
+      final byte[] privateKey,
       final Integer appId,
       final Integer installationId) {
     this.baseUrl = baseUrl;
@@ -145,6 +145,18 @@ public class GitHubClient {
    * @return github api client
    */
   public static GitHubClient create(final URI baseUrl, final File privateKey, final Integer appId) {
+    return createOrThrow(new OkHttpClient(), baseUrl, privateKey, appId, null);
+  }
+
+  /**
+   * Create a github api client with a given base URL and a path to a key.
+   *
+   * @param baseUrl base URL
+   * @param privateKey the private key as byte array
+   * @param appId the github app ID
+   * @return github api client
+   */
+  public static GitHubClient create(final URI baseUrl, final byte[] privateKey, final Integer appId) {
     return new GitHubClient(new OkHttpClient(), baseUrl, null, privateKey, appId, null);
   }
 
@@ -159,6 +171,20 @@ public class GitHubClient {
    */
   public static GitHubClient create(
       final URI baseUrl, final File privateKey, final Integer appId, final Integer installationId) {
+    return createOrThrow(new OkHttpClient(), baseUrl, privateKey, appId, installationId);
+  }
+
+  /**
+   * Create a github api client with a given base URL and a path to a key.
+   *
+   * @param baseUrl base URL
+   * @param privateKey the private key as byte array
+   * @param appId the github app ID
+   * @param installationId the installationID to be authenticated as
+   * @return github api client
+   */
+  public static GitHubClient create(
+          final URI baseUrl, final byte[] privateKey, final Integer appId, final Integer installationId) {
     return new GitHubClient(new OkHttpClient(), baseUrl, null, privateKey, appId, installationId);
   }
 
@@ -176,6 +202,23 @@ public class GitHubClient {
       final URI baseUrl,
       final File privateKey,
       final Integer appId) {
+    return createOrThrow(httpClient, baseUrl, privateKey, appId, null);
+  }
+
+  /**
+   * Create a github api client with a given base URL and a path to a key.
+   *
+   * @param httpClient an instance of OkHttpClient
+   * @param baseUrl base URL
+   * @param privateKey the private key as byte array
+   * @param appId the github app ID
+   * @return github api client
+   */
+  public static GitHubClient create(
+          final OkHttpClient httpClient,
+          final URI baseUrl,
+          final byte[] privateKey,
+          final Integer appId) {
     return new GitHubClient(httpClient, baseUrl, null, privateKey, appId, null);
   }
 
@@ -194,6 +237,24 @@ public class GitHubClient {
       final File privateKey,
       final Integer appId,
       final Integer installationId) {
+    return createOrThrow(httpClient, baseUrl, privateKey, appId, installationId);
+  }
+
+  /**
+   * Create a github api client with a given base URL and a path to a key.
+   *
+   * @param httpClient an instance of OkHttpClient
+   * @param baseUrl base URL
+   * @param privateKey the private key as byte array
+   * @param appId the github app ID
+   * @return github api client
+   */
+  public static GitHubClient create(
+          final OkHttpClient httpClient,
+          final URI baseUrl,
+          final byte[] privateKey,
+          final Integer appId,
+          final Integer installationId) {
     return new GitHubClient(httpClient, baseUrl, null, privateKey, appId, installationId);
   }
 
@@ -219,7 +280,7 @@ public class GitHubClient {
    */
   public static GitHubClient scopeForInstallationId(
       final GitHubClient client, final int installationId) {
-    if (!client.getPrivateKey().isPresent()) {
+    if (client.getPrivateKey().isEmpty()) {
       throw new RuntimeException("Installation ID scoped client needs a private key");
     }
     return new GitHubClient(
@@ -239,7 +300,7 @@ public class GitHubClient {
     }
   }
 
-  public Optional<File> getPrivateKey() {
+  public Optional<byte[]> getPrivateKey() {
     return Optional.ofNullable(privateKey);
   }
 
@@ -550,7 +611,7 @@ public class GitHubClient {
     } else if (getPrivateKey().isPresent()) {
       final String jwtToken;
       try {
-        jwtToken = JwtTokenIssuer.fromFile(privateKey).getToken(appId);
+        jwtToken = JwtTokenIssuer.fromPrivateKey(privateKey).getToken(appId);
       } catch (Exception e) {
         throw new RuntimeException("There was an error generating JWT token", e);
       }
@@ -696,5 +757,16 @@ public class GitHubClient {
     }
 
     return completedFuture(response);
+  }
+
+  /**
+   * Wrapper to Constructors that expose File object for the privateKey argument
+   * */
+  private static GitHubClient createOrThrow(final OkHttpClient httpClient, final URI baseUrl, final File privateKey, final Integer appId, final Integer installationId) {
+    try {
+      return new GitHubClient(httpClient, baseUrl, null, FileUtils.readFileToByteArray(privateKey), appId, installationId);
+    } catch (IOException e) {
+      throw new RuntimeException("There was an error generating JWT token", e);
+    }
   }
 }
