@@ -36,6 +36,7 @@ public class JwtTokenIssuer {
 
   private static final SignatureAlgorithm SIGNATURE_ALGORITHM = SignatureAlgorithm.RS256;
   private static final long TOKEN_TTL = 600000;
+  private static final long TOKEN_ISSUED = 6000;
 
   private final PrivateKey signingKey;
 
@@ -74,7 +75,7 @@ public class JwtTokenIssuer {
         .setIssuer(String.valueOf(appId))
         .signWith(signingKey, SIGNATURE_ALGORITHM)
         .setExpiration(new Date(System.currentTimeMillis() + TOKEN_TTL))
-        .setIssuedAt(new Date())
+        .setIssuedAt(new Date(System.currentTimeMillis() - TOKEN_ISSUED))
         .compact();
   }
 }
