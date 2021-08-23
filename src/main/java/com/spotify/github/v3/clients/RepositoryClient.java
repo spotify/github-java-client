@@ -30,9 +30,18 @@ import static com.spotify.github.v3.clients.GitHubClient.LIST_REPOSITORY;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.spotify.github.async.AsyncPage;
+import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.comment.Comment;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
+import com.spotify.github.v3.git.CommitResponse;
+import com.spotify.github.v3.git.ImmutableTree;
+import com.spotify.github.v3.git.ImmutableTreeItem;
+import com.spotify.github.v3.git.Reference;
+import com.spotify.github.v3.git.ShaLink;
 import com.spotify.github.v3.git.Tree;
+import com.spotify.github.v3.git.TreeItem;
+import com.spotify.github.v3.helpers.wrappers.CommitWrapper;
+import com.spotify.github.v3.helpers.wrappers.Wrapper;
 import com.spotify.github.v3.hooks.requests.WebhookCreate;
 import com.spotify.github.v3.repos.Branch;
 import com.spotify.github.v3.repos.Commit;
@@ -46,12 +55,14 @@ import com.spotify.github.v3.repos.Repository;
 import com.spotify.github.v3.repos.Status;
 import com.spotify.github.v3.repos.requests.RepositoryCreateStatus;
 import com.spotify.github.v3.repos.requests.AuthenticatedUserRepositoriesFilter;
+import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import okhttp3.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,9 +79,11 @@ public class RepositoryClient {
   private static final String CONTENTS_URI_TEMPLATE = "/repos/%s/%s/contents/%s%s";
   public static final String STATUS_URI_TEMPLATE = "/repos/%s/%s/statuses/%s";
   private static final String COMMITS_URI_TEMPLATE = "/repos/%s/%s/commits";
+  private static final String COMMIT_TEMPLATE = "/repos/%s/%s/git/commits";
   private static final String COMMIT_SHA_URI_TEMPLATE = "/repos/%s/%s/commits/%s";
   private static final String COMMIT_STATUS_URI_TEMPLATE = "/repos/%s/%s/commits/%s/status";
   private static final String TREE_SHA_URI_TEMPLATE = "/repos/%s/%s/git/trees/%s";
+  private static final String TREE_URI_TEMPLATE = "/repos/%s/%s/git/trees";
   private static final String COMPARE_COMMIT_TEMPLATE = "/repos/%s/%s/compare/%s...%s";
   private static final String BRANCH_TEMPLATE = "/repos/%s/%s/branches/%s";
   private static final String LIST_BRANCHES_TEMPLATE = "/repos/%s/%s/branches";
@@ -82,6 +95,9 @@ public class RepositoryClient {
   private static final String LIST_REPOSITORY_TEMPLATE = "/orgs/%s/repos";
   private static final String LIST_REPOSITORIES_FOR_AUTHENTICATED_USER = "/user/repos";
   private static final String IS_USER_COLLABORATOR_OF_REPO = "/repos/%s/%s/collaborators/%s";
+  private static final String BLOB_TEMPLATE = "/repos/%s/%s/git/blobs";
+  private static final String HEAD_REFERENCE_TEMPLATE = "/repos/%s/%s/git/refs/heads/%s";
+  private static final String REFERENCE_TEMPLATE = "/repos/%s/%s/git/refs";
   private final String owner;
   private final String repo;
   private final GitHubClient github;
@@ -143,6 +159,16 @@ public class RepositoryClient {
   public CompletableFuture<Repository> getRepository() {
     final String path = String.format(REPOSITORY_URI_TEMPLATE, owner, repo);
     return github.request(path, Repository.class);
+  }
+
+  /**
+   * Get a reference given a branch name
+   *
+   * @return a single reference
+   */
+  public CompletableFuture<Reference> getReference(final String ref) {
+    final String path = String.format(HEAD_REFERENCE_TEMPLATE, owner, repo, ref);
+    return github.request(path, Reference.class);
   }
 
   /**
@@ -282,6 +308,112 @@ public class RepositoryClient {
   }
 
   /**
+   * Get  repository commit and map to CommitResponse.
+   *
+   * @param sha commit sha
+   * @return commit response
+   */
+  public CompletableFuture<CommitResponse> getGitCommit(final String sha) {
+    final String path = String.format(COMMIT_SHA_URI_TEMPLATE, owner, repo, sha);
+    return github.request(path, CommitResponse.class);
+  }
+
+  /**
+   * Post new content to the server.
+   *
+   * @param content the content to be posted
+   */
+  public CompletableFuture<Response> setBlob(final String content) {
+    final String path = String.format(BLOB_TEMPLATE, owner, repo);
+    final String encoding = "utf-8|base64";
+    final String requestBody = github.json()
+        .toJsonUnchecked(ImmutableMap.of("content", content, "encoding", encoding));
+    return github.post(path, requestBody);
+  }
+
+  /**
+   * Create a commit which references a tree
+   *
+   * @param message commit message
+   * @param parents list of parent sha values, usually just one sha
+   * @param treeSha sha value of the tree
+   */
+  public CompletableFuture<Response> setCommit(final String message, final List<String> parents,
+      final String treeSha) {
+    final String path = String.format(COMMIT_TEMPLATE, owner, repo);
+    final String requestBody = github.json()
+        .toJsonUnchecked(ImmutableMap.of("message", message, "parents", parents, "tree", treeSha));
+    return github.post(path, requestBody);
+  }
+
+  /**
+   * Create a commit which references a tree.
+   *
+   * @param content new content.
+   * @param ref     reference to base branch for the commit.
+   * @param branch  name of new branch, must start with refs/heads.
+   * @param path    to the file the changes should be applied to.
+   * @param message the commit message
+   */
+  public CompletableFuture<Response> createCommit(final String content, final String ref,
+      final String branch, final String path, final String message) {
+
+    CommitWrapper commitWrapper = new CommitWrapper();
+    Wrapper blobWrapper = new Wrapper();
+
+    return getReference(ref).thenCompose(
+            referenceResponse -> getGitCommit(referenceResponse.object().sha()))
+        .thenCompose(commitResponse -> {
+          commitWrapper.setSha(commitResponse.sha());
+          commitWrapper.setTreeSha(commitResponse.commit().tree().sha());
+          commitWrapper.setTreeUrl(commitResponse.commit().tree().url());
+          return setBlob(content);
+        }).thenCompose(blobResponse -> {
+          try {
+            assert blobResponse.body() != null;
+            String sha = Json.create().fromJson(blobResponse.body().string(), ShaLink.class).sha();
+            blobWrapper.setSha(sha);
+            return getTree(commitWrapper.getTreeSha());
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+
+        }).thenCompose(treeRespone -> {
+          String baseTree = treeRespone.sha();
+          String blobSha = blobWrapper.getSha();
+
+          final TreeItem treeItem = ImmutableTreeItem.builder()
+              .path(path)
+              .mode("100644")
+              .type("commit")
+              .sha(blobSha)
+              .build();
+          final Tree tree = ImmutableTree.builder()
+              .addTree(treeItem)
+              .build();
+          return setTree(tree.tree(), baseTree);
+
+        }).thenCompose(treeResponse -> {
+          try {
+            assert treeResponse.body() != null;
+            String treeSha = Json.create().fromJson(treeResponse.body().string(), Tree.class).sha();
+            return setCommit(message, List.of(commitWrapper.getSha()), treeSha);
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+        }).thenCompose(commitResponse -> {
+          try {
+            assert commitResponse.body() != null;
+            String commitSha = Json.create().fromJson(commitResponse.body().string(), Commit.class)
+                .sha();
+            return createBranch(branch, commitSha);
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+        });
+  }
+
+  /**
    * Get a repository tree.
    *
    * @param sha commit sha
@@ -290,6 +422,19 @@ public class RepositoryClient {
   public CompletableFuture<Tree> getTree(final String sha) {
     final String path = String.format(TREE_SHA_URI_TEMPLATE, owner, repo, sha);
     return github.request(path, Tree.class);
+  }
+
+  /**
+   * Set a repository tree.
+   *
+   * @param tree     list of tree items
+   * @param baseTree sha of existing tree used as base for new tree
+   */
+  public CompletableFuture<Response> setTree(final List<TreeItem> tree, final String baseTree) {
+    final String path = String.format(TREE_URI_TEMPLATE, owner, repo);
+    final String requestBody = github.json()
+        .toJsonUnchecked(ImmutableMap.of("base_tree", baseTree, "tree", tree));
+    return github.post(path, requestBody);
   }
 
   /**
@@ -390,6 +535,19 @@ public class RepositoryClient {
   public CompletableFuture<List<Branch>> listBranches() {
     final String path = String.format(LIST_BRANCHES_TEMPLATE, owner, repo);
     return github.request(path, LIST_BRANCHES);
+  }
+
+  /**
+   * Create a new branch.
+   *
+   * @param ref new branch name
+   * @param sha sha value of parent commit to branch from
+   */
+  public CompletableFuture<Response> createBranch(final String ref, final String sha) {
+    final String path = String.format(REFERENCE_TEMPLATE, owner, repo);
+    final String requestBody = github.json()
+        .toJsonUnchecked(ImmutableMap.of("ref", ref, "sha", sha));
+    return github.post(path, requestBody);
   }
 
   /**

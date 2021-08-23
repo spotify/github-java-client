@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.spotify.github.GithubStyle;
 import java.net.URI;
+import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
@@ -57,6 +58,12 @@ public interface Commit {
   /** The SHA of the tree object this commit points to. */
   @Nullable
   ShaLink tree();
+
+  /** Parents of commit. */
+  Optional<List<ParentItem>> parents();
+
+  /** Signature verification object. */
+  Optional<Verification> verification();
 
   /** Number of comments. */
   Optional<Integer> commentCount();
