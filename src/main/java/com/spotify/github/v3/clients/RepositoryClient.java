@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -365,54 +365,15 @@ public class RepositoryClient {
     return getReference(ref).thenCompose(
             referenceResponse -> getGitCommit(referenceResponse.object().sha()))
         .thenCompose(
-          commitResponse -> {
-          commitWrapper.setSha(commitResponse.sha());
-          commitWrapper.setTreeSha(commitResponse.commit().tree().sha());
-          commitWrapper.setTreeUrl(commitResponse.commit().tree().url());
-          return setBlob(content);
-        }).thenCompose(blobResponse -> {
-          try {
-            assert blobResponse.body() != null;
-            final String sha = Json.create().fromJson(blobResponse.body().string(), ShaLink.class).sha();
-            blobWrapper.setSha(sha);
-            return getTree(commitWrapper.getTreeSha());
-          } catch (IOException e) {
-            throw new GithubException("Encountered an error with github api", e);
-          }
-
-        }).thenCompose(treeRespone -> {
-          final String baseTree = treeRespone.sha();
-          final String blobSha = blobWrapper.getSha();
-
-          final TreeItem treeItem = ImmutableTreeItem.builder()
-              .path(path)
-              .mode("100644")
-              .type("commit")
-              .sha(blobSha)
-              .build();
-          final Tree tree = ImmutableTree.builder()
-              .addTree(treeItem)
-              .build();
-          return setTree(tree.tree(), baseTree);
-
-        }).thenCompose(treeResponse -> {
-          try {
-            assert treeResponse.body() != null;
-            final String treeSha = Json.create().fromJson(treeResponse.body().string(), Tree.class).sha();
-            return setCommit(message, List.of(commitWrapper.getSha()), treeSha);
-          } catch (IOException e) {
-            throw new RuntimeException(e);
-          }
-        }).thenCompose(commitResponse -> {
-          try {
-            assert commitResponse.body() != null;
-            final String commitSha = Json.create().fromJson(commitResponse.body().string(), Commit.class)
-                .sha();
-            return createBranch(branch, commitSha);
-          } catch (IOException e) {
-            throw new RuntimeException(e);
-          }
-        });
+            commitResponse -> handleSetBlob(commitResponse, commitWrapper, content))
+        .thenCompose(
+            blobResponse -> handleGetTree(blobResponse, blobWrapper, commitWrapper))
+        .thenCompose(
+            treeResponse -> handleSetTree(treeResponse, blobWrapper, path))
+        .thenCompose(
+            treeResponse -> handleSetCommit(treeResponse, message, commitWrapper))
+        .thenCompose(
+            commitResponse -> handleCreateBranch(commitResponse, branch));
   }
 
   /**
@@ -671,5 +632,64 @@ public class RepositoryClient {
       throw new IllegalArgumentException(path + " starts or ends with '/'");
     }
     return String.format(CONTENTS_URI_TEMPLATE, owner, repo, path, query);
+  }
+
+  private CompletableFuture<Response> handleSetBlob(CommitResponse commitResponse,
+      CommitWrapper commitWrapper, String content) {
+    commitWrapper.setSha(commitResponse.sha());
+    commitWrapper.setTreeSha(commitResponse.commit().tree().sha());
+    return setBlob(content);
+  }
+
+  private CompletableFuture<Tree> handleGetTree(Response blobResponse, Wrapper blobWrapper,
+      CommitWrapper commitWrapper) {
+    try {
+      assert blobResponse.body() != null;
+      final String sha = Json.create().fromJson(blobResponse.body().string(), ShaLink.class).sha();
+      blobWrapper.setSha(sha);
+      return getTree(commitWrapper.getTreeSha());
+    } catch (IOException e) {
+      throw new GithubException("Encountered an error with github api", e);
+    }
+  }
+
+  private CompletableFuture<Response> handleSetTree(Tree treeResponse, Wrapper blobWrapper,
+      String path) {
+
+    final String baseTree = treeResponse.sha();
+    final String blobSha = blobWrapper.getSha();
+
+    final TreeItem treeItem = ImmutableTreeItem.builder()
+        .path(path)
+        .mode("100644")
+        .type("commit")
+        .sha(blobSha)
+        .build();
+    final Tree tree = ImmutableTree.builder()
+        .addTree(treeItem)
+        .build();
+    return setTree(tree.tree(), baseTree);
+  }
+
+  private CompletableFuture<Response> handleSetCommit(Response treeResponse, String message,
+      CommitWrapper commitWrapper) {
+    try {
+      assert treeResponse.body() != null;
+      final String treeSha = Json.create().fromJson(treeResponse.body().string(), Tree.class).sha();
+      return setCommit(message, List.of(commitWrapper.getSha()), treeSha);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private CompletableFuture<Response> handleCreateBranch(Response commitResponse, String branch) {
+    try {
+      assert commitResponse.body() != null;
+      final String commitSha = Json.create().fromJson(commitResponse.body().string(), Commit.class)
+          .sha();
+      return createBranch(branch, commitSha);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 }
