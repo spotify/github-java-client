@@ -33,6 +33,7 @@ import com.spotify.github.async.AsyncPage;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.comment.Comment;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
+import com.spotify.github.v3.exceptions.GithubException;
 import com.spotify.github.v3.git.CommitResponse;
 import com.spotify.github.v3.git.ImmutableTree;
 import com.spotify.github.v3.git.ImmutableTreeItem;
@@ -57,6 +58,7 @@ import com.spotify.github.v3.repos.requests.RepositoryCreateStatus;
 import com.spotify.github.v3.repos.requests.AuthenticatedUserRepositoriesFilter;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
+import java.net.URI;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -347,40 +349,42 @@ public class RepositoryClient {
   }
 
   /**
-   * Create a commit which references a tree.
+   * Create commit on new branch.
    *
    * @param content new content.
    * @param ref     reference to base branch for the commit.
    * @param branch  name of new branch, must start with refs/heads.
-   * @param path    to the file the changes should be applied to.
-   * @param message the commit message
+   * @param path    path to file changes will be applied to.
+   * @param message the commit message.
    */
   public CompletableFuture<Response> createCommit(final String content, final String ref,
       final String branch, final String path, final String message) {
 
-    CommitWrapper commitWrapper = new CommitWrapper();
-    Wrapper blobWrapper = new Wrapper();
+    final CommitWrapper commitWrapper = new CommitWrapper();
+    final Wrapper blobWrapper = new Wrapper();
 
     return getReference(ref).thenCompose(
             referenceResponse -> getGitCommit(referenceResponse.object().sha()))
-        .thenCompose(commitResponse -> {
+        .thenCompose(
+          commitResponse -> {
           commitWrapper.setSha(commitResponse.sha());
           commitWrapper.setTreeSha(commitResponse.commit().tree().sha());
           commitWrapper.setTreeUrl(commitResponse.commit().tree().url());
           return setBlob(content);
-        }).thenCompose(blobResponse -> {
+        }
+        ).thenCompose(blobResponse -> {
           try {
             assert blobResponse.body() != null;
-            String sha = Json.create().fromJson(blobResponse.body().string(), ShaLink.class).sha();
+            final String sha = Json.create().fromJson(blobResponse.body().string(), ShaLink.class).sha();
             blobWrapper.setSha(sha);
             return getTree(commitWrapper.getTreeSha());
           } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new GithubException("Encountered an error with github api", e);
           }
 
         }).thenCompose(treeRespone -> {
-          String baseTree = treeRespone.sha();
-          String blobSha = blobWrapper.getSha();
+          final String baseTree = treeRespone.sha();
+          final String blobSha = blobWrapper.getSha();
 
           final TreeItem treeItem = ImmutableTreeItem.builder()
               .path(path)
@@ -396,7 +400,7 @@ public class RepositoryClient {
         }).thenCompose(treeResponse -> {
           try {
             assert treeResponse.body() != null;
-            String treeSha = Json.create().fromJson(treeResponse.body().string(), Tree.class).sha();
+            final String treeSha = Json.create().fromJson(treeResponse.body().string(), Tree.class).sha();
             return setCommit(message, List.of(commitWrapper.getSha()), treeSha);
           } catch (IOException e) {
             throw new RuntimeException(e);
@@ -404,7 +408,7 @@ public class RepositoryClient {
         }).thenCompose(commitResponse -> {
           try {
             assert commitResponse.body() != null;
-            String commitSha = Json.create().fromJson(commitResponse.body().string(), Commit.class)
+            final String commitSha = Json.create().fromJson(commitResponse.body().string(), Commit.class)
                 .sha();
             return createBranch(branch, commitSha);
           } catch (IOException e) {
