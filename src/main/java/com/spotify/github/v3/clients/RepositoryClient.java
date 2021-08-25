@@ -58,7 +58,6 @@ import com.spotify.github.v3.repos.requests.RepositoryCreateStatus;
 import com.spotify.github.v3.repos.requests.AuthenticatedUserRepositoriesFilter;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
-import java.net.URI;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -371,8 +370,7 @@ public class RepositoryClient {
           commitWrapper.setTreeSha(commitResponse.commit().tree().sha());
           commitWrapper.setTreeUrl(commitResponse.commit().tree().url());
           return setBlob(content);
-        }
-        ).thenCompose(blobResponse -> {
+        }).thenCompose(blobResponse -> {
           try {
             assert blobResponse.body() != null;
             final String sha = Json.create().fromJson(blobResponse.body().string(), ShaLink.class).sha();
