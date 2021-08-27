@@ -23,6 +23,7 @@ package com.spotify.github.v3.clients;
 import static com.google.common.io.Resources.getResource;
 import static com.spotify.github.FixtureHelper.loadFixture;
 import static com.spotify.github.v3.UserTest.assertUser;
+import static com.spotify.github.v3.TreeItemTest.assertTreeItem;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_BRANCHES;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_FOLDERCONTENT_TYPE_REFERENCE;
@@ -47,6 +48,8 @@ import com.google.common.io.Resources;
 import com.spotify.github.async.AsyncPage;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.comment.Comment;
+import com.spotify.github.v3.git.Reference;
+import com.spotify.github.v3.git.Tree;
 import com.spotify.github.v3.repos.Branch;
 import com.spotify.github.v3.repos.Commit;
 import com.spotify.github.v3.repos.CommitComparison;
@@ -108,6 +111,21 @@ public class RepositoryClientTest {
     assertThat(repository.isPrivate(), is(false));
     assertThat(repository.fork(), is(false));
   }
+
+  @Test
+    public void getReference() throws Exception {
+    final CompletableFuture<Reference> fixture =
+        completedFuture(json.fromJson(getFixture("reference.json"), Reference.class));
+    when(github.request("/repos/someowner/somerepo/git/refs/heads/somebranch", Reference.class)).thenReturn(fixture);
+    final Reference reference = repoClient.getReference("somebranch").get();
+    assertThat(reference.ref(), is("refs/heads/featureA"));
+    assertThat(reference.url(), is("http://example.com/whatever"));
+    assertThat(reference.object().type(), is("commit"));
+    assertThat(reference.object().sha(), is("6dcb09b5b57875f334f61aebed695e2e4193db5e"));
+    assertThat(reference.object().url(), is("http://example.com/whatever"));
+  }
+
+
 
   @Test
   public void listOrganizationRepositories() throws Exception {
@@ -191,6 +209,18 @@ public class RepositoryClientTest {
         .thenReturn(fixture);
     final CommitStatus status = repoClient.getCommitStatus("thesha").get();
     assertThat(status.state(), is("success"));
+  }
+
+  @Test
+  public void getTree() throws Exception {
+    final CompletableFuture<Tree> fixture =
+        completedFuture(json.fromJson(getFixture("tree.json"), Tree.class));
+    when(github.request("/repos/someowner/somerepo/commits/thesha/status", Tree.class))
+        .thenReturn(fixture);
+    final Tree tree = repoClient.getTree("thesha").get();
+    assertThat(tree.sha(), is("6dcb09b5b57875f334f61aebed695e2e4193db5e"));
+    assertThat(tree.url(), is("http://example.com/whatever"));
+    assertTreeItem(tree.tree().get(0));
   }
 
   @Test
