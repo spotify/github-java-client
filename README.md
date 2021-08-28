@@ -25,22 +25,12 @@ In Maven:
 </dependency>
 ```
 
-Start talking to GitHub API.
-
-```java
-final GitHubClient github = GitHubClient.create(URI.create("https://api.github.com/"));
-final IssueApi issueClient = github.createRepositoryClient("my-org", "my-repo").createIssueClient();
-issueClient.listComments(ISSUE_ID).get().forEach(comment -> log.info(comment.body()));
-```
-
 ## Authenticating
 
 ### Simple access token
 
 ```java
-final GitHubClient github = GitHubClient.create(URI.create("https://api.github.com/"), "my-access-token");
-// Do the requests
-github.createRepositoryClient("my-org", "my-repo").getCommit("sha");
+final GitHubClient githubClient = GitHubClient.create(URI.create("https://api.github.com/"), "my-access-token");
 ```
 
 ### Private key
@@ -48,7 +38,7 @@ github.createRepositoryClient("my-org", "my-repo").getCommit("sha");
 To authenticate as a GitHub App, you must provide a private key and the App ID, together with the API URL.
 
 ```java
-final GitHubClient github =
+final GitHubClient githubClient =
   GitHubClient.create(
     URI.create("https://api.github.com/"),
     new File("/path-to-the/private-key.pem"),
@@ -60,9 +50,7 @@ The client will manage the generation of JWT tokens, as well as requesting and c
 from GitHub.
 
 ```java
-final GitHubClient scoped = GitHubClient.scopeForInstallationId(github, INSTALLATION_ID);
-// Do the requests now using the scoped client.
-scoped.createRepositoryClient("my-org", "my-repo").getCommit("sha");
+final GitHubClient scopedClient = GitHubClient.scopeForInstallationId(githubClient, INSTALLATION_ID);
 ```
 
 It is also possible to provide the installation to the root client.
@@ -75,23 +63,19 @@ This library attempts to mirror the structure of GitHub API endpoints. As an exa
 the `GET /repos/:owner/:repo/commits` API call, under the `repos` API. Therefore, the `getCommit` method lives in the RepositoryClient.
 
 ```java
-final GitHubClient github = GitHubClient.create(URI.create("https://api.github.com/"), "my-access-token");
-github.createRepositoryClient("my-org", "my-repo").getCommit("sha");
+final RepositoryClient repositoryClient = githubClient.createRepositoryClient("my-org", "my-repo");
+log.info(repositoryClient.getCommit("sha").get().htmlUrl());
 ```
 
 Some APIs, such as Checks API are nested in the Repository API. Endpoints such as `POST /repos/:owner/:repo/check-runs` live in the ChecksClient:
 
 ```java
-final GitHubClient github =
-  GitHubClient.create(
-    URI.create("https://api.github.com/"),
-    new File("/path-to-the/private-key.der"),
-    APP_ID);
-// Checks API need to be used by GitHub Apps
-GitHubClient.scopeForInstallationId(github, INSTALLATION_ID)
-  .createRepositoryClient("my-org", "my-repo")
-  .createChecksApiClient()
-  .createCheckRun(CHECK_RUN_REQUEST);
+final ChecksClient checksClient = repositoryClient.createChecksApiClient();
+checksClient.createCheckRun(CHECK_RUN_REQUEST);
+
+final IssueClient issueClient = repositoryClient.createIssueClient();
+issueClient.createComment(ISSUE_ID, "comment body")
+  .thenAccept(comment -> log.info("created comment " + comment.htmlUrl()));
 ``` 
 
 ## Contributing
