@@ -23,6 +23,7 @@ package com.spotify.github.v3.clients;
 import static com.spotify.github.v3.clients.GitHubClient.IGNORE_RESPONSE_CONSUMER;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_FOLDERCONTENT_TYPE_REFERENCE;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_LABEL_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_STATUS_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_BRANCHES;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_REPOSITORY;
@@ -34,6 +35,7 @@ import com.spotify.github.v3.comment.Comment;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.git.Tree;
 import com.spotify.github.v3.hooks.requests.WebhookCreate;
+import com.spotify.github.v3.issues.Label;
 import com.spotify.github.v3.repos.Branch;
 import com.spotify.github.v3.repos.Commit;
 import com.spotify.github.v3.repos.CommitComparison;
@@ -82,6 +84,7 @@ public class RepositoryClient {
   private static final String LIST_REPOSITORY_TEMPLATE = "/orgs/%s/repos";
   private static final String LIST_REPOSITORIES_FOR_AUTHENTICATED_USER = "/user/repos";
   private static final String IS_USER_COLLABORATOR_OF_REPO = "/repos/%s/%s/collaborators/%s";
+  private static final String LABELS_URI_TEMPLATE = "/repos/%s/%s/labels";
   private final String owner;
   private final String repo;
   private final GitHubClient github;
@@ -506,10 +509,23 @@ public class RepositoryClient {
             });
   }
 
+  /**
+   * List repository labels.
+   *
+   * @return labels
+   */
+  public Iterator<AsyncPage<Label>> listLabels() {
+    return listLabels(String.format(LABELS_URI_TEMPLATE, owner, repo));
+  }
+
   private String getContentPath(final String path, final String query) {
     if (path.startsWith("/") || path.endsWith("/")) {
       throw new IllegalArgumentException(path + " starts or ends with '/'");
     }
     return String.format(CONTENTS_URI_TEMPLATE, owner, repo, path, query);
+  }
+
+  private Iterator<AsyncPage<Label>> listLabels(final String path) {
+    return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_LABEL_TYPE_REFERENCE));
   }
 }

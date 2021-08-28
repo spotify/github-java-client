@@ -20,21 +20,26 @@
 
 package com.spotify.github.v3.clients;
 
-import static com.spotify.github.v3.clients.GitHubClient.IGNORE_RESPONSE_CONSUMER;
-import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMENT_TYPE_REFERENCE;
-
 import com.google.common.collect.ImmutableMap;
 import com.spotify.github.async.AsyncPage;
 import com.spotify.github.v3.comment.Comment;
+import com.spotify.github.v3.issues.Issue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.invoke.MethodHandles;
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static com.spotify.github.v3.clients.GitHubClient.IGNORE_RESPONSE_CONSUMER;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMENT_TYPE_REFERENCE;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_ISSUE_TYPE_REFERENCE;
 
 /** Issue API client */
 public class IssueClient {
 
+  static final String ISSUES_URI_TEMPLATE = "/repos/%s/%s/issues";
+  static final String ISSUES_URI_ID_TEMPLATE = "/repos/%s/%s/issues/%s";
   static final String COMMENTS_URI_NUMBER_TEMPLATE = "/repos/%s/%s/issues/%s/comments";
   static final String COMMENTS_URI_TEMPLATE = "/repos/%s/%s/issues/comments";
   static final String COMMENTS_URI_ID_TEMPLATE = "/repos/%s/%s/issues/comments/%s";
@@ -52,6 +57,51 @@ public class IssueClient {
 
   static IssueClient create(final GitHubClient github, final String owner, final String repo) {
     return new IssueClient(github, owner, repo);
+  }
+
+  /**
+   * List repository issues.
+   *
+   * @return issues
+   */
+  public Iterator<AsyncPage<Issue>> listIssues() {
+    return listIssues(String.format(ISSUES_URI_TEMPLATE, owner, repo));
+  }
+
+  /**
+   * Get a specific issue.
+   *
+   * @param number issue number
+   * @return an issue
+   */
+  public CompletableFuture<Issue> getIssue(final int number) {
+    final String path = String.format(ISSUES_URI_ID_TEMPLATE, owner, repo, number);
+    log.info("Fetching issue from " + path);
+    return github.request(path, Issue.class);
+  }
+
+  /**
+   * Create an Issue
+   *
+   * @param issue an issue
+   * @return the Issue that was just created
+   */
+  public CompletableFuture<Issue> createIssue(final Issue issue) {
+    final String path = String.format(ISSUES_URI_TEMPLATE, owner, repo);
+    final String requestBody = github.json().toJsonUnchecked(issue);
+    return github.post(path, requestBody, Issue.class);
+  }
+
+  /**
+   * Edit a specific issue.
+   *
+   * @param issue an issue
+   */
+  public CompletableFuture<Void> editIssue(final Issue issue) {
+    final String path = String.format(ISSUES_URI_ID_TEMPLATE, owner, repo, issue.number());
+    return github
+            .patch(path, github.json().toJsonUnchecked(issue))
+            .thenAccept(IGNORE_RESPONSE_CONSUMER);
   }
 
   /**
@@ -120,6 +170,10 @@ public class IssueClient {
     return github
         .delete(String.format(COMMENTS_URI_ID_TEMPLATE, owner, repo, id))
         .thenAccept(IGNORE_RESPONSE_CONSUMER);
+  }
+
+  private Iterator<AsyncPage<Issue>> listIssues(final String path) {
+    return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_ISSUE_TYPE_REFERENCE));
   }
 
   private Iterator<AsyncPage<Comment>> listComments(final String path) {

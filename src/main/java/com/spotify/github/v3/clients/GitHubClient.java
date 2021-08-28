@@ -30,6 +30,8 @@ import com.spotify.github.v3.comment.Comment;
 import com.spotify.github.v3.exceptions.ReadOnlyRepositoryException;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.git.Reference;
+import com.spotify.github.v3.issues.Issue;
+import com.spotify.github.v3.issues.Label;
 import com.spotify.github.v3.prs.PullRequestItem;
 import com.spotify.github.v3.prs.Review;
 import com.spotify.github.v3.prs.ReviewRequests;
@@ -70,8 +72,12 @@ public class GitHubClient {
       response.body().close();
     }
   };
-  static final TypeReference<List<Comment>> LIST_COMMENT_TYPE_REFERENCE =
+  static final TypeReference<List<Issue>> LIST_ISSUE_TYPE_REFERENCE =
       new TypeReference<>() {};
+  static final TypeReference<List<Comment>> LIST_COMMENT_TYPE_REFERENCE =
+          new TypeReference<>() {};
+  static final TypeReference<List<Label>> LIST_LABEL_TYPE_REFERENCE =
+          new TypeReference<>() {};
   static final TypeReference<List<Repository>> LIST_REPOSITORY =
       new TypeReference<>() {};
   static final TypeReference<List<CommitItem>> LIST_COMMIT_TYPE_REFERENCE =
