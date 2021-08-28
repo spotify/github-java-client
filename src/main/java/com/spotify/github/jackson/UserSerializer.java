@@ -26,7 +26,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.spotify.github.v3.User;
-
 import java.io.IOException;
 
 class UserSerializer extends StdSerializer<User> {
