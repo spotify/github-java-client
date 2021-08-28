@@ -1,0 +1,49 @@
+/*-
+ * -\-\-
+ * github-api
+ * --
+ * Copyright (C) 2016 - 2020 Spotify AB
+ * --
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * -/-/-
+ */
+
+package com.spotify.github.jackson;
+
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import com.spotify.github.v3.User;
+
+import java.io.IOException;
+
+import static java.util.Objects.isNull;
+
+class UserSerializer extends StdSerializer<User> {
+
+  static final UserSerializer INSTANCE = new UserSerializer();
+
+  private UserSerializer() {
+    super(User.class);
+  }
+
+  @Override
+  public void serialize(final User value, final JsonGenerator gen, final SerializerProvider serializers)
+      throws IOException {
+    if (isNull(value)) {
+      gen.writeNull();
+    } else {
+      serializers.defaultSerializeValue(value.login(), gen);
+    }
+  }
+}

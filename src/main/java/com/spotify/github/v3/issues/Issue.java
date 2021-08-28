@@ -91,8 +91,9 @@ public interface Issue extends CloseTracking {
   @Nullable
   List<Label> labels();
 
-  /** Login for the user that this issue should be assigned to. */
-  Optional<User> assignee();
+  /** Logins for the users that this issue should be assigned to. */
+  @Nullable
+  List<User> assignees();
 
   /** The milestone associated this issue with. */
   Optional<Milestone> milestone();

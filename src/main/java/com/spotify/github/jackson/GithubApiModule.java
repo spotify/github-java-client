@@ -30,5 +30,7 @@ public class GithubApiModule extends SimpleModule {
   public GithubApiModule() {
     addSerializer(GitHubInstantJsonSerializer.INSTANCE);
     addDeserializer(GitHubInstant.class, GitHubInstantJsonDeserializer.INSTANCE);
+    addSerializer(LabelSerializer.INSTANCE);
+    addSerializer(UserSerializer.INSTANCE);
   }
 }
