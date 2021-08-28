@@ -20,14 +20,14 @@
 
 package com.spotify.github.jackson;
 
+import static java.util.Objects.isNull;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.spotify.github.v3.issues.Label;
 
 import java.io.IOException;
-
-import static java.util.Objects.isNull;
 
 class LabelSerializer extends StdSerializer<Label> {
 

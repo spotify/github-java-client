@@ -20,20 +20,20 @@
 
 package com.spotify.github.v3.clients;
 
+import static com.spotify.github.v3.clients.GitHubClient.IGNORE_RESPONSE_CONSUMER;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMENT_TYPE_REFERENCE;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_ISSUE_TYPE_REFERENCE;
+
 import com.google.common.collect.ImmutableMap;
 import com.spotify.github.async.AsyncPage;
 import com.spotify.github.v3.comment.Comment;
 import com.spotify.github.v3.issues.Issue;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
-
-import static com.spotify.github.v3.clients.GitHubClient.IGNORE_RESPONSE_CONSUMER;
-import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMENT_TYPE_REFERENCE;
-import static com.spotify.github.v3.clients.GitHubClient.LIST_ISSUE_TYPE_REFERENCE;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Issue API client */
 public class IssueClient {
