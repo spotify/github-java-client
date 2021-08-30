@@ -48,8 +48,12 @@ import com.google.common.io.Resources;
 import com.spotify.github.async.AsyncPage;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.comment.Comment;
+import com.spotify.github.v3.git.ImmutableTree;
+import com.spotify.github.v3.git.ImmutableTreeItem;
 import com.spotify.github.v3.git.Reference;
+import com.spotify.github.v3.git.ShaLink;
 import com.spotify.github.v3.git.Tree;
+import com.spotify.github.v3.git.TreeItem;
 import com.spotify.github.v3.repos.Branch;
 import com.spotify.github.v3.repos.Commit;
 import com.spotify.github.v3.repos.CommitComparison;
@@ -293,6 +297,64 @@ public class RepositoryClientTest {
     assertThat(branches.size(), is(1));
   }
 
+  @Test
+  public void testTreeIsSet() throws IOException {
+    final String expectedRequestBody = json.toJsonUnchecked(ImmutableMap.of("body", "Me too")); // ok?
+
+     final CompletableFuture<Tree> fixture =
+            completedFuture(json.fromJson(getFixture("tree.json"), Tree.class));
+
+    when(github.post(
+        "/repos/someowner/somerepo/git/trees",
+        expectedRequestBody,
+        Tree.class))
+        .thenReturn(fixture);
+
+    final TreeItem treeItem = ImmutableTreeItem.builder()
+        .path("somefolder/somefolder/somefile")
+        .mode("100644")
+        .type("commit")
+        .sha("6dcb09b5b57875f334f61aebed695e2e4193db5e")
+        .build();
+    final Tree treeObject = ImmutableTree.builder()
+        .addTree(treeItem)
+        .build();
+
+    final Tree tree = repoClient.setTree(treeObject.tree(), "6dcb09b5b57875f334f61aebed695e2e4193db5e").join();
+    assertThat(tree.sha(), is("6dcb09b5b57875f334f61aebed695e2e4193db5e"));
+  }
+
+  @Test
+  public void testBlobIsSet() throws IOException {
+    final String expectedRequestBody = json.toJsonUnchecked(ImmutableMap.of("body", "Me too"));
+
+    final CompletableFuture<ShaLink> fixture =
+        completedFuture(json.fromJson(getFixture("shalink.json"), ShaLink.class));
+    when(github.post(
+        "/repos/someowner/somerepo/git/blobs",
+        expectedRequestBody,
+        ShaLink.class))
+        .thenReturn(fixture);
+    final ShaLink shalink = repoClient.setBlob("content").join();
+
+    assertThat(shalink.sha(), is("6dcb09b5b57875f334f61aebed695e2e4193db5e"));
+  }
+
+  @Test
+  public void testBranchCreated() throws IOException {
+    final String expectedRequestBody = json.toJsonUnchecked(ImmutableMap.of("body", "Me too"));
+
+    final CompletableFuture<Reference> fixture =
+        completedFuture(json.fromJson(getFixture("reference.json"), Reference.class));
+    when(github.post(
+        "/repos/someowner/somerepo/git/refs",
+        expectedRequestBody,
+        Reference.class))
+        .thenReturn(fixture);
+    final Reference reference = repoClient.createBranch("refs/heads/newbranch", "6dcb09b5b57875f334f61aebed695e2e4193db5e").join();
+
+    assertThat(reference.ref(), is("refs/heads/newbranch"));
+  }
 
   @Test
   public void testCommentCreated() throws IOException {
