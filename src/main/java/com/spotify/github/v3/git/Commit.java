@@ -59,12 +59,6 @@ public interface Commit {
   @Nullable
   ShaLink tree();
 
-  /** Parents of commit. */
-  Optional<List<ParentItem>> parents();
-
-  /** Signature verification object. */
-  Optional<Verification> verification();
-
   /** Number of comments. */
   Optional<Integer> commentCount();
 }

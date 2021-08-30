@@ -33,8 +33,6 @@ import com.spotify.github.async.AsyncPage;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.comment.Comment;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
-import com.spotify.github.v3.exceptions.GithubException;
-import com.spotify.github.v3.git.CommitResponse;
 import com.spotify.github.v3.git.ImmutableTree;
 import com.spotify.github.v3.git.ImmutableTreeItem;
 import com.spotify.github.v3.git.Reference;
@@ -309,27 +307,16 @@ public class RepositoryClient {
   }
 
   /**
-   * Get  repository commit and map to CommitResponse.
-   *
-   * @param sha commit sha
-   * @return commit response
-   */
-  public CompletableFuture<CommitResponse> getGitCommit(final String sha) {
-    final String path = String.format(COMMIT_SHA_URI_TEMPLATE, owner, repo, sha);
-    return github.request(path, CommitResponse.class);
-  }
-
-  /**
    * Post new content to the server.
    *
    * @param content the content to be posted
    */
-  public CompletableFuture<Response> setBlob(final String content) {
+  public CompletableFuture<ShaLink> setBlob(final String content) {
     final String path = String.format(BLOB_TEMPLATE, owner, repo);
     final String encoding = "utf-8|base64";
     final String requestBody = github.json()
         .toJsonUnchecked(ImmutableMap.of("content", content, "encoding", encoding));
-    return github.post(path, requestBody);
+    return github.post(path, requestBody, ShaLink.class);
   }
 
   /**
@@ -355,15 +342,17 @@ public class RepositoryClient {
    * @param branch  name of new branch, must start with refs/heads.
    * @param path    path to file changes will be applied to.
    * @param message the commit message.
+   * @return reference to the commit
    */
-  public CompletableFuture<Response> createCommit(final String content, final String ref,
+  public CompletableFuture<Reference> createCommit(final String content, final String ref,
       final String branch, final String path, final String message) {
 
     final CommitWrapper commitWrapper = new CommitWrapper();
     final Wrapper blobWrapper = new Wrapper();
 
-    return getReference(ref).thenCompose(
-            referenceResponse -> getGitCommit(referenceResponse.object().sha()))
+    return getReference(ref)
+        .thenCompose(
+            this::handleGetGitCommit)
         .thenCompose(
             commitResponse -> handleSetBlob(commitResponse, commitWrapper, content))
         .thenCompose(
@@ -391,13 +380,14 @@ public class RepositoryClient {
    * Set a repository tree.
    *
    * @param tree     list of tree items
-   * @param baseTree sha of existing tree used as base for new tree
+   * @param baseTreeSha sha of existing tree used as base for new tree
+   * @return tree
    */
-  public CompletableFuture<Response> setTree(final List<TreeItem> tree, final String baseTree) {
+  public CompletableFuture<Tree> setTree(final List<TreeItem> tree, final String baseTreeSha) {
     final String path = String.format(TREE_URI_TEMPLATE, owner, repo);
     final String requestBody = github.json()
-        .toJsonUnchecked(ImmutableMap.of("base_tree", baseTree, "tree", tree));
-    return github.post(path, requestBody);
+        .toJsonUnchecked(ImmutableMap.of("base_tree", baseTreeSha, "tree", tree));
+    return github.post(path, requestBody, Tree.class);
   }
 
   /**
@@ -505,12 +495,13 @@ public class RepositoryClient {
    *
    * @param ref new branch name
    * @param sha sha value of parent commit to branch from
+   * @return reference
    */
-  public CompletableFuture<Response> createBranch(final String ref, final String sha) {
+  public CompletableFuture<Reference> createBranch(final String ref, final String sha) {
     final String path = String.format(REFERENCE_TEMPLATE, owner, repo);
     final String requestBody = github.json()
         .toJsonUnchecked(ImmutableMap.of("ref", ref, "sha", sha));
-    return github.post(path, requestBody);
+    return github.post(path, requestBody, Reference.class);
   }
 
   /**
@@ -634,29 +625,29 @@ public class RepositoryClient {
     return String.format(CONTENTS_URI_TEMPLATE, owner, repo, path, query);
   }
 
-  private CompletableFuture<Response> handleSetBlob(CommitResponse commitResponse,
+
+  private CompletableFuture<Commit> handleGetGitCommit(Reference referenceResponse) {
+    return getCommit(referenceResponse.object().sha());
+  }
+
+  private CompletableFuture<ShaLink> handleSetBlob(Commit commitResponse,
       CommitWrapper commitWrapper, String content) {
     commitWrapper.setSha(commitResponse.sha());
     commitWrapper.setTreeSha(commitResponse.commit().tree().sha());
     return setBlob(content);
   }
 
-  private CompletableFuture<Tree> handleGetTree(Response blobResponse, Wrapper blobWrapper,
+  private CompletableFuture<Tree> handleGetTree(ShaLink blobResponse, Wrapper blobWrapper,
       CommitWrapper commitWrapper) {
-    try {
-      assert blobResponse.body() != null;
-      final String sha = Json.create().fromJson(blobResponse.body().string(), ShaLink.class).sha();
-      blobWrapper.setSha(sha);
-      return getTree(commitWrapper.getTreeSha());
-    } catch (IOException e) {
-      throw new GithubException("Encountered an error with github api", e);
-    }
+    final String sha = blobResponse.sha();
+    blobWrapper.setSha(sha);
+    return getTree(commitWrapper.getTreeSha());
   }
 
-  private CompletableFuture<Response> handleSetTree(Tree treeResponse, Wrapper blobWrapper,
+  private CompletableFuture<Tree> handleSetTree(Tree treeResponse, Wrapper blobWrapper,
       String path) {
 
-    final String baseTree = treeResponse.sha();
+    final String baseTreeSha = treeResponse.sha();
     final String blobSha = blobWrapper.getSha();
 
     final TreeItem treeItem = ImmutableTreeItem.builder()
@@ -668,21 +659,16 @@ public class RepositoryClient {
     final Tree tree = ImmutableTree.builder()
         .addTree(treeItem)
         .build();
-    return setTree(tree.tree(), baseTree);
+    return setTree(tree.tree(), baseTreeSha);
   }
 
-  private CompletableFuture<Response> handleSetCommit(Response treeResponse, String message,
+  private CompletableFuture<Response> handleSetCommit(Tree treeResponse, String message,
       CommitWrapper commitWrapper) {
-    try {
-      assert treeResponse.body() != null;
-      final String treeSha = Json.create().fromJson(treeResponse.body().string(), Tree.class).sha();
-      return setCommit(message, List.of(commitWrapper.getSha()), treeSha);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    final String treeSha = treeResponse.sha();
+    return setCommit(message, List.of(commitWrapper.getSha()), treeSha);
   }
 
-  private CompletableFuture<Response> handleCreateBranch(Response commitResponse, String branch) {
+  private CompletableFuture<Reference> handleCreateBranch(Response commitResponse, String branch) {
     try {
       assert commitResponse.body() != null;
       final String commitSha = Json.create().fromJson(commitResponse.body().string(), Commit.class)
