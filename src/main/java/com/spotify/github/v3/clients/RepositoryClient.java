@@ -352,7 +352,7 @@ public class RepositoryClient {
 
     return getReference(ref)
         .thenCompose(
-            this::handleGetGitCommit)
+            this::handleGetCommit)
         .thenCompose(
             commitResponse -> handleSetBlob(commitResponse, commitWrapper, content))
         .thenCompose(
@@ -625,27 +625,26 @@ public class RepositoryClient {
     return String.format(CONTENTS_URI_TEMPLATE, owner, repo, path, query);
   }
 
-
-  private CompletableFuture<Commit> handleGetGitCommit(Reference referenceResponse) {
+  private CompletableFuture<Commit> handleGetCommit(final Reference referenceResponse) {
     return getCommit(referenceResponse.object().sha());
   }
 
-  private CompletableFuture<ShaLink> handleSetBlob(Commit commitResponse,
-      CommitWrapper commitWrapper, String content) {
+  private CompletableFuture<ShaLink> handleSetBlob(final Commit commitResponse,
+      final CommitWrapper commitWrapper, final String content) {
     commitWrapper.setSha(commitResponse.sha());
     commitWrapper.setTreeSha(commitResponse.commit().tree().sha());
     return setBlob(content);
   }
 
-  private CompletableFuture<Tree> handleGetTree(ShaLink blobResponse, Wrapper blobWrapper,
-      CommitWrapper commitWrapper) {
+  private CompletableFuture<Tree> handleGetTree(final ShaLink blobResponse, final Wrapper blobWrapper,
+      final CommitWrapper commitWrapper) {
     final String sha = blobResponse.sha();
     blobWrapper.setSha(sha);
     return getTree(commitWrapper.getTreeSha());
   }
 
-  private CompletableFuture<Tree> handleSetTree(Tree treeResponse, Wrapper blobWrapper,
-      String path) {
+  private CompletableFuture<Tree> handleSetTree(final Tree treeResponse, final Wrapper blobWrapper,
+      final String path) {
 
     final String baseTreeSha = treeResponse.sha();
     final String blobSha = blobWrapper.getSha();
@@ -662,13 +661,13 @@ public class RepositoryClient {
     return setTree(tree.tree(), baseTreeSha);
   }
 
-  private CompletableFuture<Response> handleSetCommit(Tree treeResponse, String message,
-      CommitWrapper commitWrapper) {
+  private CompletableFuture<Response> handleSetCommit(final Tree treeResponse, final String message,
+      final CommitWrapper commitWrapper) {
     final String treeSha = treeResponse.sha();
     return setCommit(message, List.of(commitWrapper.getSha()), treeSha);
   }
 
-  private CompletableFuture<Reference> handleCreateBranch(Response commitResponse, String branch) {
+  private CompletableFuture<Reference> handleCreateBranch(final Response commitResponse, final String branch) {
     try {
       assert commitResponse.body() != null;
       final String commitSha = Json.create().fromJson(commitResponse.body().string(), Commit.class)
