@@ -32,10 +32,12 @@ import com.google.common.collect.ImmutableMap;
 import com.spotify.github.async.AsyncPage;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.comment.Comment;
+import com.spotify.github.v3.exceptions.GithubException;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.git.ImmutableTree;
 import com.spotify.github.v3.git.ImmutableTreeItem;
 import com.spotify.github.v3.git.Reference;
+import com.spotify.github.v3.git.ReferenceObject;
 import com.spotify.github.v3.git.ShaLink;
 import com.spotify.github.v3.git.Tree;
 import com.spotify.github.v3.git.TreeItem;
@@ -626,13 +628,26 @@ public class RepositoryClient {
   }
 
   private CompletableFuture<Commit> handleGetCommit(final Reference referenceResponse) {
-    return getCommit(referenceResponse.object().sha());
+    ReferenceObject referenceObject = referenceResponse.object();
+    if (referenceObject == null) throw new GithubException("Problems with Github API");
+    return getCommit(referenceObject.sha());
   }
 
   private CompletableFuture<ShaLink> handleSetBlob(final Commit commitResponse,
       final CommitWrapper commitWrapper, final String content) {
     commitWrapper.setSha(commitResponse.sha());
-    commitWrapper.setTreeSha(commitResponse.commit().tree().sha());
+
+    ShaLink tree = commitResponse.tree();
+    com.spotify.github.v3.git.Commit commit = commitResponse.commit();
+    if (tree != null) {
+      commitWrapper.setTreeSha(tree.sha());
+    }
+    if (commit != null) {
+      tree = commit.tree();
+      if (tree == null || tree.sha() == null ) throw new GithubException("Problems with Github API");
+      commitWrapper.setTreeSha(tree.sha());
+    }
+    else throw new GithubException("Problems with Github API");
     return setBlob(content);
   }
 
