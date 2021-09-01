@@ -99,6 +99,7 @@ public class RepositoryClient {
   private static final String BLOB_TEMPLATE = "/repos/%s/%s/git/blobs";
   private static final String HEAD_REFERENCE_TEMPLATE = "/repos/%s/%s/git/refs/heads/%s";
   private static final String REFERENCE_TEMPLATE = "/repos/%s/%s/git/refs";
+  private static final String GITHUB_ERROR = "Problems with Github API";
   private final String owner;
   private final String repo;
   private final GitHubClient github;
@@ -629,7 +630,7 @@ public class RepositoryClient {
 
   private CompletableFuture<Commit> handleGetCommit(final Reference referenceResponse) {
     ReferenceObject referenceObject = referenceResponse.object();
-    if (referenceObject == null) throw new GithubException("Problems with Github API");
+    if (referenceObject == null) throw new GithubException(GITHUB_ERROR + " couldn't get reference object");
     return getCommit(referenceObject.sha());
   }
 
@@ -644,10 +645,10 @@ public class RepositoryClient {
     }
     if (commit != null) {
       tree = commit.tree();
-      if (tree == null || tree.sha() == null ) throw new GithubException("Problems with Github API");
+      if (tree == null || tree.sha() == null ) throw new GithubException(GITHUB_ERROR);
       commitWrapper.setTreeSha(tree.sha());
     }
-    else throw new GithubException("Problems with Github API");
+    else throw new GithubException(GITHUB_ERROR);
     return setBlob(content);
   }
 
