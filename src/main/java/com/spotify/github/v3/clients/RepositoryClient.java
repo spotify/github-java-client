@@ -26,6 +26,7 @@ import static com.spotify.github.v3.clients.GitHubClient.LIST_FOLDERCONTENT_TYPE
 import static com.spotify.github.v3.clients.GitHubClient.LIST_STATUS_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_BRANCHES;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_REPOSITORY;
+import static java.util.Objects.nonNull;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -639,16 +640,21 @@ public class RepositoryClient {
     commitWrapper.setSha(commitResponse.sha());
 
     ShaLink tree = commitResponse.tree();
-    com.spotify.github.v3.git.Commit commit = commitResponse.commit();
-    if (tree != null) {
+    com.spotify.github.v3.git.Commit commitObject = commitResponse.commit();
+
+    if (nonNull(tree) && nonNull(tree.sha())) {
       commitWrapper.setTreeSha(tree.sha());
     }
-    if (commit != null) {
-      tree = commit.tree();
-      if (tree == null || tree.sha() == null ) throw new GithubException(GITHUB_ERROR);
-      commitWrapper.setTreeSha(tree.sha());
+    else if (nonNull(commitObject)) {
+      ShaLink nestedTreeObject = commitObject.tree();
+      if (nonNull(nestedTreeObject) && nonNull(nestedTreeObject.sha())) {
+        commitWrapper.setTreeSha(nestedTreeObject.sha());
+      } else {
+        throw new GithubException(GITHUB_ERROR);
+      }
+    } else {
+      throw new GithubException(GITHUB_ERROR);
     }
-    else throw new GithubException(GITHUB_ERROR);
     return setBlob(content);
   }
 
