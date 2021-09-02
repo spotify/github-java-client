@@ -631,7 +631,9 @@ public class RepositoryClient {
 
   private CompletableFuture<Commit> handleGetCommit(final Reference referenceResponse) {
     ReferenceObject referenceObject = referenceResponse.object();
-    if (referenceObject == null) throw new GithubException(GITHUB_ERROR + " couldn't get reference object");
+    if (referenceObject == null) {
+      throw new GithubException(GITHUB_ERROR + " couldn't get reference object");
+    }
     return getCommit(referenceObject.sha());
   }
 
@@ -639,14 +641,13 @@ public class RepositoryClient {
       final CommitWrapper commitWrapper, final String content) {
     commitWrapper.setSha(commitResponse.sha());
 
-    ShaLink tree = commitResponse.tree();
-    com.spotify.github.v3.git.Commit commitObject = commitResponse.commit();
+    final ShaLink tree = commitResponse.tree();
+    final com.spotify.github.v3.git.Commit commitObject = commitResponse.commit();
 
     if (nonNull(tree) && nonNull(tree.sha())) {
       commitWrapper.setTreeSha(tree.sha());
-    }
-    else if (nonNull(commitObject)) {
-      ShaLink nestedTreeObject = commitObject.tree();
+    } else if (nonNull(commitObject)) {
+      final ShaLink nestedTreeObject = commitObject.tree();
       if (nonNull(nestedTreeObject) && nonNull(nestedTreeObject.sha())) {
         commitWrapper.setTreeSha(nestedTreeObject.sha());
       } else {
