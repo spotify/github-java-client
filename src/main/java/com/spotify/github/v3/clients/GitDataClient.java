@@ -208,8 +208,9 @@ public class GitDataClient {
                     "name", taggerName,
                     "email", taggerEmail,
                     "date", Instant.now().toString()));
-    return createTagReference(tag, sha)
-        .thenCompose(
-            reference -> github.post(tagPath, github.json().toJsonUnchecked(body), Tag.class));
+    return github.post(tagPath, github.json().toJsonUnchecked(body), Tag.class)
+          .thenCompose(tagCreated ->
+            createTagReference(tag, tagCreated.sha())
+                .thenApply(reference -> tagCreated));
   }
 }
