@@ -39,7 +39,7 @@ public class TreeItemTest {
     assertThat(treeItem.path(), is("README.md"));
     assertThat(treeItem.mode(), is("100644"));
     assertThat(treeItem.type(), is("blob"));
-    assertThat(treeItem.size(), is(12));
+    assertThat(treeItem.size(), is(12L));
   }
 
   @Before
