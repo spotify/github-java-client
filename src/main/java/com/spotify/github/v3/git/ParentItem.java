@@ -2,7 +2,7 @@
  * -\-\-
  * github-api
  * --
- * Copyright (C) 2016 - 2020 Spotify AB
+ * Copyright (C) 2016 - 2021 Spotify AB
  * --
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,33 +18,32 @@
  * -/-/-
  */
 
-package com.spotify.github.v3.repos;
+package com.spotify.github.v3.git;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.spotify.github.GithubStyle;
-import com.spotify.github.v3.git.ShaLink;
-import java.util.List;
-import java.util.Map;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
-/** Single repository commit resource. */
+import javax.annotation.Nullable;
+import java.net.URI;
+
+
 @Value.Immutable
 @GithubStyle
-@JsonSerialize(as = ImmutableCommit.class)
-@JsonDeserialize(as = ImmutableCommit.class)
-public interface Commit extends CommitItem {
+@JsonSerialize(as = ImmutableParentItem.class)
+@JsonDeserialize(as = ImmutableParentItem.class)
 
-  /** Commit statistics key, value map. E.g. additions: 104 deletions: 4 total: 108 */
-  @Nullable
-  Map<String, Integer> stats();
+public interface ParentItem {
 
-  /** File objects included in the commit. */
   @Nullable
-  List<File> files();
+  String sha();
 
-  /** The SHA of the tree object this commit points to. */
   @Nullable
-  ShaLink tree();
+  URI url();
+
+  @Nullable
+  @JsonProperty("html_url")
+  URI htmlUrl();
 }

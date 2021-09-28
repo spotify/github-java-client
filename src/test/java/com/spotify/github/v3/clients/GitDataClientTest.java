@@ -22,8 +22,10 @@ package com.spotify.github.v3.clients;
 
 import static com.google.common.collect.ImmutableMap.of;
 import static com.google.common.io.Resources.getResource;
+import static com.spotify.github.v3.UserTest.assertUser;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_REFERENCES;
 import static java.nio.charset.Charset.defaultCharset;
+import static java.util.Collections.emptyList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -36,8 +38,14 @@ import static org.mockito.Mockito.when;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
 import com.spotify.github.jackson.Json;
+import com.spotify.github.v3.git.ImmutableTree;
+import com.spotify.github.v3.git.ImmutableTreeItem;
 import com.spotify.github.v3.git.Reference;
+import com.spotify.github.v3.git.ShaLink;
 import com.spotify.github.v3.git.Tag;
+import com.spotify.github.v3.git.Tree;
+import com.spotify.github.v3.git.TreeItem;
+import com.spotify.github.v3.repos.Commit;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
@@ -91,13 +99,13 @@ public class GitDataClientTest {
     final CompletableFuture<List<Reference>> fixture =
         completedFuture(json.fromJson(getFixture("reference_list.json"), LIST_REFERENCES));
     when(github.request(
-            "/repos/someowner/somerepo/git/matching-refs/heads/feature",
-            LIST_REFERENCES))
+            "/repos/someowner/somerepo/git/matching-refs/heads/feature", LIST_REFERENCES))
         .thenReturn(fixture);
-    final List<Reference> matchingReferences = gitDataClient.listMatchingReferences("heads/feature").get();
+    final List<Reference> matchingReferences =
+        gitDataClient.listMatchingReferences("heads/feature").get();
     assertThat(matchingReferences.size(), is(2));
     for (Reference ref : matchingReferences) {
-        assertThat(ref.ref(), containsString("heads/feature"));
+      assertThat(ref.ref(), containsString("heads/feature"));
     }
   }
 
@@ -106,28 +114,26 @@ public class GitDataClientTest {
   public void listReferences() throws Exception {
     final CompletableFuture<List<Reference>> fixture =
         completedFuture(json.fromJson(getFixture("tags_list.json"), LIST_REFERENCES));
-    when(github.request(
-            "/repos/someowner/somerepo/git/refs/tags",
-            LIST_REFERENCES))
+    when(github.request("/repos/someowner/somerepo/git/refs/tags", LIST_REFERENCES))
         .thenReturn(fixture);
     final List<Reference> matchingReferences = gitDataClient.listReferences("refs/tags").get();
     assertThat(matchingReferences.size(), is(1));
     for (Reference ref : matchingReferences) {
-        assertThat(ref.ref(), containsString("refs/tags"));
+      assertThat(ref.ref(), containsString("refs/tags"));
     }
   }
-
 
   public void createReference() throws Exception {
     final CompletableFuture<Reference> fixture =
         completedFuture(json.fromJson(getFixture("reference.json"), Reference.class));
-    final ImmutableMap<String, String> body = of(
-        "ref", "featureA",
-        "sha", "aa218f56b14c9653891f9e74264a383fa43fefbd"
-    );
-    when(github.post("/repos/someowner/somerepo/git/refs",
-        github.json().toJsonUnchecked(body),
-        Reference.class))
+    final ImmutableMap<String, String> body =
+        of(
+            "ref", "featureA",
+            "sha", "aa218f56b14c9653891f9e74264a383fa43fefbd");
+    when(github.post(
+            "/repos/someowner/somerepo/git/refs",
+            github.json().toJsonUnchecked(body),
+            Reference.class))
         .thenReturn(fixture);
     final Reference reference =
         gitDataClient.createReference("featureA", "aa218f56b14c9653891f9e74264a383fa43fefbd").get();
@@ -139,16 +145,19 @@ public class GitDataClientTest {
   public void createBranchReference() throws Exception {
     final CompletableFuture<Reference> fixture =
         completedFuture(json.fromJson(getFixture("branch.json"), Reference.class));
-    final ImmutableMap<String, String> body = of(
-        "ref", "refs/heads/featureA",
-        "sha", "aa218f56b14c9653891f9e74264a383fa43fefbd"
-    );
-    when(github.post("/repos/someowner/somerepo/git/refs",
-        github.json().toJsonUnchecked(body),
-        Reference.class))
+    final ImmutableMap<String, String> body =
+        of(
+            "ref", "refs/heads/featureA",
+            "sha", "aa218f56b14c9653891f9e74264a383fa43fefbd");
+    when(github.post(
+            "/repos/someowner/somerepo/git/refs",
+            github.json().toJsonUnchecked(body),
+            Reference.class))
         .thenReturn(fixture);
     final Reference reference =
-        gitDataClient.createBranchReference("featureA", "aa218f56b14c9653891f9e74264a383fa43fefbd").get();
+        gitDataClient
+            .createBranchReference("featureA", "aa218f56b14c9653891f9e74264a383fa43fefbd")
+            .get();
     assertThat(reference.ref(), is("refs/heads/featureA"));
     assertThat(reference.object().sha(), is("aa218f56b14c9653891f9e74264a383fa43fefbd"));
   }
@@ -212,5 +221,84 @@ public class GitDataClientTest {
                 "janedoe@foo.com")
             .join();
     assertThat(tag.object().sha(), is("5926dd300de5fee31d445c57be223f00e128a634"));
+  }
+
+  @Test
+  public void testCreateCommit() throws Exception {
+    final CompletableFuture<Commit> fixture =
+        completedFuture(json.fromJson(getFixture("commit.json"), Commit.class));
+
+    final String expectedRequestBody =
+        json.toJsonUnchecked(
+            ImmutableMap.of("message", "message", "parents", emptyList(), "tree", "thesha"));
+
+    when(github.post("/repos/someowner/somerepo/git/commits", expectedRequestBody, Commit.class))
+        .thenReturn(fixture);
+    final Commit commit = gitDataClient.createCommit("message", emptyList(), "thesha").get();
+    assertUser(commit.author().get());
+    assertThat(commit.commit().message(), is("Fix all the bugs"));
+    assertThat(commit.files().size(), is(1));
+    assertThat(commit.files().get(0).filename(), is("file1.txt"));
+  }
+
+  @Test
+  public void testGetTree() throws IOException {
+    final CompletableFuture<Tree> fixture =
+        completedFuture(json.fromJson(getFixture("tree.json"), Tree.class));
+
+    when(github.request("/repos/someowner/somerepo/git/trees/thesha", Tree.class))
+        .thenReturn(fixture);
+
+    final Tree tree =
+        gitDataClient
+            .getTree("thesha")
+            .join();
+    assertThat(tree.sha(), is("9c27bd92524e2b57b569d4c86695b3993d9b8f9f"));
+  }
+
+  @Test
+  public void testCreateTree() throws IOException {
+    final TreeItem treeItem =
+        ImmutableTreeItem.builder()
+            .path("somefolder/somefolder/somefile")
+            .mode("100644")
+            .type("commit")
+            .sha("9c27bd92524e2b57b569d4c86695b3993d9b8f9f")
+            .build();
+    final Tree treeObject = ImmutableTree.builder().addTree(treeItem).build();
+
+    final String expectedRequestBody =
+        json.toJsonUnchecked(
+            ImmutableMap.of(
+                "base_tree",
+                "9c27bd92524e2b57b569d4c86695b3993d9b8f9f",
+                "tree",
+                List.of(treeItem)));
+
+    final CompletableFuture<Tree> fixture =
+        completedFuture(json.fromJson(getFixture("tree.json"), Tree.class));
+
+    when(github.post("/repos/someowner/somerepo/git/trees", expectedRequestBody, Tree.class))
+        .thenReturn(fixture);
+
+    final Tree tree =
+        gitDataClient
+            .createTree(treeObject.tree(), "9c27bd92524e2b57b569d4c86695b3993d9b8f9f")
+            .join();
+    assertThat(tree.sha(), is("9c27bd92524e2b57b569d4c86695b3993d9b8f9f"));
+  }
+
+  @Test
+  public void testCreateBlob() throws IOException {
+    final String expectedRequestBody =
+        json.toJsonUnchecked(ImmutableMap.of("content", "content", "encoding", "utf-8|base64"));
+
+    final CompletableFuture<ShaLink> fixture =
+        completedFuture(json.fromJson(getFixture("shalink.json"), ShaLink.class));
+    when(github.post("/repos/someowner/somerepo/git/blobs", expectedRequestBody, ShaLink.class))
+        .thenReturn(fixture);
+    final ShaLink shalink = gitDataClient.createBlob("content").join();
+
+    assertThat(shalink.sha(), is("8fc4e0fe57752b892a921806a1352e4cc72dff37"));
   }
 }

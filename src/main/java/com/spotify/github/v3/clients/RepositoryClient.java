@@ -21,11 +21,11 @@
 package com.spotify.github.v3.clients;
 
 import static com.spotify.github.v3.clients.GitHubClient.IGNORE_RESPONSE_CONSUMER;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_BRANCHES;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_FOLDERCONTENT_TYPE_REFERENCE;
-import static com.spotify.github.v3.clients.GitHubClient.LIST_STATUS_TYPE_REFERENCE;
-import static com.spotify.github.v3.clients.GitHubClient.LIST_BRANCHES;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_REPOSITORY;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_STATUS_TYPE_REFERENCE;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -44,8 +44,8 @@ import com.spotify.github.v3.repos.FolderContent;
 import com.spotify.github.v3.repos.Languages;
 import com.spotify.github.v3.repos.Repository;
 import com.spotify.github.v3.repos.Status;
-import com.spotify.github.v3.repos.requests.RepositoryCreateStatus;
 import com.spotify.github.v3.repos.requests.AuthenticatedUserRepositoriesFilter;
+import com.spotify.github.v3.repos.requests.RepositoryCreateStatus;
 import java.lang.invoke.MethodHandles;
 import java.util.Iterator;
 import java.util.List;
@@ -161,9 +161,12 @@ public class RepositoryClient {
    * @param filter filter parameters
    * @return list of repositories for the authenticated user
    */
-  public Iterator<AsyncPage<Repository>> listAuthenticatedUserRepositories(final AuthenticatedUserRepositoriesFilter filter) {
+  public Iterator<AsyncPage<Repository>> listAuthenticatedUserRepositories(
+      final AuthenticatedUserRepositoriesFilter filter) {
     final String serial = filter.serialize();
-    final String path = LIST_REPOSITORIES_FOR_AUTHENTICATED_USER + (Strings.isNullOrEmpty(serial) ? "" : "?" + serial);
+    final String path =
+        LIST_REPOSITORIES_FOR_AUTHENTICATED_USER
+            + (Strings.isNullOrEmpty(serial) ? "" : "?" + serial);
     return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_REPOSITORY));
   }
 
@@ -235,8 +238,8 @@ public class RepositoryClient {
   }
 
   /**
-   * List statuses for a specific ref. Statuses are returned in reverse chronological order.
-   * The first status in the list will be the latest one.
+   * List statuses for a specific ref. Statuses are returned in reverse chronological order. The
+   * first status in the list will be the latest one.
    *
    * @param sha the commit sha to list the statuses for
    */
@@ -284,9 +287,11 @@ public class RepositoryClient {
   /**
    * Get a repository tree.
    *
+   * @deprecated Use {@link com.spotify.github.v3.clients.GitDataClient#getTree(String)} instead
    * @param sha commit sha
    * @return tree
    */
+  @Deprecated
   public CompletableFuture<Tree> getTree(final String sha) {
     final String path = String.format(TREE_SHA_URI_TEMPLATE, owner, repo, sha);
     return github.request(path, Tree.class);
@@ -429,7 +434,6 @@ public class RepositoryClient {
    * Perform a merge.
    *
    * @see "https://developer.github.com/enterprise/2.18/v3/repos/merging/"
-   *
    * @param base branch name or sha
    * @param head branch name or sha
    * @return resulting merge commit, or empty if base already contains the head (nothing to merge)
@@ -442,7 +446,6 @@ public class RepositoryClient {
    * Perform a merge.
    *
    * @see "https://developer.github.com/enterprise/2.18/v3/repos/merging/"
-   *
    * @param base branch name that the head will be merged into
    * @param head branch name or sha to merge
    * @param commitMessage commit message to use for the merge commit
@@ -477,20 +480,17 @@ public class RepositoryClient {
             });
   }
 
-    /**
+  /**
    * Create a fork.
    *
    * @see "https://developer.github.com/v3/repos/forks/#create-a-fork"
-   *
    * @param organization the organization where the fork will be created
    * @return resulting repository
    */
   public CompletableFuture<Repository> createFork(final String organization) {
     final String path = String.format(FORK_TEMPLATE, owner, repo);
     final ImmutableMap<String, String> params =
-        (organization == null)
-            ? ImmutableMap.of()
-            : ImmutableMap.of("organization", organization);
+        (organization == null) ? ImmutableMap.of() : ImmutableMap.of("organization", organization);
     final String body = github.json().toJsonUnchecked(params);
 
     return github

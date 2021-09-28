@@ -1,0 +1,10 @@
+{
+  "ref": "refs/heads/newBranch",
+  "node_id": "MDM6UmVmMTc3NzI0OnJlZnMvaGVhZHMvYW5uYS9uZXd0ZXN0",
+  "url": "https://github.com/octocat/Hello-World/repos/someowner/somerepo/git/refs/heads/newBranch",
+  "object": {
+    "sha": "3d9d329812e120d3a01111cfee1f91cacebc7793",
+    "type": "commit",
+    "url": "https://github.com/octocat/Hello-World/repos/someowner/somerepo/git/commits/3d9d329812e120d3a01111cfee1f91cacebc7793"
+  }
+}
