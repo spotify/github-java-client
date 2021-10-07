@@ -257,6 +257,22 @@ public class GitDataClientTest {
   }
 
   @Test
+  public void testGetRecursiveTree() throws IOException {
+    final CompletableFuture<Tree> fixture =
+            completedFuture(json.fromJson(getFixture("recursive-tree.json"), Tree.class));
+
+    when(github.request("/repos/someowner/somerepo/git/trees/thesha", Tree.class))
+            .thenReturn(fixture);
+
+    final Tree tree =
+            gitDataClient
+                    .getTree("thesha")
+                    .join();
+    assertThat(tree.sha(), is("9c27bd92524e2b57b569d4c86695b3993d9b8f9f"));
+    assertThat(tree.tree().size(), is(7));
+  }
+
+  @Test
   public void testCreateTree() throws IOException {
     final TreeItem treeItem =
         ImmutableTreeItem.builder()
