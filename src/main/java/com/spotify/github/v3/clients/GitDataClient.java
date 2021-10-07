@@ -250,6 +250,17 @@ public class GitDataClient {
   }
 
   /**
+   * Get a repository tree recursively.
+   *
+   * @param sha commit sha
+   * @return tree
+   */
+  public CompletableFuture<Tree> getRecursiveTree(final String sha) {
+    final String path = String.format(TREE_SHA_URI_TEMPLATE, owner, repo, sha);
+    return github.request(path + "?recursive=true", Tree.class);
+  }
+
+  /**
    * Set a repository tree.
    *
    * @param tree     list of tree items
