@@ -27,6 +27,7 @@ import static com.spotify.github.v3.clients.GitHubClient.LIST_REVIEW_REQUEST_TYP
 import static com.spotify.github.v3.clients.GitHubClient.LIST_REVIEW_TYPE_REFERENCE;
 
 import com.google.common.base.Strings;
+import com.spotify.github.Tracer;
 import com.spotify.github.async.AsyncPage;
 import com.spotify.github.v3.prs.*;
 import com.spotify.github.v3.prs.requests.PullRequestCreate;
@@ -53,6 +54,7 @@ public class PullRequestClient {
   private final GitHubClient github;
   private final String owner;
   private final String repo;
+  private Tracer tracer = NoopTracer.INSTANCE;
 
   PullRequestClient(final GitHubClient github, final String owner, final String repo) {
     this.github = github;
@@ -63,6 +65,11 @@ public class PullRequestClient {
   static PullRequestClient create(
       final GitHubClient github, final String owner, final String repo) {
     return new PullRequestClient(github, owner, repo);
+  }
+
+  public PullRequestClient withTracer(Tracer tracer) {
+    this.tracer = tracer;
+    return this;
   }
 
   /**
@@ -95,7 +102,9 @@ public class PullRequestClient {
   public CompletableFuture<PullRequest> get(final int number) {
     final String path = String.format(PR_NUMBER_TEMPLATE, owner, repo, number);
     log.debug("Fetching pull request from " + path);
-    return github.request(path, PullRequest.class);
+    CompletableFuture<PullRequest> future = github.request(path, PullRequest.class);
+    tracer.span("Get a specific pull request", future);
+    return future;
   }
 
   /**
@@ -105,9 +114,11 @@ public class PullRequestClient {
    */
   public CompletableFuture<Void> create(final PullRequestCreate request) {
     final String path = String.format(PR_TEMPLATE, owner, repo);
-    return github
+    CompletableFuture<Void> future = github
         .post(path, github.json().toJsonUnchecked(request))
         .thenAccept(IGNORE_RESPONSE_CONSUMER);
+    tracer.span("Create a pull request", future);
+    return future;
   }
 
   /**
@@ -118,9 +129,11 @@ public class PullRequestClient {
    */
   public CompletableFuture<Void> update(final int number, final PullRequestUpdate request) {
     final String path = String.format(PR_NUMBER_TEMPLATE, owner, repo, number);
-    return github
+    CompletableFuture<Void> future = github
         .patch(path, github.json().toJsonUnchecked(request))
         .thenAccept(IGNORE_RESPONSE_CONSUMER);
+    tracer.span("Update given pull request", future);
+    return future;
   }
 
   /**
@@ -132,7 +145,9 @@ public class PullRequestClient {
   public CompletableFuture<List<CommitItem>> listCommits(final int number) {
     final String path = String.format(PR_COMMITS_TEMPLATE, owner, repo, number);
     log.debug("Fetching pull request commits from " + path);
-    return github.request(path, LIST_COMMIT_TYPE_REFERENCE);
+    CompletableFuture<List<CommitItem>> future = github.request(path, LIST_COMMIT_TYPE_REFERENCE);
+    tracer.span("List pull request commits", future);
+    return future;
   }
 
   /**
@@ -144,7 +159,9 @@ public class PullRequestClient {
    public CompletableFuture<List<Review>> listReviews(final int number) {
    final String path = String.format(PR_REVIEWS_TEMPLATE, owner, repo, number);
    log.debug("Fetching pull request reviews from " + path);
-   return github.request(path, LIST_REVIEW_TYPE_REFERENCE);
+   CompletableFuture<List<Review>> future = github.request(path, LIST_REVIEW_TYPE_REFERENCE);
+   tracer.span("List pull request reviews", future);
+   return future;
   }
 
   /**
@@ -172,7 +189,9 @@ public class PullRequestClient {
     final String path = String.format(PR_REVIEWS_TEMPLATE, owner, repo, number);
     final String jsonPayload = github.json().toJsonUnchecked(properties);
     log.debug("Creating review for PR: " + path);
-    return github.post(path, jsonPayload, Review.class);
+    CompletableFuture<Review> future = github.post(path, jsonPayload, Review.class);
+    tracer.span("Create a review for a pull request", future);
+    return future;
   }
 
   /**
@@ -184,7 +203,9 @@ public class PullRequestClient {
   public CompletableFuture<ReviewRequests> listReviewRequests(final int number) {
     final String path = String.format(PR_REVIEW_REQUESTS_TEMPLATE, owner, repo, number);
     log.debug("Fetching pull request requested reviews from " + path);
-    return github.request(path, LIST_REVIEW_REQUEST_TYPE_REFERENCE);
+    CompletableFuture<ReviewRequests> future =  github.request(path, LIST_REVIEW_REQUEST_TYPE_REFERENCE);
+    tracer.span("List pull request requested reviews", future);
+    return future;
   }
 
   /**
@@ -198,7 +219,9 @@ public class PullRequestClient {
     final String path = String.format(PR_REVIEW_REQUESTS_TEMPLATE, owner, repo, number);
     final String jsonPayload = github.json().toJsonUnchecked(properties);
     log.debug("Requesting reviews for PR: " + path);
-    return github.post(path, jsonPayload, PullRequest.class);
+    CompletableFuture<PullRequest> future = github.post(path, jsonPayload, PullRequest.class);
+    tracer.span("Request review for a pull request", future);
+    return future;
   }
 
   /**
@@ -212,7 +235,9 @@ public class PullRequestClient {
     final String path = String.format(PR_REVIEW_REQUESTS_TEMPLATE, owner, repo, number);
     final String jsonPayload = github.json().toJsonUnchecked(properties);
     log.debug("Removing requested reviews for PR: " + path);
-    return github.delete(path, jsonPayload).thenAccept(IGNORE_RESPONSE_CONSUMER);
+    CompletableFuture<Void> future = github.delete(path, jsonPayload).thenAccept(IGNORE_RESPONSE_CONSUMER);
+    tracer.span("Remove request for review for a pull request", future);
+    return future;
   }
 
   /**
@@ -226,13 +251,17 @@ public class PullRequestClient {
     final String path = String.format(PR_NUMBER_TEMPLATE + "/merge", owner, repo, number);
     final String jsonPayload = github.json().toJsonUnchecked(properties);
     log.debug("Merging pr, running: {}", path);
-    return github.put(path, jsonPayload).thenAccept(IGNORE_RESPONSE_CONSUMER);
+    CompletableFuture<Void> future = github.put(path, jsonPayload).thenAccept(IGNORE_RESPONSE_CONSUMER);
+    tracer.span("Merge pull request", future);
+    return future;
   }
 
   private CompletableFuture<List<PullRequestItem>> list(final String parameterPath) {
     final String path = String.format(PR_TEMPLATE + parameterPath, owner, repo);
     log.debug("Fetching pull requests from " + path);
-    return github.request(path, LIST_PR_TYPE_REFERENCE);
+    CompletableFuture<List<PullRequestItem>> future = github.request(path, LIST_PR_TYPE_REFERENCE);
+    tracer.span("List pull requests", future);
+    return future;
   }
 
 }

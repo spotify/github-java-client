@@ -21,6 +21,7 @@
 package com.spotify.github.v3.clients;
 
 import com.google.common.base.Strings;
+import com.spotify.github.Tracer;
 import com.spotify.github.v3.search.SearchIssues;
 import com.spotify.github.v3.search.SearchRepositories;
 import com.spotify.github.v3.search.SearchUsers;
@@ -38,6 +39,7 @@ public class SearchClient {
   static final String REPOSITORIES_URI = "/search/repositories";
   static final String ISSUES_URI = "/search/issues";
   private final GitHubClient github;
+  private Tracer tracer = NoopTracer.INSTANCE;
 
   SearchClient(final GitHubClient github) {
     this.github = github;
@@ -47,6 +49,10 @@ public class SearchClient {
     return new SearchClient(github);
   }
 
+  public SearchClient withTracer(Tracer tracer) {
+    this.tracer = tracer;
+    return this;
+  }
   /**
    * Search users.
    *
@@ -54,7 +60,9 @@ public class SearchClient {
    * @return user search results
    */
   public CompletableFuture<SearchUsers> users(final SearchParameters parameters) {
-    return search(USERS_URI, parameters, SearchUsers.class);
+    CompletableFuture<SearchUsers> future = search(USERS_URI, parameters, SearchUsers.class);
+    tracer.span("Search users", future);
+    return future;
   }
 
   /**
@@ -64,7 +72,9 @@ public class SearchClient {
    * @return issue search results
    */
   public CompletableFuture<SearchIssues> issues(final SearchParameters parameters) {
-    return search(ISSUES_URI, parameters, SearchIssues.class);
+    CompletableFuture<SearchIssues> future = search(ISSUES_URI, parameters, SearchIssues.class);
+    tracer.span("Search issues", future);
+    return future;
   }
 
   /**
@@ -74,7 +84,9 @@ public class SearchClient {
    * @return repository search results
    */
   public CompletableFuture<SearchRepositories> repositories(final SearchParameters parameters) {
-    return search(REPOSITORIES_URI, parameters, SearchRepositories.class);
+    CompletableFuture<SearchRepositories> future = search(REPOSITORIES_URI, parameters, SearchRepositories.class);
+    tracer.span("Search repositories", future);
+    return future;
   }
 
   private <T> CompletableFuture<T> search(

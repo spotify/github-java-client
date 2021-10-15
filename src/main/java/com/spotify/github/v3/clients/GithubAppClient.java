@@ -22,6 +22,7 @@ package com.spotify.github.v3.clients;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.ImmutableMap;
+import com.spotify.github.Tracer;
 import com.spotify.github.v3.apps.InstallationRepositoriesResponse;
 import com.spotify.github.v3.checks.AccessToken;
 import com.spotify.github.v3.checks.Installation;
@@ -41,6 +42,7 @@ public class GithubAppClient {
   private final GitHubClient github;
   private final String owner;
   private final String repo;
+  private Tracer tracer = NoopTracer.INSTANCE;
 
   private final Map<String, String> extraHeaders =
       ImmutableMap.of(HttpHeaders.ACCEPT, "application/vnd.github.machine-man-preview+json");
@@ -54,13 +56,20 @@ public class GithubAppClient {
     this.repo = repo;
   }
 
+  public GithubAppClient withTracer(Tracer tracer) {
+    this.tracer = tracer;
+    return this;
+  }
+
   /**
    * List Installations of an app.
    *
    * @return a list of Installation
    */
   public CompletableFuture<List<Installation>> getInstallations() {
-    return github.request(GET_INSTALLATIONS_URL, INSTALLATION_LIST_TYPE_REFERENCE, extraHeaders);
+    CompletableFuture<List<Installation>> future = github.request(GET_INSTALLATIONS_URL, INSTALLATION_LIST_TYPE_REFERENCE, extraHeaders);
+    tracer.span("List Installations", future);
+    return future;
   }
 
   /**
@@ -69,8 +78,10 @@ public class GithubAppClient {
    * @return a list of Installation
    */
   public CompletableFuture<Installation> getInstallation() {
-    return github.request(
+    CompletableFuture<Installation> future = github.request(
         String.format(GET_INSTALLATION_REPO_URL, owner, repo), Installation.class, extraHeaders);
+    tracer.span("Get installation", future);
+    return future;
   }
 
   /**
@@ -80,7 +91,9 @@ public class GithubAppClient {
    */
   public CompletableFuture<AccessToken> getAccessToken(final Integer installationId) {
     final String path = String.format(GET_ACCESS_TOKEN_URL, installationId);
-    return github.post(path, "", AccessToken.class, extraHeaders);
+    CompletableFuture<AccessToken> future = github.post(path, "", AccessToken.class, extraHeaders);
+    tracer.span("Get access token", future);
+    return future;
   }
 
   /**
@@ -92,7 +105,9 @@ public class GithubAppClient {
   public CompletableFuture<InstallationRepositoriesResponse> listAccessibleRepositories(
       final int installationId) {
 
-    return GitHubClient.scopeForInstallationId(github, installationId)
+    CompletableFuture<InstallationRepositoriesResponse>  future = GitHubClient.scopeForInstallationId(github, installationId)
         .request(LIST_ACCESSIBLE_REPOS_URL, InstallationRepositoriesResponse.class, extraHeaders);
+    tracer.span("List scoped repositories", future);
+    return future;
   }
 }
