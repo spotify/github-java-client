@@ -31,7 +31,9 @@ import com.spotify.github.v3.git.ShaLink;
 import com.spotify.github.v3.git.Tag;
 import com.spotify.github.v3.git.Tree;
 import com.spotify.github.v3.git.TreeItem;
+import com.spotify.github.v3.repos.BlobContent;
 import com.spotify.github.v3.repos.Commit;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -53,6 +55,7 @@ public class GitDataClient {
   private static final String TREE_URI_TEMPLATE = "/repos/%s/%s/git/trees";
 
   private static final String BLOB_URI_TEMPLATE = "/repos/%s/%s/git/blobs";
+  private static final String GET_BLOB_URI_TEMPLATE = "/repos/%s/%s/git/blobs/%s";
 
   private final GitHubClient github;
   private final String owner;
@@ -288,5 +291,13 @@ public class GitDataClient {
     return github.post(path, requestBody, ShaLink.class);
   }
 
-
+  /**
+   * Get blob content.
+   *
+   * @param fileSha the sha of the blob you want to get.
+   */
+  public CompletableFuture<BlobContent> getBlobContent(final String fileSha) {
+    final String path = String.format(GET_BLOB_URI_TEMPLATE, owner, repo, fileSha);
+    return github.request(path, BlobContent.class);
+  }
 }

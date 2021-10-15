@@ -38,18 +38,14 @@ import static org.mockito.Mockito.when;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
 import com.spotify.github.jackson.Json;
-import com.spotify.github.v3.git.ImmutableTree;
-import com.spotify.github.v3.git.ImmutableTreeItem;
-import com.spotify.github.v3.git.Reference;
-import com.spotify.github.v3.git.ShaLink;
-import com.spotify.github.v3.git.Tag;
-import com.spotify.github.v3.git.Tree;
-import com.spotify.github.v3.git.TreeItem;
+import com.spotify.github.v3.git.*;
+import com.spotify.github.v3.repos.BlobContent;
 import com.spotify.github.v3.repos.Commit;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -316,5 +312,22 @@ public class GitDataClientTest {
     final ShaLink shalink = gitDataClient.createBlob("content").join();
 
     assertThat(shalink.sha(), is("8fc4e0fe57752b892a921806a1352e4cc72dff37"));
+  }
+
+
+  @Test
+  public void testGetBlobContent() throws Exception {
+    final CompletableFuture<BlobContent> fixture =
+            completedFuture(json.fromJson(getFixture("blob_content.json"), BlobContent.class));
+    when(github.request("/repos/someowner/somerepo/git/blobs/3d21ec53a331a6f037a91c368710b99387d012c1", BlobContent.class))
+            .thenReturn(fixture);
+
+    final BlobContent fileContent = gitDataClient.getBlobContent("3d21ec53a331a6f037a91c368710b99387d012c1").get();
+
+    assertThat(fileContent.type(), is("file"));
+    assertThat(fileContent.name(), is("README.md"));
+    assertThat(fileContent.encoding(), is("base64"));
+    assertThat(fileContent.content(), is("encoded blob content ..."));
+    assertThat(fileContent.nodeId(), is("node id"));
   }
 }
