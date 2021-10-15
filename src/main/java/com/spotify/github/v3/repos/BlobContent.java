@@ -26,13 +26,14 @@ import com.spotify.github.GithubStyle;
 import org.immutables.value.Value;
 
 import javax.annotation.Nullable;
+import java.net.URI;
 
 /** Blob content resource */
 @Value.Immutable
 @GithubStyle
 @JsonSerialize(as = ImmutableBlobContent.class)
 @JsonDeserialize(as = ImmutableBlobContent.class)
-public interface BlobContent extends FolderContent {
+public interface BlobContent {
 
   /** Node ID */
   @Nullable
@@ -45,4 +46,16 @@ public interface BlobContent extends FolderContent {
   /** Blob content */
   @Nullable
   String content();
+
+  /** Content size in bytes */
+  @Nullable
+  Integer size();
+
+  /** SHA. */
+  @Nullable
+  String sha();
+
+  /** URL. */
+  @Nullable
+  URI url();
 }

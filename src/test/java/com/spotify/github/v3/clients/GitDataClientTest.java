@@ -42,6 +42,7 @@ import com.spotify.github.v3.git.*;
 import com.spotify.github.v3.repos.BlobContent;
 import com.spotify.github.v3.repos.Commit;
 import java.io.IOException;
+import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -314,7 +315,6 @@ public class GitDataClientTest {
     assertThat(shalink.sha(), is("8fc4e0fe57752b892a921806a1352e4cc72dff37"));
   }
 
-
   @Test
   public void testGetBlobContent() throws Exception {
     final CompletableFuture<BlobContent> fixture =
@@ -324,10 +324,11 @@ public class GitDataClientTest {
 
     final BlobContent fileContent = gitDataClient.getBlobContent("3d21ec53a331a6f037a91c368710b99387d012c1").get();
 
-    assertThat(fileContent.type(), is("file"));
-    assertThat(fileContent.name(), is("README.md"));
     assertThat(fileContent.encoding(), is("base64"));
     assertThat(fileContent.content(), is("encoded blob content ..."));
     assertThat(fileContent.nodeId(), is("node id"));
+    assertThat(fileContent.size(), is(5362));
+    assertThat(fileContent.sha(), is("3d21ec53a331a6f037a91c368710b99387d012c1"));
+    assertThat(fileContent.url(), is(URI.create("https://api.github.com/repos/octokit/octokit.rb/contents/README.md")));
   }
 }
