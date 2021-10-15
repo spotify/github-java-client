@@ -67,7 +67,7 @@ public class PullRequestClient {
     return new PullRequestClient(github, owner, repo);
   }
 
-  public PullRequestClient withTracer(Tracer tracer) {
+  public PullRequestClient withTracer(final Tracer tracer) {
     this.tracer = tracer;
     return this;
   }

@@ -70,7 +70,7 @@ public class GitDataClient {
     return new GitDataClient(github, owner, repo);
   }
 
-  public GitDataClient withTracer(Tracer tracer) {
+  public GitDataClient withTracer(final Tracer tracer) {
     this.tracer = tracer;
     return this;
   }

@@ -56,7 +56,7 @@ public class IssueClient {
     return new IssueClient(github, owner, repo);
   }
 
-  public IssueClient withTracer(Tracer tracer) {
+  public IssueClient withTracer(final Tracer tracer) {
     this.tracer = tracer;
     return this;
   }

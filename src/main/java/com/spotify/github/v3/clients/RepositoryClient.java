@@ -99,7 +99,7 @@ public class RepositoryClient {
     return new RepositoryClient(github, owner, repo);
   }
 
-  public RepositoryClient withTracer(Tracer tracer) {
+  public RepositoryClient withTracer(final Tracer tracer) {
     this.tracer = requireNonNull(tracer);
     return this;
   }
@@ -110,7 +110,7 @@ public class RepositoryClient {
    * @return issue API client
    */
   public IssueClient createIssueClient() {
-    return IssueClient.create(github, owner, repo);
+    return IssueClient.create(github, owner, repo).withTracer(tracer);
   }
 
   /**
@@ -119,7 +119,7 @@ public class RepositoryClient {
    * @return pull request API client
    */
   public PullRequestClient createPullRequestClient() {
-    return PullRequestClient.create(github, owner, repo);
+    return PullRequestClient.create(github, owner, repo).withTracer(tracer);
   }
 
   /**
@@ -128,7 +128,7 @@ public class RepositoryClient {
    * @return Github App API client
    */
   public GithubAppClient createGithubAppClient() {
-    return new GithubAppClient(github, owner, repo);
+    return new GithubAppClient(github, owner, repo).withTracer(tracer);
   }
 
   /**
@@ -140,7 +140,7 @@ public class RepositoryClient {
     if (!github.getPrivateKey().isPresent()) {
       throw new IllegalArgumentException("Checks Client needs a private key");
     }
-    return new ChecksClient(github, owner, repo);
+    return new ChecksClient(github, owner, repo).withTracer(tracer);
   }
 
   /**

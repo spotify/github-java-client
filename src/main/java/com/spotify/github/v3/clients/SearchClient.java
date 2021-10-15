@@ -49,7 +49,7 @@ public class SearchClient {
     return new SearchClient(github);
   }
 
-  public SearchClient withTracer(Tracer tracer) {
+  public SearchClient withTracer(final Tracer tracer) {
     this.tracer = tracer;
     return this;
   }

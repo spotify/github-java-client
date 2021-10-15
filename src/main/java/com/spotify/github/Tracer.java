@@ -1,5 +1,8 @@
 /*
- * Copyright (c) 2019 Spotify AB
+ * -\-\-
+ * github-client
+ * --
+ * Copyright (c) 2021 Spotify AB
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -22,7 +25,7 @@ public interface Tracer {
 
     /** Create scoped span. Span will be closed when future completes. */
     Span span(
-            final String name, final CompletionStage<?> future);
+            String name, CompletionStage<?> future);
 
 }
 

@@ -56,7 +56,7 @@ public class GithubAppClient {
     this.repo = repo;
   }
 
-  public GithubAppClient withTracer(Tracer tracer) {
+  public GithubAppClient withTracer(final Tracer tracer) {
     this.tracer = tracer;
     return this;
   }

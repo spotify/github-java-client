@@ -63,7 +63,7 @@ public class ChecksClient {
     this.repo = repo;
   }
 
-  public ChecksClient withTracer(Tracer tracer) {
+  public ChecksClient withTracer(final Tracer tracer) {
     this.tracer = tracer;
     return this;
   }
