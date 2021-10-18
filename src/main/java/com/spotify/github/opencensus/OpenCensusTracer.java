@@ -55,6 +55,7 @@ public class OpenCensusTracer implements Tracer {
 
         future.whenComplete(
                 (result, t) -> {
+
                     if (t == null) {
                         span.success();
                     } else {

@@ -25,8 +25,7 @@ import static com.spotify.github.v3.clients.SearchClient.ISSUES_URI;
 import static com.spotify.github.v3.search.SearchTest.assertSearchIssues;
 import static java.nio.charset.Charset.defaultCharset;
 import static java.util.concurrent.CompletableFuture.completedFuture;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import com.google.common.io.Resources;
 import com.spotify.github.jackson.Json;
@@ -44,6 +43,8 @@ public class SearchClientTest {
   private SearchClient searchClient;
   private Json json;
 
+  private NoopTracer tracer = mock(NoopTracer.class);
+
   private static String getFixture(String resource) throws IOException {
     return Resources.toString(getResource(SearchTest.class, resource), defaultCharset());
   }
@@ -51,7 +52,7 @@ public class SearchClientTest {
   @Before
   public void setUp() {
     github = mock(GitHubClient.class);
-    searchClient = SearchClient.create(github);
+    searchClient = SearchClient.create(github).withTracer(tracer);
     json = Json.create();
   }
 
@@ -63,6 +64,8 @@ public class SearchClientTest {
     when(github.request(ISSUES_URI + "?q=bogus-q", SearchIssues.class)).thenReturn(fixture);
     final SearchIssues search =
         searchClient.issues(ImmutableSearchParameters.builder().q("bogus-q").build()).get();
+
+    verify(tracer,times(1)).span(eq("Search issues"), any());
     assertSearchIssues(search);
   }
 }

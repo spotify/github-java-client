@@ -31,9 +31,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.times;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
@@ -58,6 +59,7 @@ public class GitDataClientTest {
   private GitHubClient github;
   private GitDataClient gitDataClient;
   private Json json;
+  private NoopTracer tracer = mock(NoopTracer.class);
 
   private static String getFixture(String resource) throws IOException {
     return Resources.toString(getResource(GitDataClientTest.class, resource), defaultCharset());
@@ -66,7 +68,7 @@ public class GitDataClientTest {
   @Before
   public void setUp() {
     github = mock(GitHubClient.class);
-    gitDataClient = new GitDataClient(github, "someowner", "somerepo");
+    gitDataClient = new GitDataClient(github, "someowner", "somerepo").withTracer(tracer);
     json = Json.create();
     when(github.json()).thenReturn(json);
   }
@@ -79,6 +81,7 @@ public class GitDataClientTest {
         .thenReturn(fixture);
     final Reference reference = gitDataClient.getTagReference("0.0.1").get();
     assertThat(reference.object().sha(), is("5926dd300de5fee31d445c57be223f00e128a634"));
+    verify(tracer,times(1)).span(anyString(), any());
   }
 
   @Test
@@ -270,6 +273,8 @@ public class GitDataClientTest {
                     .join();
     assertThat(tree.sha(), is("9c27bd92524e2b57b569d4c86695b3993d9b8f9f"));
     assertThat(tree.tree().size(), is(7));
+    verify(tracer,times(1)).span(anyString(), any());
+
   }
 
   @Test
