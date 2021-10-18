@@ -2,7 +2,7 @@
  * -\-\-
  * github-api
  * --
- * Copyright (C) 2016 - 2021 Spotify AB
+ * Copyright (C) 2021 Spotify AB
  * --
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,33 +19,34 @@
  */
 
 package com.spotify.github.opencensus;
-import static java.util.Objects.requireNonNull;
+
 import com.spotify.github.Span;
 import io.opencensus.trace.Status;
+import org.junit.jupiter.api.Test;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
-class OpenCensusSpan implements Span {
+class OpenCensusSpanTest {
+    private io.opencensus.trace.Span wrapped = mock(io.opencensus.trace.Span.class);
 
-    private final io.opencensus.trace.Span span;
+    @Test
+    public void succeed() {
+        final Span span = new OpenCensusSpan(wrapped);
+        span.success();
+        span.close();
 
-    OpenCensusSpan(final io.opencensus.trace.Span span) {
-        this.span = requireNonNull(span);
+        verify(wrapped).setStatus(Status.OK);
+        verify(wrapped).end();
     }
 
-    @Override
-    public Span success() {
-        span.setStatus(Status.OK);
-        return this;
+    @Test
+    public void fail() {
+        final Span span = new OpenCensusSpan(wrapped);
+        span.failure();
+        span.close();
+
+        verify(wrapped).setStatus(Status.UNKNOWN);
+        verify(wrapped).end();
     }
 
-    @Override
-    public Span failure() {
-        span.setStatus(Status.UNKNOWN);
-        return this;
-    }
-
-    @Override
-    public void close() {
-        span.end();
-    }
 }
-
