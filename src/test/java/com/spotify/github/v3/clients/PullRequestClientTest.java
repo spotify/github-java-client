@@ -24,7 +24,9 @@ import static com.google.common.io.Resources.getResource;
 import static java.nio.charset.Charset.defaultCharset;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
@@ -51,7 +53,6 @@ public class PullRequestClientTest {
 
   private GitHubClient github;
   private OkHttpClient client;
-  private NoopTracer tracer = mock(NoopTracer.class);
 
   private static String getFixture(String resource) throws IOException {
     return Resources.toString(getResource(PullRequestClientTest.class, resource), defaultCharset());
@@ -148,7 +149,7 @@ public class PullRequestClientTest {
     when(client.newCall(any())).thenReturn(call);
 
     PullRequestClient pullRequestClient =
-        PullRequestClient.create(github, "owner", "repo").withTracer(tracer);
+        PullRequestClient.create(github, "owner", "repo");
 
     CompletableFuture<Void> result =
         pullRequestClient.removeRequestedReview(1, ImmutableRequestReviewParameters.builder()
@@ -156,7 +157,6 @@ public class PullRequestClientTest {
             .build());
 
     capture.getValue().onResponse(call, response);
-    verify(tracer,times(1)).span(any(), any());
 
     try {
       result.get();

@@ -21,7 +21,6 @@
 package com.spotify.github.v3.clients;
 
 import com.google.common.collect.ImmutableMap;
-import com.spotify.github.Tracer;
 import com.spotify.github.v3.checks.CheckRunRequest;
 import com.spotify.github.v3.checks.CheckRunResponse;
 import com.spotify.github.v3.checks.CheckRunResponseList;
@@ -48,8 +47,6 @@ public class ChecksClient {
   private final Map<String, String> extraHeaders =
       ImmutableMap.of(HttpHeaders.ACCEPT, "application/vnd.github.antiope-preview+json");
 
-  private Tracer tracer = NoopTracer.INSTANCE;
-
   /**
    * Instantiates a new Checks client.
    *
@@ -63,11 +60,6 @@ public class ChecksClient {
     this.repo = repo;
   }
 
-  public ChecksClient withTracer(final Tracer tracer) {
-    this.tracer = tracer;
-    return this;
-  }
-
   /**
    * Create a checkRun.
    *
@@ -76,10 +68,8 @@ public class ChecksClient {
    */
   public CompletableFuture<CheckRunResponse> createCheckRun(final CheckRunRequest checkRun) {
     final String path = String.format(CHECK_RUNS_URI, owner, repo);
-    CompletableFuture<CheckRunResponse> future = github.post(
+    return github.post(
         path, github.json().toJsonUnchecked(checkRun), CheckRunResponse.class, extraHeaders);
-    tracer.span("Create checkrun", future);
-    return future;
   }
 
   /**
@@ -92,10 +82,8 @@ public class ChecksClient {
   public CompletableFuture<CheckRunResponse> updateCheckRun(
       final int id, final CheckRunRequest checkRun) {
     final String path = String.format(GET_CHECK_RUN_URI, owner, repo, id);
-    CompletableFuture<CheckRunResponse> future = github.patch(
+    return github.patch(
         path, github.json().toJsonUnchecked(checkRun), CheckRunResponse.class, extraHeaders);
-    tracer.span("Update checkrun", future);
-    return future;
   }
 
   /**
@@ -106,9 +94,7 @@ public class ChecksClient {
    */
   public CompletableFuture<CheckRunResponse> getCheckRun(final int id) {
     final String path = String.format(GET_CHECK_RUN_URI, owner, repo, id);
-    CompletableFuture<CheckRunResponse> future = github.request(path, CheckRunResponse.class, extraHeaders);
-    tracer.span("Get checkrun", future);
-    return future;
+    return github.request(path, CheckRunResponse.class, extraHeaders);
   }
 
   /**
@@ -119,9 +105,7 @@ public class ChecksClient {
    */
   public CompletableFuture<CheckRunResponseList> getCheckRuns(final String ref) {
     final String path = String.format(LIST_CHECK_RUNS_URI, owner, repo, ref);
-    CompletableFuture<CheckRunResponseList> future = github.request(path, CheckRunResponseList.class, extraHeaders);
-    tracer.span("List checkruns", future);
-    return future;
+    return github.request(path, CheckRunResponseList.class, extraHeaders);
   }
 
   /**
@@ -132,9 +116,7 @@ public class ChecksClient {
    */
   public CompletableFuture<CheckSuite> getCheckSuite(final String id) {
     final String path = String.format(GET_CHECK_SUITE_URI, owner, repo, id);
-    CompletableFuture<CheckSuite> future = github.request(path, CheckSuite.class, extraHeaders);
-    tracer.span("Get check suite", future);
-    return future;
+    return github.request(path, CheckSuite.class, extraHeaders);
   }
 
   /**
@@ -145,8 +127,6 @@ public class ChecksClient {
    */
   public CompletableFuture<CheckSuiteResponseList> getCheckSuites(final String sha) {
     final String path = String.format(LIST_CHECK_SUITES_REF_URI, owner, repo, sha);
-    CompletableFuture<CheckSuiteResponseList> future = github.request(path, CheckSuiteResponseList.class, extraHeaders);
-    tracer.span("List check suites", future);
-    return future;
+    return github.request(path, CheckSuiteResponseList.class, extraHeaders);
   }
 }

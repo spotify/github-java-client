@@ -35,27 +35,29 @@ public class OpenCensusTracer implements Tracer {
     private static final io.opencensus.trace.Tracer TRACER = Tracing.getTracer();
 
     @Override
-    public Span span(final String name, final CompletionStage<?> future) {
-        return internalSpan(name, future);
+    public Span span(final String name, final String method, final CompletionStage<?> future) {
+        return internalSpan(name, method, future);
     }
 
     @SuppressWarnings("MustBeClosedChecker")
     private Span internalSpan(
-            final String name,
+            final String path,
+            final String method,
             final CompletionStage<?> future) {
-        requireNonNull(name);
+        requireNonNull(path);
         requireNonNull(future);
 
         final io.opencensus.trace.Span ocSpan =
-                TRACER.spanBuilder(name).setSpanKind(CLIENT).startSpan();
+                TRACER.spanBuilder("GitHub Request").setSpanKind(CLIENT).startSpan();
 
         ocSpan.putAttribute("component", stringAttributeValue("github-api-client"));
         ocSpan.putAttribute("peer.service", stringAttributeValue("github"));
+        ocSpan.putAttribute("path", stringAttributeValue(path));
+        ocSpan.putAttribute("method", stringAttributeValue(method));
         final Span span = new OpenCensusSpan(ocSpan);
 
         future.whenComplete(
                 (result, t) -> {
-
                     if (t == null) {
                         span.success();
                     } else {

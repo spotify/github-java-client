@@ -24,7 +24,6 @@ import static com.spotify.github.v3.clients.GitHubClient.IGNORE_RESPONSE_CONSUME
 import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMENT_TYPE_REFERENCE;
 
 import com.google.common.collect.ImmutableMap;
-import com.spotify.github.Tracer;
 import com.spotify.github.async.AsyncPage;
 import com.spotify.github.v3.comment.Comment;
 import java.lang.invoke.MethodHandles;
@@ -44,7 +43,6 @@ public class IssueClient {
   private final GitHubClient github;
   private final String owner;
   private final String repo;
-  private Tracer tracer = NoopTracer.INSTANCE;
 
   IssueClient(final GitHubClient github, final String owner, final String repo) {
     this.github = github;
@@ -54,11 +52,6 @@ public class IssueClient {
 
   static IssueClient create(final GitHubClient github, final String owner, final String repo) {
     return new IssueClient(github, owner, repo);
-  }
-
-  public IssueClient withTracer(final Tracer tracer) {
-    this.tracer = tracer;
-    return this;
   }
 
   /**
@@ -89,9 +82,7 @@ public class IssueClient {
   public CompletableFuture<Comment> getComment(final int id) {
     final String path = String.format(COMMENTS_URI_ID_TEMPLATE, owner, repo, id);
     log.info("Fetching issue comments from " + path);
-    CompletableFuture<Comment> future = github.request(path, Comment.class);
-    tracer.span("Get comment", future);
-    return future;
+    return github.request(path, Comment.class);
   }
 
   /**
@@ -104,9 +95,7 @@ public class IssueClient {
   public CompletableFuture<Comment> createComment(final int number, final String body) {
     final String path = String.format(COMMENTS_URI_NUMBER_TEMPLATE, owner, repo, number);
     final String requestBody = github.json().toJsonUnchecked(ImmutableMap.of("body", body));
-    CompletableFuture<Comment> future = github.post(path, requestBody, Comment.class);
-    tracer.span("Create comment", future);
-    return future;
+    return github.post(path, requestBody, Comment.class);
   }
 
   /**
@@ -117,11 +106,9 @@ public class IssueClient {
    */
   public CompletableFuture<Void> editComment(final int id, final String body) {
     final String path = String.format(COMMENTS_URI_ID_TEMPLATE, owner, repo, id);
-    CompletableFuture<Void> future = github
+    return github
         .patch(path, github.json().toJsonUnchecked(ImmutableMap.of("body", body)))
         .thenAccept(IGNORE_RESPONSE_CONSUMER);
-    tracer.span("Edit comment", future);
-    return future;
   }
 
   /**
@@ -130,11 +117,9 @@ public class IssueClient {
    * @param id comment id
    */
   public CompletableFuture<Void> deleteComment(final int id) {
-    CompletableFuture<Void> future = github
+    return github
         .delete(String.format(COMMENTS_URI_ID_TEMPLATE, owner, repo, id))
         .thenAccept(IGNORE_RESPONSE_CONSUMER);
-    tracer.span("Delete comment", future);
-    return future;
   }
 
   private Iterator<AsyncPage<Comment>> listComments(final String path) {

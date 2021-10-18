@@ -28,14 +28,12 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.common.io.Resources;
 import com.spotify.github.jackson.Json;
-import com.spotify.github.opencensus.OpenCensusTracer;
 import com.spotify.github.v3.checks.CheckRunOutput;
 import com.spotify.github.v3.checks.CheckRunRequest;
 import com.spotify.github.v3.checks.CheckRunResponse;
@@ -54,7 +52,6 @@ public class ChecksClientTest {
   private GitHubClient github;
   private ChecksClient checksClient;
   private Json json;
-  private OpenCensusTracer tracer = mock(OpenCensusTracer.class);
 
   public static String loadResource(final String path) {
     try {
@@ -67,7 +64,7 @@ public class ChecksClientTest {
   @Before
   public void setUp() {
     github = mock(GitHubClient.class);
-    checksClient = new ChecksClient(github, "someowner", "somerepo").withTracer(tracer);
+    checksClient = new ChecksClient(github, "someowner", "somerepo");
     json = Json.create();
     when(github.json()).thenReturn(json);
   }
@@ -93,7 +90,6 @@ public class ChecksClientTest {
     assertThat(actualResponse.get().status(), is(completed));
     assertThat(actualResponse.get().headSha(), is("ce587453ced02b1526dfb4cb910479d431683101"));
     assertThat(actualResponse.get().output().annotationsCount().get(), is(2));
-    verify(tracer,times(1)).span(anyString(), any());
   }
 
   @Test

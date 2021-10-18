@@ -25,10 +25,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
+import com.spotify.github.Tracer;
 import com.spotify.github.v3.exceptions.ReadOnlyRepositoryException;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.repos.CommitItem;
@@ -52,6 +51,7 @@ public class GitHubClientTest {
 
   private GitHubClient github;
   private OkHttpClient client;
+  private Tracer tracer = mock(Tracer.class);
 
   @Before
   public void setUp() {
@@ -88,10 +88,11 @@ public class GitHubClientTest {
 
     when(client.newCall(any())).thenReturn(call);
     IssueClient issueClient =
-        github.createRepositoryClient("testorg", "testrepo").createIssueClient();
+        github.withTracer(tracer).createRepositoryClient("testorg", "testrepo").createIssueClient();
 
     CompletableFuture<Void> maybeSucceeded = issueClient.editComment(1, "some comment");
     capture.getValue().onResponse(call, response);
+    verify(tracer,times(1)).span(anyString(), anyString(),any());
     try {
       maybeSucceeded.get();
     } catch (Exception e) {

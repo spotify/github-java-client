@@ -24,6 +24,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 import static okhttp3.MediaType.parse;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.spotify.github.Tracer;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.checks.AccessToken;
 import com.spotify.github.v3.comment.Comment;
@@ -64,6 +65,8 @@ import org.slf4j.LoggerFactory;
  * functionality as well as acts as a factory for the higher level API clients.
  */
 public class GitHubClient {
+
+  private Tracer tracer = NoopTracer.INSTANCE;
 
   static final Consumer<Response> IGNORE_RESPONSE_CONSUMER = (response) -> {
     if (response.body() != null) {
@@ -298,6 +301,11 @@ public class GitHubClient {
     } catch (IOException e) {
       throw new UncheckedIOException("Failed getting response body for: " + response, e);
     }
+  }
+
+  public GitHubClient withTracer(final Tracer tracer) {
+    this.tracer = tracer;
+    return this;
   }
 
   public Optional<byte[]> getPrivateKey() {
@@ -724,7 +732,7 @@ public class GitHubClient {
                     });
           }
         });
-
+    tracer.span(request.url().toString(), request.method(), future);
     return future;
   }
 

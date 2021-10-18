@@ -26,7 +26,7 @@ public interface Tracer {
 
     /** Create scoped span. Span will be closed when future completes. */
     Span span(
-            String name, CompletionStage<?> future);
+            String path, String method, CompletionStage<?> future);
 
 }
 

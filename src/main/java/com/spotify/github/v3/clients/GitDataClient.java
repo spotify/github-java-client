@@ -26,7 +26,6 @@ import static com.spotify.github.v3.clients.GitHubClient.LIST_REFERENCES;
 import static java.lang.String.format;
 
 import com.google.common.collect.ImmutableMap;
-import com.spotify.github.Tracer;
 import com.spotify.github.v3.git.Reference;
 import com.spotify.github.v3.git.ShaLink;
 import com.spotify.github.v3.git.Tag;
@@ -58,7 +57,6 @@ public class GitDataClient {
   private final GitHubClient github;
   private final String owner;
   private final String repo;
-  private Tracer tracer = NoopTracer.INSTANCE;
 
   GitDataClient(final GitHubClient github, final String owner, final String repo) {
     this.github = github;
@@ -70,11 +68,6 @@ public class GitDataClient {
     return new GitDataClient(github, owner, repo);
   }
 
-  public GitDataClient withTracer(final Tracer tracer) {
-    this.tracer = tracer;
-    return this;
-  }
-
   /**
    * Deletes a git reference.
    *
@@ -82,9 +75,7 @@ public class GitDataClient {
    */
   public CompletableFuture<Void> deleteReference(final String ref) {
     final String path = format(REFERENCE_URI, owner, repo, ref.replaceAll("refs/", ""));
-    CompletableFuture<Void> future = github.delete(path).thenAccept(IGNORE_RESPONSE_CONSUMER);
-    tracer.span("Delete reference", future);
-    return future;
+    return github.delete(path).thenAccept(IGNORE_RESPONSE_CONSUMER);
   }
 
   /**
@@ -112,9 +103,7 @@ public class GitDataClient {
    */
   public CompletableFuture<Reference> getBranchReference(final String branch) {
     final String path = format(BRANCH_REFERENCE_URI, owner, repo, branch);
-    CompletableFuture<Reference> future = github.request(path, Reference.class);
-    tracer.span("Get branch reference", future);
-    return future;
+    return github.request(path, Reference.class);
   }
 
   /**
@@ -124,9 +113,7 @@ public class GitDataClient {
    */
   public CompletableFuture<Reference> getTagReference(final String tag) {
     final String path = format(TAG_REFERENCE_URI, owner, repo, tag);
-    CompletableFuture<Reference> future = github.request(path, Reference.class);
-    tracer.span("Get tag reference", future);
-    return future;
+    return github.request(path, Reference.class);
   }
 
   /**
@@ -136,9 +123,7 @@ public class GitDataClient {
    */
   public CompletableFuture<Tag> getTag(final String tag) {
     final String path = format(TAG_URI, owner, repo, tag);
-    CompletableFuture<Tag> future = github.request(path, Tag.class);
-    tracer.span("Get annotated tag", future);
-    return future;
+    return github.request(path, Tag.class);
   }
 
   /**
@@ -148,9 +133,7 @@ public class GitDataClient {
    */
   public CompletableFuture<List<Reference>> listMatchingReferences(final String ref) {
     final String path = format(LIST_MATCHING_REFERENCES_URI, owner, repo, ref);
-    CompletableFuture<List<Reference>> future = github.request(path, LIST_REFERENCES);
-    tracer.span("List matching references", future);
-    return future;
+    return github.request(path, LIST_REFERENCES);
   }
 
   /**
@@ -182,9 +165,7 @@ public class GitDataClient {
         of(
             "ref", ref,
             "sha", sha);
-    CompletableFuture<Reference> future = github.post(path, github.json().toJsonUnchecked(body), Reference.class);
-    tracer.span("Create git reference", future);
-    return future;
+    return github.post(path, github.json().toJsonUnchecked(body), Reference.class);
   }
 
   /**
@@ -254,9 +235,7 @@ public class GitDataClient {
             .json()
             .toJsonUnchecked(
                 ImmutableMap.of("message", message, "parents", parents, "tree", treeSha));
-    CompletableFuture<Commit> future = github.post(path, requestBody, Commit.class);
-    tracer.span("Create commit", future);
-    return future;
+    return github.post(path, requestBody, Commit.class);
   }
 
   /**
@@ -267,9 +246,7 @@ public class GitDataClient {
    */
   public CompletableFuture<Tree> getTree(final String sha) {
     final String path = String.format(TREE_SHA_URI_TEMPLATE, owner, repo, sha);
-    CompletableFuture<Tree> future = github.request(path, Tree.class);
-    tracer.span("Get repository tree", future);
-    return future;
+    return github.request(path, Tree.class);
   }
 
   /**
@@ -280,9 +257,7 @@ public class GitDataClient {
    */
   public CompletableFuture<Tree> getRecursiveTree(final String sha) {
     final String path = String.format(TREE_SHA_URI_TEMPLATE, owner, repo, sha);
-    CompletableFuture<Tree> future = github.request(path + "?recursive=true", Tree.class);
-    tracer.span("Get recursive tree", future);
-    return future;
+    return github.request(path + "?recursive=true", Tree.class);
   }
 
   /**
@@ -296,9 +271,7 @@ public class GitDataClient {
     final String path = String.format(TREE_URI_TEMPLATE, owner, repo);
     final String requestBody = github.json()
         .toJsonUnchecked(ImmutableMap.of("base_tree", baseTreeSha, "tree", tree));
-    CompletableFuture<Tree> future = github.post(path, requestBody, Tree.class);
-    tracer.span("Create tree", future);
-    return future;
+    return github.post(path, requestBody, Tree.class);
   }
 
 
@@ -312,9 +285,7 @@ public class GitDataClient {
     final String encoding = "utf-8|base64";
     final String requestBody = github.json()
         .toJsonUnchecked(ImmutableMap.of("content", content, "encoding", encoding));
-    CompletableFuture<ShaLink> future = github.post(path, requestBody, ShaLink.class);
-    tracer.span("Create blob", future);
-    return future;
+    return github.post(path, requestBody, ShaLink.class);
   }
 
 

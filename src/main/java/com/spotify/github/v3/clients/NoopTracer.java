@@ -47,7 +47,8 @@ public class NoopTracer implements Tracer {
 
     @Override
     public Span span(
-            final String name,
+            final String path,
+            final String method,
             final CompletionStage<?> future) {
         return SPAN;
     }

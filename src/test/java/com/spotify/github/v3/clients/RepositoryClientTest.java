@@ -37,15 +37,13 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static java.util.stream.StreamSupport.stream;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.times;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
-import com.spotify.github.Tracer;
 import com.spotify.github.async.AsyncPage;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.comment.Comment;
@@ -65,8 +63,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-
-import io.opencensus.trace.Tracing;
 import okhttp3.Headers;
 import okhttp3.MediaType;
 import okhttp3.Protocol;
@@ -86,7 +82,6 @@ public class RepositoryClientTest {
   private GitHubClient github;
   private RepositoryClient repoClient;
   private Json json;
-  private NoopTracer noopTracer = mock(NoopTracer.class);
 
   private static String getFixture(String resource) throws IOException {
     return Resources.toString(getResource(RepositoryTest.class, resource), defaultCharset());
@@ -95,7 +90,7 @@ public class RepositoryClientTest {
   @Before
   public void setUp() {
     github = mock(GitHubClient.class);
-    repoClient = new RepositoryClient(github, "someowner", "somerepo").withTracer(noopTracer);
+    repoClient = new RepositoryClient(github, "someowner", "somerepo");
     json = Json.create();
     when(github.json()).thenReturn(json);
   }
@@ -112,8 +107,6 @@ public class RepositoryClientTest {
     assertThat(repository.fullName(), is(repository.owner().login() + "/Hello-World"));
     assertThat(repository.isPrivate(), is(false));
     assertThat(repository.fork(), is(false));
-    verify(noopTracer,times(1)).span(eq("Get repository"), any());
-
   }
 
   @Test

@@ -26,11 +26,9 @@ import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERE
 import static com.spotify.github.v3.clients.GitHubClient.LIST_FOLDERCONTENT_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_REPOSITORY;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_STATUS_TYPE_REFERENCE;
-import static java.util.Objects.requireNonNull;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
-import com.spotify.github.Tracer;
 import com.spotify.github.async.AsyncPage;
 import com.spotify.github.v3.comment.Comment;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
@@ -87,7 +85,6 @@ public class RepositoryClient {
   private final String owner;
   private final String repo;
   private final GitHubClient github;
-  private Tracer tracer = NoopTracer.INSTANCE;
 
   RepositoryClient(final GitHubClient github, final String owner, final String repo) {
     this.github = github;
@@ -99,18 +96,13 @@ public class RepositoryClient {
     return new RepositoryClient(github, owner, repo);
   }
 
-  public RepositoryClient withTracer(final Tracer tracer) {
-    this.tracer = requireNonNull(tracer);
-    return this;
-  }
-
   /**
    * Create an issue API client.
    *
    * @return issue API client
    */
   public IssueClient createIssueClient() {
-    return IssueClient.create(github, owner, repo).withTracer(tracer);
+    return IssueClient.create(github, owner, repo);
   }
 
   /**
@@ -119,7 +111,7 @@ public class RepositoryClient {
    * @return pull request API client
    */
   public PullRequestClient createPullRequestClient() {
-    return PullRequestClient.create(github, owner, repo).withTracer(tracer);
+    return PullRequestClient.create(github, owner, repo);
   }
 
   /**
@@ -128,7 +120,7 @@ public class RepositoryClient {
    * @return Github App API client
    */
   public GithubAppClient createGithubAppClient() {
-    return new GithubAppClient(github, owner, repo).withTracer(tracer);
+    return new GithubAppClient(github, owner, repo);
   }
 
   /**
@@ -140,7 +132,7 @@ public class RepositoryClient {
     if (!github.getPrivateKey().isPresent()) {
       throw new IllegalArgumentException("Checks Client needs a private key");
     }
-    return new ChecksClient(github, owner, repo).withTracer(tracer);
+    return new ChecksClient(github, owner, repo);
   }
 
   /**
@@ -150,9 +142,7 @@ public class RepositoryClient {
    */
   public CompletableFuture<Repository> getRepository() {
     final String path = String.format(REPOSITORY_URI_TEMPLATE, owner, repo);
-    CompletableFuture<Repository> future = github.request(path, Repository.class);
-    tracer.span("Get repository", future);
-    return future;
+    return github.request(path, Repository.class);
   }
 
   /**
@@ -162,9 +152,7 @@ public class RepositoryClient {
    */
   public CompletableFuture<List<Repository>> listOrganizationRepositories() {
     final String path = String.format(LIST_REPOSITORY_TEMPLATE, owner);
-    CompletableFuture<List<Repository>> future = github.request(path, LIST_REPOSITORY);
-    tracer.span("List repositories", future);
-    return future;
+    return github.request(path, LIST_REPOSITORY);
   }
 
   /**
@@ -190,9 +178,7 @@ public class RepositoryClient {
    */
   public CompletableFuture<Boolean> isCollaborator(final String user) {
     final String path = String.format(IS_USER_COLLABORATOR_OF_REPO, owner, repo, user);
-    CompletableFuture<Boolean> future = github.request(path).thenApply(response -> response.code() == NO_CONTENT);
-    tracer.span("isCollaborator", future);
-    return future;
+    return github.request(path).thenApply(response -> response.code() == NO_CONTENT);
   }
 
   /**
@@ -204,7 +190,8 @@ public class RepositoryClient {
   public CompletableFuture<Void> createWebhook(
       final WebhookCreate request, final boolean ignoreExisting) {
     final String path = String.format(HOOK_URI_TEMPLATE, owner, repo);
-    CompletableFuture<Void> future = github
+
+    return github
         .post(path, github.json().toJsonUnchecked(request))
         .thenAccept(IGNORE_RESPONSE_CONSUMER)
         .exceptionally(
@@ -224,8 +211,6 @@ public class RepositoryClient {
 
               throw new CompletionException(e);
             });
-    tracer.span("Create webhook", future);
-    return future;
   }
 
   /**
@@ -237,11 +222,9 @@ public class RepositoryClient {
   public CompletableFuture<Void> setCommitStatus(
       final String sha, final RepositoryCreateStatus request) {
     final String path = String.format(STATUS_URI_TEMPLATE, owner, repo, sha);
-    CompletableFuture<Void> future = github
+    return github
         .post(path, github.json().toJsonUnchecked(request))
         .thenAccept(IGNORE_RESPONSE_CONSUMER);
-    tracer.span("Set commit status", future);
-    return future;
   }
 
   /**
@@ -251,9 +234,7 @@ public class RepositoryClient {
    */
   public CompletableFuture<CommitStatus> getCommitStatus(final String ref) {
     final String path = String.format(COMMIT_STATUS_URI_TEMPLATE, owner, repo, ref);
-    CompletableFuture<CommitStatus> future = github.request(path, CommitStatus.class);
-    tracer.span("Get commit status", future);
-    return future;
+    return github.request(path, CommitStatus.class);
   }
 
   /**
@@ -264,9 +245,7 @@ public class RepositoryClient {
    */
   public CompletableFuture<List<Status>> listCommitStatuses(final String sha) {
     final String path = String.format(STATUS_URI_TEMPLATE, owner, repo, sha);
-    CompletableFuture<List<Status>> future = github.request(path, LIST_STATUS_TYPE_REFERENCE);
-    tracer.span("List commit statuses", future);
-    return future;
+    return github.request(path, LIST_STATUS_TYPE_REFERENCE);
   }
 
   /**
@@ -291,9 +270,7 @@ public class RepositoryClient {
    */
   public CompletableFuture<List<CommitItem>> listCommits() {
     final String path = String.format(COMMITS_URI_TEMPLATE, owner, repo);
-    CompletableFuture<List<CommitItem>> future = github.request(path, LIST_COMMIT_TYPE_REFERENCE);
-    tracer.span("List commits", future);
-    return future;
+    return github.request(path, LIST_COMMIT_TYPE_REFERENCE);
   }
 
   /**
@@ -304,9 +281,7 @@ public class RepositoryClient {
    */
   public CompletableFuture<Commit> getCommit(final String sha) {
     final String path = String.format(COMMIT_SHA_URI_TEMPLATE, owner, repo, sha);
-    CompletableFuture<Commit> future = github.request(path, Commit.class);
-    tracer.span("Get commit", future);
-    return future;
+    return github.request(path, Commit.class);
   }
 
   /**
@@ -319,9 +294,7 @@ public class RepositoryClient {
   @Deprecated
   public CompletableFuture<Tree> getTree(final String sha) {
     final String path = String.format(TREE_SHA_URI_TEMPLATE, owner, repo, sha);
-    CompletableFuture<Tree> future =  github.request(path, Tree.class);
-    tracer.span("Get tree", future);
-    return future;
+    return github.request(path, Tree.class);
   }
 
   /**
@@ -331,9 +304,7 @@ public class RepositoryClient {
    * @return content
    */
   public CompletableFuture<Content> getFileContent(final String path) {
-    CompletableFuture<Content> future = github.request(getContentPath(path, ""), Content.class);
-    tracer.span("Get file content", future);
-    return future;
+    return github.request(getContentPath(path, ""), Content.class);
   }
 
   /**
@@ -344,9 +315,7 @@ public class RepositoryClient {
    * @return content
    */
   public CompletableFuture<Content> getFileContent(final String path, final String ref) {
-    CompletableFuture<Content> future =  github.request(getContentPath(path, "?ref=" + ref), Content.class);
-    tracer.span("Get file content", future);
-    return future;
+    return github.request(getContentPath(path, "?ref=" + ref), Content.class);
   }
 
   /**
@@ -356,9 +325,7 @@ public class RepositoryClient {
    * @return content
    */
   public CompletableFuture<List<FolderContent>> getFolderContent(final String path) {
-    CompletableFuture<List<FolderContent>> future = github.request(getContentPath(path, ""), LIST_FOLDERCONTENT_TYPE_REFERENCE);
-    tracer.span("Get folder content", future);
-    return future;
+    return github.request(getContentPath(path, ""), LIST_FOLDERCONTENT_TYPE_REFERENCE);
   }
 
   /**
@@ -371,9 +338,7 @@ public class RepositoryClient {
   public CompletableFuture<Comment> createComment(final String sha, final String body) {
     final String path = String.format(CREATE_COMMENT_TEMPLATE, owner, repo, sha);
     final String requestBody = github.json().toJsonUnchecked(ImmutableMap.of("body", body));
-    CompletableFuture<Comment> future = github.post(path, requestBody, Comment.class);
-    tracer.span("Create comment", future);
-    return future;
+    return github.post(path, requestBody, Comment.class);
   }
 
   /**
@@ -384,9 +349,7 @@ public class RepositoryClient {
    */
   public CompletableFuture<Comment> getComment(final int id) {
     final String path = String.format(COMMENT_TEMPLATE, owner, repo, id);
-    CompletableFuture<Comment> future = github.request(path, Comment.class);
-    tracer.span("Get comment", future);
-    return future;
+    return github.request(path, Comment.class);
   }
 
   /**
@@ -398,9 +361,7 @@ public class RepositoryClient {
    */
   public CompletableFuture<List<FolderContent>> getFolderContent(
       final String path, final String ref) {
-    CompletableFuture<List<FolderContent>> future = github.request(getContentPath(path, "?ref=" + ref), LIST_FOLDERCONTENT_TYPE_REFERENCE);
-    tracer.span("Get folder content", future);
-    return future;
+    return github.request(getContentPath(path, "?ref=" + ref), LIST_FOLDERCONTENT_TYPE_REFERENCE);
   }
 
   /**
@@ -412,9 +373,7 @@ public class RepositoryClient {
    */
   public CompletableFuture<CommitComparison> compareCommits(final String base, final String head) {
     final String path = String.format(COMPARE_COMMIT_TEMPLATE, owner, repo, base, head);
-    CompletableFuture<CommitComparison> future = github.request(path, CommitComparison.class);
-    tracer.span("Compare commits", future);
-    return future;
+    return github.request(path, CommitComparison.class);
   }
 
   /**
@@ -425,9 +384,7 @@ public class RepositoryClient {
    */
   public CompletableFuture<Branch> getBranch(final String branch) {
     final String path = String.format(BRANCH_TEMPLATE, owner, repo, branch);
-    CompletableFuture<Branch> future = github.request(path, Branch.class);
-    tracer.span("Get branch", future);
-    return future;
+    return github.request(path, Branch.class);
   }
 
   /**
@@ -437,9 +394,7 @@ public class RepositoryClient {
    */
   public CompletableFuture<List<Branch>> listBranches() {
     final String path = String.format(LIST_BRANCHES_TEMPLATE, owner, repo);
-    CompletableFuture<List<Branch>> future = github.request(path, LIST_BRANCHES);
-    tracer.span("List branches", future);
-    return future;
+    return github.request(path, LIST_BRANCHES);
   }
 
   /**
@@ -449,9 +404,7 @@ public class RepositoryClient {
    */
   public CompletableFuture<Void> deleteComment(final int id) {
     final String path = String.format(COMMENT_TEMPLATE, owner, repo, id);
-    CompletableFuture<Void> future = github.delete(path).thenAccept(IGNORE_RESPONSE_CONSUMER);
-    tracer.span("Delete comment", future);
-    return future;
+    return github.delete(path).thenAccept(IGNORE_RESPONSE_CONSUMER);
   }
 
   /**
@@ -462,11 +415,9 @@ public class RepositoryClient {
    */
   public CompletableFuture<Void> editComment(final int id, final String body) {
     final String path = String.format(COMMENT_TEMPLATE, owner, repo, id);
-    CompletableFuture<Void> future = github
+    return github
         .patch(path, github.json().toJsonUnchecked(ImmutableMap.of("body", body)))
         .thenAccept(IGNORE_RESPONSE_CONSUMER);
-    tracer.span("Edit comment", future);
-    return future;
   }
 
   /**
@@ -476,9 +427,7 @@ public class RepositoryClient {
    */
   public CompletableFuture<Languages> getLanguages() {
     final String path = String.format(LANGUAGES_TEMPLATE, owner, repo);
-    CompletableFuture<Languages> future = github.request(path, Languages.class);
-    tracer.span("Get languages", future);
-    return future;
+    return github.request(path, Languages.class);
   }
 
   /**
@@ -490,9 +439,7 @@ public class RepositoryClient {
    * @return resulting merge commit, or empty if base already contains the head (nothing to merge)
    */
   public CompletableFuture<Optional<CommitItem>> merge(final String base, final String head) {
-    CompletableFuture<Optional<CommitItem>> future = merge(base, head, null);
-    tracer.span("Merge", future);
-    return future;
+    return merge(base, head, null);
   }
 
   /**
@@ -513,7 +460,7 @@ public class RepositoryClient {
             : ImmutableMap.of("base", base, "head", head, "commit_message", commitMessage);
     final String body = github.json().toJsonUnchecked(params);
 
-    CompletableFuture<Optional<CommitItem>> future = github
+    return github
         .post(path, body)
         .thenApply(
             response -> {
@@ -531,8 +478,6 @@ public class RepositoryClient {
                           GitHubClient.responseBodyUnchecked(response), CommitItem.class);
               return Optional.of(commitItem);
             });
-    tracer.span("Merge", future);
-    return future;
   }
 
   /**
@@ -548,7 +493,7 @@ public class RepositoryClient {
         (organization == null) ? ImmutableMap.of() : ImmutableMap.of("organization", organization);
     final String body = github.json().toJsonUnchecked(params);
 
-    CompletableFuture<Repository> future = github
+    return github
         .post(path, body)
         .thenApply(
             response -> {
@@ -559,8 +504,6 @@ public class RepositoryClient {
                           GitHubClient.responseBodyUnchecked(response), Repository.class);
               return repositoryItem;
             });
-    tracer.span("Create fork", future);
-    return future;
   }
 
   private String getContentPath(final String path, final String query) {

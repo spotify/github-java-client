@@ -31,10 +31,9 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mock;
 
 import com.google.common.collect.Lists;
@@ -59,14 +58,13 @@ public class IssueClientTest {
 
   private GitHubClient github;
   private IssueClient issueClient;
-  private NoopTracer tracer = mock(NoopTracer.class);
 
   @Before
   public void setUp() {
     github = mock(GitHubClient.class);
     when(github.json()).thenReturn(Json.create());
     when(github.urlFor("")).thenReturn("https://github.com/api/v3");
-    issueClient = new IssueClient(github, "someowner", "somerepo").withTracer(tracer);
+    issueClient = new IssueClient(github, "someowner", "somerepo");
   }
 
   @Test
@@ -143,7 +141,5 @@ public class IssueClientTest {
     final Comment comment = issueClient.createComment(10, "Me too").join();
 
     assertThat(comment.id(), is(114));
-    verify(tracer,times(1)).span(anyString(), any());
-
   }
 }
