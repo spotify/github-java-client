@@ -73,7 +73,7 @@ public class OpenCensusTracerTest {
         final Map<String, AttributeValue> attributes = inner.getAttributes().getAttributeMap();
         assertEquals(stringAttributeValue("github-api-client"), attributes.get("component"));
         assertEquals(stringAttributeValue("github"), attributes.get("peer.service"));
-        assertEquals(stringAttributeValue("path"), attributes.get("path"));
+        assertEquals(stringAttributeValue("path"), attributes.get("http.url"));
         assertEquals(stringAttributeValue("GET"), attributes.get("method"));
         assertEquals(Status.OK, inner.getStatus());
     }
@@ -99,7 +99,7 @@ public class OpenCensusTracerTest {
         final Map<String, AttributeValue> attributes = inner.getAttributes().getAttributeMap();
         assertEquals(stringAttributeValue("github-api-client"), attributes.get("component"));
         assertEquals(stringAttributeValue("github"), attributes.get("peer.service"));
-        assertEquals(stringAttributeValue("path"), attributes.get("path"));
+        assertEquals(stringAttributeValue("path"), attributes.get("http.url"));
         assertEquals(stringAttributeValue("POST"), attributes.get("method"));
         assertEquals(Status.UNKNOWN, inner.getStatus());
     }

@@ -24,7 +24,7 @@ public interface Span extends AutoCloseable {
 
     Span success();
 
-    Span failure();
+    Span failure(Throwable t);
 
     /** Close span. Must be called for any opened span. */
     @Override

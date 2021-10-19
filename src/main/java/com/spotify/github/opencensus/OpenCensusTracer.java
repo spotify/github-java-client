@@ -52,7 +52,7 @@ public class OpenCensusTracer implements Tracer {
 
         ocSpan.putAttribute("component", stringAttributeValue("github-api-client"));
         ocSpan.putAttribute("peer.service", stringAttributeValue("github"));
-        ocSpan.putAttribute("path", stringAttributeValue(path));
+        ocSpan.putAttribute("http.url", stringAttributeValue(path));
         ocSpan.putAttribute("method", stringAttributeValue(method));
         final Span span = new OpenCensusSpan(ocSpan);
 
@@ -61,7 +61,7 @@ public class OpenCensusTracer implements Tracer {
                     if (t == null) {
                         span.success();
                     } else {
-                        span.failure();
+                        span.failure(t);
                     }
                     span.close();
                 });

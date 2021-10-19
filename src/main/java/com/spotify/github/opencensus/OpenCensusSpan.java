@@ -21,10 +21,14 @@
 package com.spotify.github.opencensus;
 import static java.util.Objects.requireNonNull;
 import com.spotify.github.Span;
+import com.spotify.github.v3.exceptions.RequestNotOkException;
+import io.opencensus.trace.AttributeValue;
 import io.opencensus.trace.Status;
 
 class OpenCensusSpan implements Span {
 
+    public static final int NOT_FOUND = 404;
+    public static final int INTERNAL_SERVER_ERROR = 500;
     private final io.opencensus.trace.Span span;
 
     OpenCensusSpan(final io.opencensus.trace.Span span) {
@@ -38,7 +42,15 @@ class OpenCensusSpan implements Span {
     }
 
     @Override
-    public Span failure() {
+    public Span failure(final Throwable t) {
+        if (t instanceof RequestNotOkException) {
+            RequestNotOkException ex = (RequestNotOkException) t;
+            span.putAttribute("http.status_code", AttributeValue.longAttributeValue(ex.statusCode()));
+            span.putAttribute("message", AttributeValue.stringAttributeValue(ex.getMessage()));
+            if (ex.statusCode() - INTERNAL_SERVER_ERROR >= 0) {
+                span.putAttribute("error", AttributeValue.booleanAttributeValue(true));
+            }
+        }
         span.setStatus(Status.UNKNOWN);
         return this;
     }

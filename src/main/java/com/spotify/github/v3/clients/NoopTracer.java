@@ -35,7 +35,7 @@ public class NoopTracer implements Tracer {
                 }
 
                 @Override
-                public Span failure() {
+                public Span failure(final Throwable t) {
                     return this;
                 }
 
