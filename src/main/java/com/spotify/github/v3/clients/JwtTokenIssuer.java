@@ -30,18 +30,39 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Date;
+import java.util.function.Supplier;
 
 /** The helper Jwt token issuer. */
 public class JwtTokenIssuer {
 
   private static final SignatureAlgorithm SIGNATURE_ALGORITHM = SignatureAlgorithm.RS256;
   private static final long TOKEN_TTL = 600000;
-  private static final long TOKEN_ISSUED = 6000;
 
   private final PrivateKey signingKey;
+  private final Supplier<Date> issuedAt;
 
-  private JwtTokenIssuer(final PrivateKey signingKey) {
+  private JwtTokenIssuer(final PrivateKey signingKey, final Supplier<Date> issuedAt) {
     this.signingKey = signingKey;
+    this.issuedAt = issuedAt;
+  }
+
+  /**
+   * Instantiates a new Jwt token issuer.
+   *
+   * @param privateKey the private key to use
+   * @param issuedAt the way to determine when the jwt is assumed to be issued at. Used to fix drift
+   * @throws NoSuchAlgorithmException the no such algorithm exception
+   * @throws InvalidKeySpecException the invalid key spec exception
+   */
+  public static JwtTokenIssuer fromPrivateKey(final byte[] privateKey, final Supplier<Date> issuedAt)
+      throws NoSuchAlgorithmException, InvalidKeySpecException {
+
+    KeySpec keySpec = PKCS1PEMKey.loadKeySpec(privateKey)
+        .orElseGet(() -> new PKCS8EncodedKeySpec(privateKey));
+
+    KeyFactory kf = KeyFactory.getInstance("RSA");
+    PrivateKey signingKey = kf.generatePrivate(keySpec);
+    return new JwtTokenIssuer(signingKey, issuedAt);
   }
 
   /**
@@ -54,14 +75,9 @@ public class JwtTokenIssuer {
   public static JwtTokenIssuer fromPrivateKey(final byte[] privateKey)
       throws NoSuchAlgorithmException, InvalidKeySpecException {
 
-    KeySpec keySpec = PKCS1PEMKey.loadKeySpec(privateKey)
-        .orElseGet(() -> new PKCS8EncodedKeySpec(privateKey));
-
-    KeyFactory kf = KeyFactory.getInstance("RSA");
-    PrivateKey signingKey = kf.generatePrivate(keySpec);
-    return new JwtTokenIssuer(signingKey);
+    Supplier<Date> defaultIssuedAt = () -> new Date();
+    return fromPrivateKey(privateKey, defaultIssuedAt);
   }
-
   /**
    * Generates a JWT token for the given APP ID.
    *
@@ -75,7 +91,7 @@ public class JwtTokenIssuer {
         .setIssuer(String.valueOf(appId))
         .signWith(signingKey, SIGNATURE_ALGORITHM)
         .setExpiration(new Date(System.currentTimeMillis() + TOKEN_TTL))
-        .setIssuedAt(new Date(System.currentTimeMillis() - TOKEN_ISSUED))
+        .setIssuedAt(issuedAt.get())
         .compact();
   }
 }

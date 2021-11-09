@@ -26,6 +26,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import com.google.common.io.Resources;
 import java.net.URL;
+import java.util.Date;
+
 import org.junit.Test;
 
 public class JwtTokenIssuerTest {
@@ -49,7 +51,7 @@ public class JwtTokenIssuerTest {
   @Test
   public void loadsPEMFile() throws Exception {
     final byte[] key = Resources.toByteArray(PEM_KEY_RESOURCE);
-    final JwtTokenIssuer tokenIssuer = JwtTokenIssuer.fromPrivateKey(key);
+    final JwtTokenIssuer tokenIssuer = JwtTokenIssuer.fromPrivateKey(key, () -> new Date(System.currentTimeMillis() - 60000));
 
     final String token = tokenIssuer.getToken(42);
     assertThat(token, not(nullValue()));
