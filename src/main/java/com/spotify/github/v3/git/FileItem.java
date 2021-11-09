@@ -2,7 +2,7 @@
  * -\-\-
  * github-api
  * --
- * Copyright (C) 2016 - 2020 Spotify AB
+ * Copyright (C) 2016 - 2021 Spotify AB
  * --
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,33 +18,57 @@
  * -/-/-
  */
 
-package com.spotify.github.v3.repos;
+package com.spotify.github.v3.git;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.spotify.github.GithubStyle;
-import com.spotify.github.v3.git.ShaLink;
-import java.util.List;
-import java.util.Map;
-import javax.annotation.Nullable;
 import org.immutables.value.Value;
+import javax.annotation.Nullable;
+import java.net.URI;
 
-/** Single repository commit resource. */
 @Value.Immutable
 @GithubStyle
-@JsonSerialize(as = ImmutableCommit.class)
-@JsonDeserialize(as = ImmutableCommit.class)
-public interface Commit extends CommitItem {
+@JsonSerialize(as = ImmutableFileItem.class)
+@JsonDeserialize(as = ImmutableFileItem.class)
 
-  /** Commit statistics key, value map. E.g. additions: 104 deletions: 4 total: 108 */
-  @Nullable
-  Map<String, Integer> stats();
+public interface FileItem {
 
-  /** File objects included in the commit. */
-  @Nullable
-  List<File> files();
+  /** Commit sha value. */
+  String sha();
 
-  /** The SHA of the tree object this commit points to. */
+  /** Commit node_id. */
+  String filename();
+
+  /** Commit API URL. */
   @Nullable
-  ShaLink tree();
+  String status();
+
+  @Nullable
+  Integer additions();
+
+  /** Author commit user. */
+  @Nullable
+  Integer deletions();
+
+  @Nullable
+  Integer changes();
+
+  @Nullable
+  @JsonProperty("blob_url")
+  URI blobUrl();
+
+  @Nullable
+  @JsonProperty("raw_url")
+  URI rawUrl();
+
+  @Nullable
+  @JsonProperty("contents_url")
+  URI contentsUrl();
+
+  @Nullable
+  String patch();
+
 }
+

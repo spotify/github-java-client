@@ -27,7 +27,11 @@ import static java.lang.String.format;
 
 import com.google.common.collect.ImmutableMap;
 import com.spotify.github.v3.git.Reference;
+import com.spotify.github.v3.git.ShaLink;
 import com.spotify.github.v3.git.Tag;
+import com.spotify.github.v3.git.Tree;
+import com.spotify.github.v3.git.TreeItem;
+import com.spotify.github.v3.repos.Commit;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -42,6 +46,14 @@ public class GitDataClient {
   private static final String CREATE_REFERENCE_URI = "/repos/%s/%s/git/refs";
   private static final String CREATE_REFERENCE_TAG = "/repos/%s/%s/git/tags";
   private static final String LIST_MATCHING_REFERENCES_URI = "/repos/%s/%s/git/matching-refs/%s";
+
+  private static final String CREATE_COMMIT_URI_TEMPLATE = "/repos/%s/%s/git/commits";
+
+  private static final String TREE_SHA_URI_TEMPLATE = "/repos/%s/%s/git/trees/%s";
+  private static final String TREE_URI_TEMPLATE = "/repos/%s/%s/git/trees";
+
+  private static final String BLOB_URI_TEMPLATE = "/repos/%s/%s/git/blobs";
+
   private final GitHubClient github;
   private final String owner;
   private final String repo;
@@ -62,8 +74,7 @@ public class GitDataClient {
    * @param ref search parameters
    */
   public CompletableFuture<Void> deleteReference(final String ref) {
-    final String path =
-        format(REFERENCE_URI, owner, repo, ref.replaceAll("refs/", ""));
+    final String path = format(REFERENCE_URI, owner, repo, ref.replaceAll("refs/", ""));
     return github.delete(path).thenAccept(IGNORE_RESPONSE_CONSUMER);
   }
 
@@ -136,15 +147,11 @@ public class GitDataClient {
     return github.request(path, LIST_REFERENCES);
   }
 
-  /**
-   * List references. (Replaced by listMatchingReferences for github enterprise version > 2.18)
-   *
-   */
+  /** List references. (Replaced by listMatchingReferences for github enterprise version > 2.18) */
   @Deprecated
   public CompletableFuture<List<Reference>> listReferences() {
     return listReferences("");
   }
-
 
   /**
    * Create a git reference.
@@ -154,10 +161,10 @@ public class GitDataClient {
    */
   public CompletableFuture<Reference> createReference(final String ref, final String sha) {
     final String path = format(CREATE_REFERENCE_URI, owner, repo);
-    final ImmutableMap<String, String> body = of(
-        "ref", ref,
-        "sha", sha
-    );
+    final ImmutableMap<String, String> body =
+        of(
+            "ref", ref,
+            "sha", sha);
     return github.post(path, github.json().toJsonUnchecked(body), Reference.class);
   }
 
@@ -212,4 +219,74 @@ public class GitDataClient {
         .thenCompose(
             reference -> github.post(tagPath, github.json().toJsonUnchecked(body), Tag.class));
   }
+
+  /**
+   * Create a commit which references a tree
+   *
+   * @param message commit message
+   * @param parents list of parent sha values, usually just one sha
+   * @param treeSha sha value of the tree
+   */
+  public CompletableFuture<Commit> createCommit(
+      final String message, final List<String> parents, final String treeSha) {
+    final String path = String.format(CREATE_COMMIT_URI_TEMPLATE, owner, repo);
+    final String requestBody =
+        github
+            .json()
+            .toJsonUnchecked(
+                ImmutableMap.of("message", message, "parents", parents, "tree", treeSha));
+    return github.post(path, requestBody, Commit.class);
+  }
+
+  /**
+   * Get a repository tree.
+   *
+   * @param sha commit sha
+   * @return tree
+   */
+  public CompletableFuture<Tree> getTree(final String sha) {
+    final String path = String.format(TREE_SHA_URI_TEMPLATE, owner, repo, sha);
+    return github.request(path, Tree.class);
+  }
+
+  /**
+   * Get a repository tree recursively.
+   *
+   * @param sha commit sha
+   * @return tree
+   */
+  public CompletableFuture<Tree> getRecursiveTree(final String sha) {
+    final String path = String.format(TREE_SHA_URI_TEMPLATE, owner, repo, sha);
+    return github.request(path + "?recursive=true", Tree.class);
+  }
+
+  /**
+   * Set a repository tree.
+   *
+   * @param tree     list of tree items
+   * @param baseTreeSha sha of existing tree used as base for new tree
+   * @return tree
+   */
+  public CompletableFuture<Tree> createTree(final List<TreeItem> tree, final String baseTreeSha) {
+    final String path = String.format(TREE_URI_TEMPLATE, owner, repo);
+    final String requestBody = github.json()
+        .toJsonUnchecked(ImmutableMap.of("base_tree", baseTreeSha, "tree", tree));
+    return github.post(path, requestBody, Tree.class);
+  }
+
+
+  /**
+   * Post new content to the server.
+   *
+   * @param content the content to be posted
+   */
+  public CompletableFuture<ShaLink> createBlob(final String content) {
+    final String path = String.format(BLOB_URI_TEMPLATE, owner, repo);
+    final String encoding = "utf-8|base64";
+    final String requestBody = github.json()
+        .toJsonUnchecked(ImmutableMap.of("content", content, "encoding", encoding));
+    return github.post(path, requestBody, ShaLink.class);
+  }
+
+
 }

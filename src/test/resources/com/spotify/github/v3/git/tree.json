@@ -1,0 +1,38 @@
+{
+  "sha": "9c27bd92524e2b57b569d4c86695b3993d9b8f9f",
+  "url": "https://ghe.spotify.net/api/v3/repos/ugc-sharing/test-repo/git/trees/9c27bd92524e2b57b569d4c86695b3993d9b8f9f",
+  "tree": [
+    {
+      "path": "README.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "6e091fd045dc88806e5c70357326af7fa0e1ccde",
+      "size": 12,
+      "url": "https://ghe.spotify.net/api/v3/repos/ugc-sharing/test-repo/git/blobs/6e091fd045dc88806e5c70357326af7fa0e1ccde"
+    },
+    {
+      "path": "UserGeneratedContentUtils.java",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "77b3e188803e717a0a5ce53b818b0ed6fb6b8a23",
+      "size": 5340,
+      "url": "https://ghe.spotify.net/api/v3/repos/ugc-sharing/test-repo/git/blobs/77b3e188803e717a0a5ce53b818b0ed6fb6b8a23"
+    },
+    {
+      "path": "readme.md",
+      "mode": "100644",
+      "type": "blob",
+      "sha": "f09eac953086b8760f600822f057141d7b311165",
+      "size": 29,
+      "url": "https://ghe.spotify.net/api/v3/repos/ugc-sharing/test-repo/git/blobs/f09eac953086b8760f600822f057141d7b311165"
+    },
+    {
+      "path": "src",
+      "mode": "040000",
+      "type": "tree",
+      "sha": "26cd96e1394d6c4982d8cec879ad4fefa423bec8",
+      "url": "https://ghe.spotify.net/api/v3/repos/ugc-sharing/test-repo/git/trees/26cd96e1394d6c4982d8cec879ad4fefa423bec8"
+    }
+  ],
+  "truncated": false
+}
