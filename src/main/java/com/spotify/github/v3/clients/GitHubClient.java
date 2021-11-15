@@ -26,6 +26,9 @@ import static okhttp3.MediaType.parse;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.spotify.github.Tracer;
 import com.spotify.github.jackson.Json;
+import com.spotify.github.semanticmetrics.Metrics;
+import com.spotify.github.semanticmetrics.NoopMetrics;
+import com.spotify.github.semanticmetrics.SemanticGithubMetrics;
 import com.spotify.github.v3.checks.AccessToken;
 import com.spotify.github.v3.comment.Comment;
 import com.spotify.github.v3.exceptions.ReadOnlyRepositoryException;
@@ -67,6 +70,7 @@ import org.slf4j.LoggerFactory;
 public class GitHubClient {
 
   private Tracer tracer = NoopTracer.INSTANCE;
+  private Metrics metrics = NoopMetrics.INSTANCE;
 
   static final Consumer<Response> IGNORE_RESPONSE_CONSUMER = (response) -> {
     if (response.body() != null) {
@@ -305,6 +309,11 @@ public class GitHubClient {
 
   public GitHubClient withTracer(final Tracer tracer) {
     this.tracer = tracer;
+    return this;
+  }
+
+  public GitHubClient withMetrics(final Metrics metrics) {
+    this.metrics = metrics;
     return this;
   }
 
@@ -732,6 +741,7 @@ public class GitHubClient {
                     });
           }
         });
+    metrics.recordMetric(request.url().toString(), request.method(), future);
     tracer.span(request.url().toString(), request.method(), future);
     return future;
   }
