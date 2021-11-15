@@ -115,7 +115,7 @@ public class GitHubClientTest {
             ))
         .message("")
         .protocol(Protocol.HTTP_1_1)
-        .request(new Request.Builder().url("htztp://localhost/").build())
+        .request(new Request.Builder().url("http://localhost/").build())
         .build();
 
     when(client.newCall(any())).thenReturn(call);
