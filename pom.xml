@@ -177,6 +177,11 @@
             <version>${opencensus.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.spotify.metrics</groupId>
+            <artifactId>semantic-metrics-core</artifactId>
+            <version>1.0.2</version>
+        </dependency>
+        <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-impl</artifactId>
             <version>0.10.5</version>
