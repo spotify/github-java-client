@@ -51,7 +51,7 @@ public class JwtTokenIssuerTest {
   @Test
   public void loadsPEMFile() throws Exception {
     final byte[] key = Resources.toByteArray(PEM_KEY_RESOURCE);
-    final JwtTokenIssuer tokenIssuer = JwtTokenIssuer.fromPrivateKey(key, () -> new Date(System.currentTimeMillis() - 60000));
+    final JwtTokenIssuer tokenIssuer = JwtTokenIssuer.fromPrivateKey(key, () -> new Date());
 
     final String token = tokenIssuer.getToken(42);
     assertThat(token, not(nullValue()));

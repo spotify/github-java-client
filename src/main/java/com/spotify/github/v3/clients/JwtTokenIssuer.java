@@ -36,7 +36,8 @@ import java.util.function.Supplier;
 public class JwtTokenIssuer {
 
   private static final SignatureAlgorithm SIGNATURE_ALGORITHM = SignatureAlgorithm.RS256;
-  private static final long TOKEN_TTL = 600000;
+  private static final long TOKEN_TTL = 600_000;
+  private static final long TOKEN_ISSUED = 60_000;
 
   private final PrivateKey signingKey;
   private final Supplier<Date> issuedAt;
@@ -75,7 +76,7 @@ public class JwtTokenIssuer {
   public static JwtTokenIssuer fromPrivateKey(final byte[] privateKey)
       throws NoSuchAlgorithmException, InvalidKeySpecException {
 
-    Supplier<Date> defaultIssuedAt = () -> new Date();
+    Supplier<Date> defaultIssuedAt = () -> new Date(System.currentTimeMillis() - TOKEN_ISSUED);
     return fromPrivateKey(privateKey, defaultIssuedAt);
   }
   /**
