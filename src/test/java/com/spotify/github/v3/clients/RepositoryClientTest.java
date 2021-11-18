@@ -249,7 +249,52 @@ public class RepositoryClientTest {
     when(github.request("/repos/someowner/somerepo/branches/somebranch", Branch.class))
         .thenReturn(fixture);
     final Branch branch = repoClient.getBranch("somebranch").get();
+    assertThat(branch.isProtected().orElse(false), is(true));
     assertThat(branch.commit().sha(), is("6dcb09b5b57875f334f61aebed695e2e4193db5e"));
+    assertThat(
+        branch.commit().url().toString(),
+        is("https://api.github.com/repos/octocat/Hello-World/commits/c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc"));
+  }
+
+  @Test
+  public void getBranchWithoutProtection() throws Exception {
+    // Make sure the custom deserialiser correctly handles the optional protected fields
+    final CompletableFuture<Branch> fixture =
+        completedFuture(json.fromJson(getFixture("branch-not-protected.json"), Branch.class));
+    when(github.request("/repos/someowner/somerepo/branches/somebranch", Branch.class))
+        .thenReturn(fixture);
+    final Branch branch = repoClient.getBranch("somebranch").get();
+    assertThat(branch.isProtected().orElse(false), is(false));
+    assertThat(branch.commit().sha(), is("6dcb09b5b57875f334f61aebed695e2e4193db5e"));
+    assertThat(
+        branch.commit().url().toString(),
+        is("https://api.github.com/repos/octocat/Hello-World/commits/c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc"));
+  }
+
+  @Test
+  public void getBranchWithCharactersIncorrectlyUnescapedByTheGithubApi() throws Exception {
+    final CompletableFuture<Branch> fixture =
+        completedFuture(json.fromJson(getFixture("branch-escape-chars.json"), Branch.class));
+    when(github.request("/repos/someowner/somerepo/branches/unescaped-percent-sign-%", Branch.class))
+        .thenReturn(fixture);
+    final Branch branch = repoClient.getBranch("unescaped-percent-sign-%").get();
+    assertThat(branch.commit().sha(), is("6dcb09b5b57875f334f61aebed695e2e4193db5e"));
+    assertThat(
+        branch.protectionUrl().get().toString(),
+        is("https://api.github.com/repos/octocat/Hello-World/branches/unescaped-percent-sign-%25/protection"));
+  }
+
+  @Test
+  public void getBranchWithCharactersIncorrectlyUnescapedByTheGithubApi_uriVariationTwo() throws Exception {
+    final CompletableFuture<Branch> fixture =
+        completedFuture(json.fromJson(getFixture("branch-escape-chars-url-variation-two.json"), Branch.class));
+    when(github.request("/repos/someowner/somerepo/branches/unescaped-percent-sign-%", Branch.class))
+        .thenReturn(fixture);
+    final Branch branch = repoClient.getBranch("unescaped-percent-sign-%").get();
+    assertThat(branch.commit().sha(), is("6dcb09b5b57875f334f61aebed695e2e4193db5e"));
+    assertThat(
+        branch.protectionUrl().get().toString(),
+        is("https://api.github.com/api/v3/repos/octocat/Hello-World/branches/branch-name-with-slashes/unescaped-percent-sign-%25/protection"));
   }
 
   @Test
