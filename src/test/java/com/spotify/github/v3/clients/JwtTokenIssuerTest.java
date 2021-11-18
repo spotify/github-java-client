@@ -23,12 +23,19 @@ package com.spotify.github.v3.clients;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.google.common.io.Resources;
 import java.net.URL;
+import java.util.Base64;
 import java.util.Date;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.io.Resources;
+
 import org.junit.Test;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.impl.DefaultClaims;
 
 public class JwtTokenIssuerTest {
 
@@ -45,7 +52,11 @@ public class JwtTokenIssuerTest {
     final JwtTokenIssuer tokenIssuer = JwtTokenIssuer.fromPrivateKey(key);
 
     final String token = tokenIssuer.getToken(42);
+
     assertThat(token, not(nullValue()));
+
+    // in the default usecase the issued at should be 10 minutes (expected length of jwt) + 1 minute (prevent drift) before expires
+    assertEquals(tokenDuration(token), 10*60*1000+60*1000);
   }
 
   @Test
@@ -55,6 +66,24 @@ public class JwtTokenIssuerTest {
 
     final String token = tokenIssuer.getToken(42);
     assertThat(token, not(nullValue()));
+
+    // in this usecase the issued at should be 10 minutes (expected length of jwt) before expires
+    assertEquals(tokenDuration(token), 10*60*1000);
+  }
+
+  private long tokenDuration(String token) throws Exception {
+    // 0 - headers
+    // 1 - claims/data
+    // 2 - signature
+    String[] chunks = token.split("\\.");
+    String data = new String(Base64.getDecoder().decode(chunks[1]));
+
+    Claims claims = new ObjectMapper().readValue(data, DefaultClaims.class);
+
+    Date issuedAt = claims.getIssuedAt();
+    Date expires = claims.getExpiration();
+
+    return expires.getTime() - issuedAt.getTime();
   }
 
 }
