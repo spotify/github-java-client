@@ -45,6 +45,8 @@ public class JwtTokenIssuerTest {
   // generated using this command: "openssl genrsa -out fake-github-app-key.pem 2048"
   private static final URL PEM_KEY_RESOURCE =
       Resources.getResource("com/spotify/github/v3/fake-github-app-key.pem");
+      
+  private static final long TEN_MINUTES_MS = 10*60*1_000;
 
   @Test
   public void loadsDERFileWithPKCS8Key() throws Exception {
@@ -55,8 +57,8 @@ public class JwtTokenIssuerTest {
 
     assertThat(token, not(nullValue()));
 
-    // in the default usecase the issued at should be 10 minutes (expected length of jwt) + 1 minute (prevent drift) before expires
-    assertEquals(tokenDuration(token), 10*60*1000+60*1000);
+    // in this usecase the issued at should be 10 minutes (expected length of jwt) before expires
+    assertEquals(tokenDuration(token), TEN_MINUTES_MS);
   }
 
   @Test
@@ -68,7 +70,7 @@ public class JwtTokenIssuerTest {
     assertThat(token, not(nullValue()));
 
     // in this usecase the issued at should be 10 minutes (expected length of jwt) before expires
-    assertEquals(tokenDuration(token), 10*60*1000);
+    assertEquals(tokenDuration(token), TEN_MINUTES_MS);
   }
 
   private long tokenDuration(String token) throws Exception {

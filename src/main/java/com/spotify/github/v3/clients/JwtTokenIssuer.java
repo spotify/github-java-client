@@ -36,8 +36,8 @@ import java.util.function.Supplier;
 public class JwtTokenIssuer {
 
   private static final SignatureAlgorithm SIGNATURE_ALGORITHM = SignatureAlgorithm.RS256;
-  private static final long TOKEN_TTL = 600_000;
-  private static final long TOKEN_ISSUED = 60_000;
+  private static final long TOKEN_TTL = 600_000L;
+  private static final long TOKEN_ISSUED = 60_000L;
 
   private final PrivateKey signingKey;
   private final Supplier<Date> issuedAt;
@@ -86,13 +86,15 @@ public class JwtTokenIssuer {
    * @return the token content
    */
   public String getToken(final Integer appId) {
+    
+    Date now = issuedAt.get();
     return Jwts.builder()
         .setId("github-auth")
         .setSubject("authenticating via private key")
         .setIssuer(String.valueOf(appId))
         .signWith(signingKey, SIGNATURE_ALGORITHM)
-        .setExpiration(new Date(System.currentTimeMillis() + TOKEN_TTL))
-        .setIssuedAt(issuedAt.get())
+        .setExpiration(new Date(now.getTime() + TOKEN_TTL))
+        .setIssuedAt(now)
         .compact();
   }
 }
