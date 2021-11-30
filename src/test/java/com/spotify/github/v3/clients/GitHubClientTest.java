@@ -131,6 +131,7 @@ public class GitHubClientTest {
       RequestNotOkException e1 = (RequestNotOkException) e.getCause();
       assertThat(e1.statusCode(), is(409));
       assertThat(e1.getMessage(), containsString("Merge Conflict"));
+      assertThat(e1.getRawMessage(), containsString("Merge Conflict"));
     }
   }
 }

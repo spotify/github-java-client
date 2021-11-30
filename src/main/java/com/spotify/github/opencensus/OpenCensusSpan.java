@@ -46,7 +46,7 @@ class OpenCensusSpan implements Span {
         if (t instanceof RequestNotOkException) {
             RequestNotOkException ex = (RequestNotOkException) t;
             span.putAttribute("http.status_code", AttributeValue.longAttributeValue(ex.statusCode()));
-            span.putAttribute("message", AttributeValue.stringAttributeValue(ex.getMessage()));
+            span.putAttribute("message", AttributeValue.stringAttributeValue(ex.getRawMessage()));
             if (ex.statusCode() - INTERNAL_SERVER_ERROR >= 0) {
                 span.putAttribute("error", AttributeValue.booleanAttributeValue(true));
             }
