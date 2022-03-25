@@ -106,6 +106,7 @@ public class RepositoryClientTest {
     assertThat(repository.name(), is("Hello-World"));
     assertThat(repository.fullName(), is(repository.owner().login() + "/Hello-World"));
     assertThat(repository.isPrivate(), is(false));
+    assertThat(repository.isArchived(), is(false));
     assertThat(repository.fork(), is(false));
   }
 
