@@ -58,6 +58,11 @@ public interface RepositoryBase extends UpdateTracking {
   @JsonProperty("private")
   Boolean isPrivate();
 
+  /** Is it archived */
+  @Nullable
+  @JsonProperty("archived")
+  Boolean isArchived();
+
   /** Is it public */
   @JsonProperty("public")
   Optional<Boolean> isPublic();
