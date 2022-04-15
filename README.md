@@ -86,6 +86,8 @@ This project uses Maven. To run the tests locally, just run:
 mvn clean verify
 ```
 
+If you are a maintainer, you can release a new version by running this command locally: `mvn release:prepare`
+
 ## Notes about maturity
 
 This module was created after existing libraries were evaluated and dismissed, and we found that we were writing similar
