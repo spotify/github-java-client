@@ -251,6 +251,7 @@ public class RepositoryClientTest {
         .thenReturn(fixture);
     final Branch branch = repoClient.getBranch("somebranch").get();
     assertThat(branch.isProtected().orElse(false), is(true));
+    assertThat(branch.protectionUrl().get().toString(), is("https://api.github.com/repos/octocat/Hello-World/branches/master/protection"));
     assertThat(branch.commit().sha(), is("6dcb09b5b57875f334f61aebed695e2e4193db5e"));
     assertThat(
         branch.commit().url().toString(),
@@ -258,14 +259,26 @@ public class RepositoryClientTest {
   }
 
   @Test
-  public void getBranchWithoutProtection() throws Exception {
-    // Make sure the custom deserialiser correctly handles the optional protected fields
+  public void getBranchWithNoProtection() throws Exception {
     final CompletableFuture<Branch> fixture =
         completedFuture(json.fromJson(getFixture("branch-not-protected.json"), Branch.class));
     when(github.request("/repos/someowner/somerepo/branches/somebranch", Branch.class))
         .thenReturn(fixture);
     final Branch branch = repoClient.getBranch("somebranch").get();
     assertThat(branch.isProtected().orElse(false), is(false));
+    assertTrue(branch.protectionUrl().isEmpty());
+    assertThat(branch.commit().sha(), is("6dcb09b5b57875f334f61aebed695e2e4193db5e"));
+  }
+
+  @Test
+  public void getBranchWithoutProtectionFields() throws Exception {
+    final CompletableFuture<Branch> fixture =
+        completedFuture(json.fromJson(getFixture("branch-no-protection-fields.json"), Branch.class));
+    when(github.request("/repos/someowner/somerepo/branches/somebranch", Branch.class))
+        .thenReturn(fixture);
+    final Branch branch = repoClient.getBranch("somebranch").get();
+    assertThat(branch.isProtected().orElse(false), is(false));
+    assertTrue(branch.protectionUrl().isEmpty());
     assertThat(branch.commit().sha(), is("6dcb09b5b57875f334f61aebed695e2e4193db5e"));
     assertThat(
         branch.commit().url().toString(),

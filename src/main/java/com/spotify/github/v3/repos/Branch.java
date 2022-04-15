@@ -34,7 +34,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @GithubStyle
 @JsonSerialize(as = ImmutableBranch.class)
-@JsonDeserialize(as = ImmutableBranch.class, using = BranchDeserializer.class)
+@JsonDeserialize(as = ImmutableBranch.class)
 public interface Branch {
 
   /** Branch name */
@@ -50,6 +50,7 @@ public interface Branch {
   Optional<Boolean> isProtected();
 
   /** Branch protection API URL */
+  @JsonDeserialize(using = BranchProtectionUrlDeserializer.class)
   Optional<URI> protectionUrl();
 }
 
