@@ -50,5 +50,8 @@ public class RepositoryTest {
     assertThat(repository.fullName(), is(repository.owner().login() + "/Hello-World"));
     assertThat(repository.isPrivate(), is(false));
     assertThat(repository.isArchived(), is(false));
+    assertThat(repository.allowMergeCommit(), is(false));
+    assertThat(repository.allowRebaseMerge(), is(true));
+    assertThat(repository.allowSquashMerge(), is(true));
   }
 }

@@ -79,6 +79,18 @@ public interface RepositoryBase extends UpdateTracking {
   @Nullable
   URI htmlUrl();
 
+  /** Allow squash merges */
+  @Nullable
+  Boolean allowSquashMerge();
+
+  /** Allow merge commits */
+  @Nullable
+  Boolean allowMergeCommit();
+
+  /** Allow rebase merges */
+  @Nullable
+  Boolean allowRebaseMerge();
+
   /** Archive URL template */
   @Nullable
   String archiveUrl();
