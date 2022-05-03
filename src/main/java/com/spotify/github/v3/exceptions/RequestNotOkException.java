@@ -39,6 +39,7 @@ public class RequestNotOkException extends GithubException {
 
   private final int statusCode;
   private final String path;
+  private final String msg;
 
   private static String decoratedMessage(final String path, final int statusCode, final String msg) {
     return String.format("%s %d: %s", path, statusCode, msg);
@@ -55,6 +56,7 @@ public class RequestNotOkException extends GithubException {
     super(decoratedMessage(path, statusCode, msg));
     this.statusCode = statusCode;
     this.path = path;
+    this.msg = msg;
   }
 
   /**
@@ -70,6 +72,16 @@ public class RequestNotOkException extends GithubException {
     super(decoratedMessage(path, statusCode, msg), cause);
     this.statusCode = statusCode;
     this.path = path;
+    this.msg = msg;
+  }
+
+  /**
+   * Get the raw message from github
+   *
+   * @return msg
+   */
+  public String getRawMessage() {
+    return msg;
   }
 
   /**
