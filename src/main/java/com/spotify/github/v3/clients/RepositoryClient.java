@@ -26,6 +26,7 @@ import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERE
 import static com.spotify.github.v3.clients.GitHubClient.LIST_FOLDERCONTENT_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_REPOSITORY;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_STATUS_TYPE_REFERENCE;
+import static com.spotify.github.v3.clients.GitHubClient.responseBodyUnchecked;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -43,6 +44,7 @@ import com.spotify.github.v3.repos.Content;
 import com.spotify.github.v3.repos.FolderContent;
 import com.spotify.github.v3.repos.Languages;
 import com.spotify.github.v3.repos.Repository;
+import com.spotify.github.v3.repos.RepositoryInvitation;
 import com.spotify.github.v3.repos.Status;
 import com.spotify.github.v3.repos.requests.AuthenticatedUserRepositoriesFilter;
 import com.spotify.github.v3.repos.requests.RepositoryCreateStatus;
@@ -81,7 +83,7 @@ public class RepositoryClient {
   private static final String FORK_TEMPLATE = "/repos/%s/%s/forks";
   private static final String LIST_REPOSITORY_TEMPLATE = "/orgs/%s/repos";
   private static final String LIST_REPOSITORIES_FOR_AUTHENTICATED_USER = "/user/repos";
-  private static final String IS_USER_COLLABORATOR_OF_REPO = "/repos/%s/%s/collaborators/%s";
+  private static final String REPOSITORY_COLLABORATOR = "/repos/%s/%s/collaborators/%s";
   private final String owner;
   private final String repo;
   private final GitHubClient github;
@@ -177,8 +179,18 @@ public class RepositoryClient {
    * @return boolean indicating if user is collaborator
    */
   public CompletableFuture<Boolean> isCollaborator(final String user) {
-    final String path = String.format(IS_USER_COLLABORATOR_OF_REPO, owner, repo, user);
+    final String path = String.format(REPOSITORY_COLLABORATOR, owner, repo, user);
     return github.request(path).thenApply(response -> response.code() == NO_CONTENT);
+  }
+
+  public CompletableFuture<RepositoryInvitation> addCollaborator(final String user) {
+    final String path = String.format(REPOSITORY_COLLABORATOR, owner, repo, user);
+    return github.put(path, "", RepositoryInvitation.class);
+  }
+
+  public CompletableFuture<Void> removeCollaborator(final String user) {
+    final String path = String.format(REPOSITORY_COLLABORATOR, owner, repo, user);
+    return github.delete(path).thenAccept(IGNORE_RESPONSE_CONSUMER);
   }
 
   /**
@@ -475,7 +487,7 @@ public class RepositoryClient {
                   github
                       .json()
                       .fromJsonUnchecked(
-                          GitHubClient.responseBodyUnchecked(response), CommitItem.class);
+                          responseBodyUnchecked(response), CommitItem.class);
               return Optional.of(commitItem);
             });
   }
@@ -501,7 +513,7 @@ public class RepositoryClient {
                   github
                       .json()
                       .fromJsonUnchecked(
-                          GitHubClient.responseBodyUnchecked(response), Repository.class);
+                          responseBodyUnchecked(response), Repository.class);
               return repositoryItem;
             });
   }

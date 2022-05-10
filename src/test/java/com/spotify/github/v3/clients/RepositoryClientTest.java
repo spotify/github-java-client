@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -55,6 +55,7 @@ import com.spotify.github.v3.repos.CommitStatus;
 import com.spotify.github.v3.repos.Content;
 import com.spotify.github.v3.repos.FolderContent;
 import com.spotify.github.v3.repos.Repository;
+import com.spotify.github.v3.repos.RepositoryInvitation;
 import com.spotify.github.v3.repos.RepositoryTest;
 import com.spotify.github.v3.repos.Status;
 import com.spotify.github.v3.repos.requests.ImmutableAuthenticatedUserRepositoriesFilter;
@@ -154,6 +155,23 @@ public class RepositoryClientTest {
     when(github.request("/repos/someowner/somerepo/collaborators/user")).thenReturn(completedFuture(response));
     boolean isCollaborator = repoClient.isCollaborator("user").get();
     assertFalse(isCollaborator);
+  }
+
+  @Test
+  public void addCollaborator() throws Exception {
+    final CompletableFuture<RepositoryInvitation> fixture =
+        completedFuture(json.fromJson(getFixture("repository_invitation.json"), RepositoryInvitation.class));
+    when(github.put("/repos/someowner/somerepo/collaborators/user", "", RepositoryInvitation.class)).thenReturn(fixture);
+
+    final RepositoryInvitation repoInvite = repoClient.addCollaborator("user").get();
+
+    assertThat(repoInvite.id(), is(1));
+    assertThat(repoInvite.nodeId(), is("MDEwOlJlcG9zaXRvcnkxMjk2MjY5"));
+    assertThat(repoInvite.repository().id(), is(1296269));
+    assertUser(repoInvite.repository().owner());
+    assertUser(repoInvite.invitee());
+    assertUser(repoInvite.inviter());
+    assertThat(repoInvite.permissions(), is("write"));
   }
 
   @Test
