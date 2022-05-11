@@ -46,7 +46,7 @@ class OpenCensusSpanTest {
     @Test
     public void fail() {
         final Span span = new OpenCensusSpan(wrapped);
-        span.failure(new RequestNotOkException("path", 404, "Not found"));
+        span.failure(new RequestNotOkException("method", "path", 404, "Not found"));
         span.close();
 
         verify(wrapped).setStatus(Status.UNKNOWN);
@@ -57,7 +57,7 @@ class OpenCensusSpanTest {
     @Test
     public void failOnServerError() {
         final Span span = new OpenCensusSpan(wrapped);
-        span.failure(new RequestNotOkException("path", 500, "Internal Server Error"));
+        span.failure(new RequestNotOkException("method", "path", 500, "Internal Server Error"));
         span.close();
 
         verify(wrapped).setStatus(Status.UNKNOWN);

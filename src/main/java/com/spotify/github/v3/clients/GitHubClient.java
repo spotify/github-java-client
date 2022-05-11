@@ -741,10 +741,10 @@ public class GitHubClient {
     String bodyString = res.body() != null ? res.body().string() : "";
     if (res.code() == FORBIDDEN) {
       if (bodyString.contains("Repository was archived so is read-only")) {
-        return new ReadOnlyRepositoryException(request.url().encodedPath(), res.code(), bodyString);
+        return new ReadOnlyRepositoryException(request.method(), request.url().encodedPath(), res.code(), bodyString);
       }
     }
-    return new RequestNotOkException(request.url().encodedPath(), res.code(), bodyString);
+    return new RequestNotOkException(request.method(), request.url().encodedPath(), res.code(), bodyString);
   }
 
   CompletableFuture<Response> processPossibleRedirects(
