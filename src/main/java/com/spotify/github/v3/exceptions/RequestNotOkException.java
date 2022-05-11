@@ -60,22 +60,6 @@ public class RequestNotOkException extends GithubException {
   }
 
   /**
-   * Response to request came back with non-2xx status code
-   *
-   * @param path URI path
-   * @param statusCode status of repsonse
-   * @param msg response body
-   * @param cause exception cause
-   */
-  public RequestNotOkException(
-      final String path, final int statusCode, final String msg, final Throwable cause) {
-    super(decoratedMessage(path, statusCode, msg), cause);
-    this.statusCode = statusCode;
-    this.path = path;
-    this.msg = msg;
-  }
-
-  /**
    * Get the raw message from github
    *
    * @return msg

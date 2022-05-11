@@ -32,17 +32,4 @@ public class ReadOnlyRepositoryException extends RequestNotOkException {
   public ReadOnlyRepositoryException(final String path, final int statusCode, final String msg) {
     super(path, statusCode, msg);
   }
-
-  /**
-   * Instantiates a new Read only repository exception.
-   *
-   * @param path the path
-   * @param statusCode the status code
-   * @param msg the msg
-   * @param cause the cause
-   */
-  public ReadOnlyRepositoryException(
-      final String path, final int statusCode, final String msg, final Throwable cause) {
-    super(path, statusCode, msg, cause);
-  }
 }

@@ -205,8 +205,7 @@ public class RepositoryClient {
                   return null;
                 }
 
-                throw new RequestNotOkException(
-                    e1.path(), e1.statusCode(), "Failed creating a webhook: " + request, e);
+                throw e1;
               }
 
               throw new CompletionException(e);
