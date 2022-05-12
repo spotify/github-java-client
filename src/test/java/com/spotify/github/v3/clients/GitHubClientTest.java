@@ -130,6 +130,10 @@ public class GitHubClientTest {
       assertThat(e.getCause() instanceof RequestNotOkException, is(true));
       RequestNotOkException e1 = (RequestNotOkException) e.getCause();
       assertThat(e1.statusCode(), is(409));
+      assertThat(e1.method(), is("POST"));
+      assertThat(e1.path(), is("/repos/testorg/testrepo/merges"));
+      assertThat(e1.getMessage(), containsString("POST"));
+      assertThat(e1.getMessage(), containsString("/repos/testorg/testrepo/merges"));
       assertThat(e1.getMessage(), containsString("Merge Conflict"));
       assertThat(e1.getRawMessage(), containsString("Merge Conflict"));
     }
