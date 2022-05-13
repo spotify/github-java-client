@@ -24,6 +24,7 @@ import static com.spotify.github.v3.clients.GitHubClient.IGNORE_RESPONSE_CONSUME
 import static com.spotify.github.v3.clients.GitHubClient.LIST_BRANCHES;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_FOLDERCONTENT_TYPE_REFERENCE;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_PR_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_REPOSITORY;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_STATUS_TYPE_REFERENCE;
 
@@ -34,6 +35,7 @@ import com.spotify.github.v3.comment.Comment;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.git.Tree;
 import com.spotify.github.v3.hooks.requests.WebhookCreate;
+import com.spotify.github.v3.prs.PullRequestItem;
 import com.spotify.github.v3.repos.Branch;
 import com.spotify.github.v3.repos.Commit;
 import com.spotify.github.v3.repos.CommitComparison;
@@ -49,9 +51,11 @@ import com.spotify.github.v3.repos.requests.RepositoryCreateStatus;
 import java.lang.invoke.MethodHandles;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import javax.ws.rs.core.HttpHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,6 +73,7 @@ public class RepositoryClient {
   public static final String STATUS_URI_TEMPLATE = "/repos/%s/%s/statuses/%s";
   private static final String COMMITS_URI_TEMPLATE = "/repos/%s/%s/commits";
   private static final String COMMIT_SHA_URI_TEMPLATE = "/repos/%s/%s/commits/%s";
+  private static final String COMMIT_PULL_REQUESTS_SHA_URI_TEMPLATE = "/repos/%s/%s/commits/%s/pulls";
   private static final String COMMIT_STATUS_URI_TEMPLATE = "/repos/%s/%s/commits/%s/status";
   private static final String TREE_SHA_URI_TEMPLATE = "/repos/%s/%s/git/trees/%s";
   private static final String COMPARE_COMMIT_TEMPLATE = "/repos/%s/%s/compare/%s...%s";
@@ -270,6 +275,22 @@ public class RepositoryClient {
   public CompletableFuture<List<CommitItem>> listCommits() {
     final String path = String.format(COMMITS_URI_TEMPLATE, owner, repo);
     return github.request(path, LIST_COMMIT_TYPE_REFERENCE);
+  }
+
+  /**
+   * List pull requests that contain the given commit.
+   *
+   * @param sha commit sha
+   * @return pull requests
+   */
+  public CompletableFuture<List<PullRequestItem>> listPullRequestsForCommit(final String sha) {
+    final String path = String.format(COMMIT_PULL_REQUESTS_SHA_URI_TEMPLATE, owner, repo, sha);
+
+    // As of GHE 3.2, this feature is still in preview, so we need to add the extra header.
+    // https://developer.github.com/changes/2019-04-11-pulls-branches-for-commit/
+    final Map<String, String> extraHeaders =
+        ImmutableMap.of(HttpHeaders.ACCEPT, "application/vnd.github.groot-preview+json");
+    return github.request(path, LIST_PR_TYPE_REFERENCE, extraHeaders);
   }
 
   /**

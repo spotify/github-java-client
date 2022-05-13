@@ -26,6 +26,7 @@ import static com.spotify.github.v3.UserTest.assertUser;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_BRANCHES;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_FOLDERCONTENT_TYPE_REFERENCE;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_PR_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_REPOSITORY;
 import static com.spotify.github.v3.clients.MockHelper.createMockResponse;
 import static com.spotify.github.v3.clients.RepositoryClient.STATUS_URI_TEMPLATE;
@@ -37,6 +38,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static java.util.stream.StreamSupport.stream;
@@ -44,9 +46,11 @@ import static java.util.stream.StreamSupport.stream;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
+import com.google.common.net.HttpHeaders;
 import com.spotify.github.async.AsyncPage;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.comment.Comment;
+import com.spotify.github.v3.prs.PullRequestItem;
 import com.spotify.github.v3.repos.Branch;
 import com.spotify.github.v3.repos.Commit;
 import com.spotify.github.v3.repos.CommitComparison;
@@ -169,6 +173,18 @@ public class RepositoryClientTest {
     assertThat(commits.get(0).commit().message(), is("Fix all the bugs"));
     assertThat(
         commits.get(0).commit().tree().sha(), is("6dcb09b5b57875f334f61aebed695e2e4193db5e"));
+  }
+
+  @Test
+  public void listPullRequestsForCommit() throws Exception {
+    final CompletableFuture<List<PullRequestItem>> fixture =
+        completedFuture(
+            json.fromJson("[" + getFixture("../prs/pull_request_item.json") + "]", LIST_PR_TYPE_REFERENCE));
+    when(github.request(eq("/repos/someowner/somerepo/commits/thesha/pulls"), eq(LIST_PR_TYPE_REFERENCE), any()))
+        .thenReturn(fixture);
+    final List<PullRequestItem> prs = repoClient.listPullRequestsForCommit("thesha").get();
+    assertThat(prs.size(), is(1));
+    assertThat(prs.get(0).number(), is(1347));
   }
 
   @Test
