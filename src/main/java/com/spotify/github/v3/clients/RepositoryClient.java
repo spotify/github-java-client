@@ -26,7 +26,6 @@ import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERE
 import static com.spotify.github.v3.clients.GitHubClient.LIST_FOLDERCONTENT_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_REPOSITORY;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_STATUS_TYPE_REFERENCE;
-import static com.spotify.github.v3.clients.GitHubClient.responseBodyUnchecked;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -487,7 +486,7 @@ public class RepositoryClient {
                   github
                       .json()
                       .fromJsonUnchecked(
-                          responseBodyUnchecked(response), CommitItem.class);
+                          GitHubClient.responseBodyUnchecked(response), CommitItem.class);
               return Optional.of(commitItem);
             });
   }
@@ -513,7 +512,7 @@ public class RepositoryClient {
                   github
                       .json()
                       .fromJsonUnchecked(
-                          responseBodyUnchecked(response), Repository.class);
+                          GitHubClient.responseBodyUnchecked(response), Repository.class);
               return repositoryItem;
             });
   }
