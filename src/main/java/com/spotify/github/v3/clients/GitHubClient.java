@@ -514,7 +514,7 @@ public class GitHubClient {
   }
 
   /**
-   * Make an http PUT request for the given path with provided JSON body.
+   * Make a HTTP PUT request for the given path with provided JSON body.
    *
    * @param path relative to the Github base url
    * @param data request body as stringified JSON
