@@ -20,6 +20,8 @@
 
 package com.spotify.github.v3.clients;
 
+import static com.google.common.io.Resources.getResource;
+import static java.nio.charset.Charset.defaultCharset;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -27,10 +29,13 @@ import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import com.google.common.io.Resources;
 import com.spotify.github.Tracer;
 import com.spotify.github.v3.exceptions.ReadOnlyRepositoryException;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.repos.CommitItem;
+import com.spotify.github.v3.repos.RepositoryInvitation;
+import java.io.IOException;
 import java.net.URI;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -52,6 +57,10 @@ public class GitHubClientTest {
   private GitHubClient github;
   private OkHttpClient client;
   private Tracer tracer = mock(Tracer.class);
+
+  private static String getFixture(String resource) throws IOException {
+    return Resources.toString(getResource(GitHubClientTest.class, resource), defaultCharset());
+  }
 
   @Before
   public void setUp() {
@@ -137,5 +146,35 @@ public class GitHubClientTest {
       assertThat(e1.getMessage(), containsString("Merge Conflict"));
       assertThat(e1.getRawMessage(), containsString("Merge Conflict"));
     }
+  }
+
+  @Test
+  public void testPutConvertsToClass() throws Throwable {
+    final Call call = mock(Call.class);
+    final ArgumentCaptor<Callback> callbackCapture = ArgumentCaptor.forClass(Callback.class);
+    doNothing().when(call).enqueue(callbackCapture.capture());
+
+    final ArgumentCaptor<Request> requestCapture = ArgumentCaptor.forClass(Request.class);
+    when(client.newCall(requestCapture.capture())).thenReturn(call);
+
+    final Response response =
+        new okhttp3.Response.Builder()
+            .code(200)
+            .body(
+                ResponseBody.create(
+                    MediaType.get("application/json"), getFixture("repository_invitation.json")))
+            .message("")
+            .protocol(Protocol.HTTP_1_1)
+            .request(new Request.Builder().url("http://localhost/").build())
+            .build();
+
+    CompletableFuture<RepositoryInvitation> future = github.put("collaborators/", "",
+        RepositoryInvitation.class);
+    callbackCapture.getValue().onResponse(call, response);
+
+    RepositoryInvitation invitation = future.get();
+    assertThat(requestCapture.getValue().method(), is("PUT"));
+    assertThat(requestCapture.getValue().url().toString(), is("http://bogus/collaborators/"));
+    assertThat(invitation.id(), is(1));
   }
 }

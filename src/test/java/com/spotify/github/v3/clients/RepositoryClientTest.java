@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,8 +23,8 @@ package com.spotify.github.v3.clients;
 import static com.google.common.io.Resources.getResource;
 import static com.spotify.github.FixtureHelper.loadFixture;
 import static com.spotify.github.v3.UserTest.assertUser;
-import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_BRANCHES;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_FOLDERCONTENT_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_PR_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_REPOSITORY;
@@ -33,6 +33,7 @@ import static com.spotify.github.v3.clients.RepositoryClient.STATUS_URI_TEMPLATE
 import static java.lang.String.format;
 import static java.nio.charset.Charset.defaultCharset;
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static java.util.stream.StreamSupport.stream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertFalse;
@@ -41,7 +42,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static java.util.stream.StreamSupport.stream;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -59,6 +59,7 @@ import com.spotify.github.v3.repos.CommitStatus;
 import com.spotify.github.v3.repos.Content;
 import com.spotify.github.v3.repos.FolderContent;
 import com.spotify.github.v3.repos.Repository;
+import com.spotify.github.v3.repos.RepositoryInvitation;
 import com.spotify.github.v3.repos.RepositoryTest;
 import com.spotify.github.v3.repos.Status;
 import com.spotify.github.v3.repos.requests.ImmutableAuthenticatedUserRepositoriesFilter;
@@ -76,6 +77,7 @@ import okhttp3.ResponseBody;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -158,6 +160,35 @@ public class RepositoryClientTest {
     when(github.request("/repos/someowner/somerepo/collaborators/user")).thenReturn(completedFuture(response));
     boolean isCollaborator = repoClient.isCollaborator("user").get();
     assertFalse(isCollaborator);
+  }
+
+  @Test
+  public void addCollaborator() throws Exception {
+    final CompletableFuture<RepositoryInvitation> fixture =
+        completedFuture(json.fromJson(getFixture("repository_invitation.json"), RepositoryInvitation.class));
+    when(github.put("/repos/someowner/somerepo/collaborators/user", "", RepositoryInvitation.class)).thenReturn(fixture);
+
+    final RepositoryInvitation repoInvite = repoClient.addCollaborator("user").get();
+
+    assertThat(repoInvite.id(), is(1));
+    assertThat(repoInvite.nodeId(), is("MDEwOlJlcG9zaXRvcnkxMjk2MjY5"));
+    assertThat(repoInvite.repository().id(), is(1296269));
+    assertUser(repoInvite.repository().owner());
+    assertUser(repoInvite.invitee());
+    assertUser(repoInvite.inviter());
+    assertThat(repoInvite.permissions(), is("write"));
+  }
+
+  @Test
+  public void removeCollaborator() throws Exception {
+    CompletableFuture<Response> response = completedFuture(mock(Response.class));
+    final ArgumentCaptor<String> capture = ArgumentCaptor.forClass(String.class);
+    when(github.delete(capture.capture())).thenReturn(response);
+
+    CompletableFuture<Void> deleteResponse = repoClient.removeCollaborator("user");
+    deleteResponse.get();
+
+    assertThat(capture.getValue(), is("/repos/someowner/somerepo/collaborators/user"));
   }
 
   @Test
