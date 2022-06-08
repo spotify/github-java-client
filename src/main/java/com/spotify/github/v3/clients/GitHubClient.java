@@ -772,7 +772,7 @@ public class GitHubClient {
       final Request request =
           requestBuilder(newLocation)
               .url(newLocation)
-              .method("POST", response.request().body())
+              .method(response.request().method(), response.request().body())
               .build();
       // Do the new call and complete the original future when the new call completes
       return call(request);
