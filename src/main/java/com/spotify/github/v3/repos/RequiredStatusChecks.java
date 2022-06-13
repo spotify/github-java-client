@@ -24,34 +24,22 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.spotify.github.GithubStyle;
-import com.spotify.github.v3.git.ShaLink;
-import java.net.URI;
-import java.util.Optional;
-import javax.annotation.Nullable;
+import java.util.Collections;
+import java.util.List;
 import org.immutables.value.Value;
+import org.immutables.value.Value.Default;
 
 /** Branch resource */
 @Value.Immutable
 @GithubStyle
-@JsonSerialize(as = ImmutableBranch.class)
-@JsonDeserialize(as = ImmutableBranch.class)
-public interface Branch {
+@JsonSerialize(as = ImmutableRequiredStatusChecks.class)
+@JsonDeserialize(as = ImmutableRequiredStatusChecks.class)
+public interface RequiredStatusChecks {
+  @JsonProperty("enforcement_level")
+  String enforcementLevel();
 
-  /** Branch name */
-  @Nullable
-  String name();
-
-  /** Commit details branch is labeling */
-  @Nullable
-  ShaLink commit();
-
-  /** True if branch is protected */
-  @JsonProperty("protected")
-  Optional<Boolean> isProtected();
-
-  /** Branch protection API URL */
-  @JsonDeserialize(using = BranchProtectionUrlDeserializer.class)
-  Optional<URI> protectionUrl();
-
-  Optional<Protection> protection();
+  @Default
+  default List<String> contexts() {
+    return Collections.emptyList();
+  }
 }

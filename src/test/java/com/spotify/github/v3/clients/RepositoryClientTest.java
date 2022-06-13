@@ -39,6 +39,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -303,6 +304,11 @@ public class RepositoryClientTest {
     assertThat(
         branch.commit().url().toString(),
         is("https://api.github.com/repos/octocat/Hello-World/commits/c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc"));
+    assertTrue(branch.protection().isPresent());
+    assertTrue(branch.protection().get().enabled());
+    assertThat(branch.protection().get().requiredStatusChecks().enforcementLevel(), is("non_admins"));
+    assertTrue(branch.protection().get().requiredStatusChecks().contexts().contains("Context 1"));
+    assertTrue(branch.protection().get().requiredStatusChecks().contexts().contains("Context 2"));
   }
 
   @Test
