@@ -40,4 +40,16 @@ public class SearchParametersTest {
 
     assertThat(params.serialize(), is("order=bogus-order&page=2&per_page=50&q=bogus-query&sort=bogus-sort"));
   }
+
+  @Test
+  public void testSerializeWithoutPageAndPerPageParameters() {
+    final SearchParameters params =
+            ImmutableSearchParameters.builder()
+                    .q("bogus-query")
+                    .sort("bogus-sort")
+                    .order("bogus-order")
+                    .build();
+
+    assertThat(params.serialize(), is("order=bogus-order&q=bogus-query&sort=bogus-sort"));
+  }
 }
