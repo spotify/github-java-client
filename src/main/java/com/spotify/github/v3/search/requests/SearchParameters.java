@@ -20,13 +20,16 @@
 
 package com.spotify.github.v3.search.requests;
 
+import java.util.Optional;
+
+import javax.annotation.Nullable;
+
+import org.immutables.value.Value;
+
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.spotify.github.GithubStyle;
 import com.spotify.github.Parameters;
-import java.util.Optional;
-import javax.annotation.Nullable;
-import org.immutables.value.Value;
 
 /**
  * Search parameters resource defines required and optional parameters. To be serialized as
@@ -47,4 +50,15 @@ public interface SearchParameters extends Parameters {
 
   /** The sort order if sort parameter is provided. One of asc or desc. Default: desc */
   Optional<String> order();
+
+  /**
+   * The number of results per page (max 100). Default: 30
+   */
+  @SuppressWarnings("checkstyle:methodname")
+  Optional<Integer> per_page();
+
+  /**
+   * Page number of the results to fetch. Default: 1
+   */
+  Optional<Integer> page();
 }
