@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -34,7 +34,21 @@ public class SearchParametersTest {
             .q("bogus-query")
             .sort("bogus-sort")
             .order("bogus-order")
+            .per_page(50)
+            .page(2)
             .build();
+
+    assertThat(params.serialize(), is("order=bogus-order&page=2&per_page=50&q=bogus-query&sort=bogus-sort"));
+  }
+
+  @Test
+  public void testSerializeWithoutPageAndPerPageParameters() {
+    final SearchParameters params =
+            ImmutableSearchParameters.builder()
+                    .q("bogus-query")
+                    .sort("bogus-sort")
+                    .order("bogus-order")
+                    .build();
 
     assertThat(params.serialize(), is("order=bogus-order&q=bogus-query&sort=bogus-sort"));
   }
