@@ -39,7 +39,6 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -47,7 +46,6 @@ import static org.mockito.Mockito.when;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
-import com.google.common.net.HttpHeaders;
 import com.spotify.github.async.AsyncPage;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.comment.Comment;
@@ -61,6 +59,7 @@ import com.spotify.github.v3.repos.Content;
 import com.spotify.github.v3.repos.FolderContent;
 import com.spotify.github.v3.repos.Repository;
 import com.spotify.github.v3.repos.RepositoryInvitation;
+import com.spotify.github.v3.repos.RepositoryPermission;
 import com.spotify.github.v3.repos.RepositoryTest;
 import com.spotify.github.v3.repos.Status;
 import com.spotify.github.v3.repos.requests.ImmutableAuthenticatedUserRepositoriesFilter;
@@ -165,12 +164,15 @@ public class RepositoryClientTest {
 
   @Test
   public void addCollaborator() throws Exception {
-    final CompletableFuture<RepositoryInvitation> fixture =
-        completedFuture(json.fromJson(getFixture("repository_invitation.json"), RepositoryInvitation.class));
-    when(github.put("/repos/someowner/somerepo/collaborators/user", "", RepositoryInvitation.class)).thenReturn(fixture);
+    final Response response = createMockResponse("", getFixture("repository_invitation.json"));
+    when(github.put("/repos/someowner/somerepo/collaborators/user", "{\"permission\":\"pull\"}")).thenReturn(
+        completedFuture(response));
 
-    final RepositoryInvitation repoInvite = repoClient.addCollaborator("user").get();
+    final Optional<RepositoryInvitation> maybeInvite = repoClient.addCollaborator("user",
+        RepositoryPermission.PULL).get();
 
+    assertTrue(maybeInvite.isPresent());
+    final RepositoryInvitation repoInvite = maybeInvite.get();
     assertThat(repoInvite.id(), is(1));
     assertThat(repoInvite.nodeId(), is("MDEwOlJlcG9zaXRvcnkxMjk2MjY5"));
     assertThat(repoInvite.repository().id(), is(1296269));
@@ -178,6 +180,19 @@ public class RepositoryClientTest {
     assertUser(repoInvite.invitee());
     assertUser(repoInvite.inviter());
     assertThat(repoInvite.permissions(), is("write"));
+  }
+
+  @Test
+  public void addCollaboratorUserExists() throws Exception {
+    final Response response = mock(Response.class);
+    when(response.code()).thenReturn(204);
+    when(github.put("/repos/someowner/somerepo/collaborators/user", "{\"permission\":\"pull\"}")).thenReturn(
+        completedFuture(response));
+
+    final Optional<RepositoryInvitation> maybeInvite = repoClient.addCollaborator("user",
+        RepositoryPermission.PULL).get();
+
+    assertTrue(maybeInvite.isEmpty());
   }
 
   @Test

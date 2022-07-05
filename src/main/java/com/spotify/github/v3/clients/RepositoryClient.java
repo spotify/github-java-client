@@ -187,9 +187,41 @@ public class RepositoryClient {
     return github.request(path).thenApply(response -> response.code() == NO_CONTENT);
   }
 
-  public CompletableFuture<RepositoryInvitation> addCollaborator(final String user) {
+  /**
+   * Add a collaborator to the repo.
+   *
+   * @param user       the GitHub username to add
+   * @param permission the permission level for the user; one of RepositoryPermission, or a custom
+   *                   role
+   * @return
+   */
+  public CompletableFuture<Optional<RepositoryInvitation>> addCollaborator(final String user,
+      final String permission) {
     final String path = String.format(REPOSITORY_COLLABORATOR, owner, repo, user);
-    return github.put(path, "", RepositoryInvitation.class);
+    final String data = github.json().toJsonUnchecked(Map.of("permission", permission));
+    return github
+        .put(path, data)
+        .thenApply(
+            response -> {
+              // Non-successful statuses result in an RequestNotOkException exception and this code
+              // not called.
+              if (response.code() == NO_CONTENT) {
+                /*
+                  GitHub returns a 204 when:
+                  - an existing collaborator is added as a collaborator
+                  - an organization member is added as an individual collaborator
+                  - an existing team member (whose team is also a repository collaborator) is
+                      added as a collaborator
+                 */
+                return Optional.empty();
+              }
+              final RepositoryInvitation invitation =
+                  github
+                      .json()
+                      .fromJsonUnchecked(
+                          GitHubClient.responseBodyUnchecked(response), RepositoryInvitation.class);
+              return Optional.of(invitation);
+            });
   }
 
   public CompletableFuture<Void> removeCollaborator(final String user) {
