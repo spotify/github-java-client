@@ -102,12 +102,11 @@ public class PullRequestClient {
    * Create a pull request.
    *
    * @param request create request
+   * @return pull request
    */
-  public CompletableFuture<Void> create(final PullRequestCreate request) {
+  public CompletableFuture<PullRequest> create(final PullRequestCreate request) {
     final String path = String.format(PR_TEMPLATE, owner, repo);
-    return github
-        .post(path, github.json().toJsonUnchecked(request))
-        .thenAccept(IGNORE_RESPONSE_CONSUMER);
+    return github.post(path, github.json().toJsonUnchecked(request), PullRequest.class);
   }
 
   /**
@@ -115,12 +114,11 @@ public class PullRequestClient {
    *
    * @param number pull request number
    * @param request update request
+   * @return pull request
    */
-  public CompletableFuture<Void> update(final int number, final PullRequestUpdate request) {
+  public CompletableFuture<PullRequest> update(final int number, final PullRequestUpdate request) {
     final String path = String.format(PR_NUMBER_TEMPLATE, owner, repo, number);
-    return github
-        .patch(path, github.json().toJsonUnchecked(request))
-        .thenAccept(IGNORE_RESPONSE_CONSUMER);
+    return github.patch(path, github.json().toJsonUnchecked(request), PullRequest.class);
   }
 
   /**
