@@ -519,7 +519,7 @@ public class GitHubClient {
    * @param path relative to the Github base url
    * @param data request body as stringified JSON
    * @param clazz class to cast response as
-   * @return response body as String
+   * @return response body deserialized as provided class
    */
   <T> CompletableFuture<T> put(final String path, final String data, final Class<T> clazz) {
     return put(path, data)
@@ -544,12 +544,26 @@ public class GitHubClient {
   }
 
   /**
+   * Make an http PATCH request for the given path with provided JSON body.
+   *
+   * @param path relative to the Github base url
+   * @param data request body as stringified JSON
+   * @param clazz class to cast response as
+   * @return response body deserialized as provided class
+   */
+  <T> CompletableFuture<T> patch(final String path, final String data, final Class<T> clazz) {
+    return patch(path, data)
+        .thenApply(
+            response -> json().fromJsonUncheckedNotNull(responseBodyUnchecked(response), clazz));
+  }
+
+  /**
    * Make an http PATCH request for the given path with provided JSON body
    *
    * @param path relative to the Github base url
    * @param data request body as stringified JSON
    * @param clazz class to cast response as
-   * @return response body as String
+   * @return response body deserialized as provided class
    */
   <T> CompletableFuture<T> patch(
       final String path,

@@ -20,8 +20,12 @@
 
 package com.spotify.github.v3.clients;
 
+import static com.google.common.collect.ImmutableMap.of;
 import static com.google.common.io.Resources.getResource;
 import static java.nio.charset.Charset.defaultCharset;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
@@ -29,10 +33,18 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
+import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
+import com.spotify.github.v3.git.Reference;
 import com.spotify.github.v3.prs.ImmutableRequestReviewParameters;
+import com.spotify.github.v3.prs.PullRequest;
 import com.spotify.github.v3.prs.ReviewRequests;
+import com.spotify.github.v3.prs.requests.ImmutablePullRequestCreate;
+import com.spotify.github.v3.prs.requests.ImmutablePullRequestUpdate;
+import com.spotify.github.v3.prs.requests.PullRequestCreate;
+import com.spotify.github.v3.prs.requests.PullRequestUpdate;
 import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
@@ -62,6 +74,88 @@ public class PullRequestClientTest {
   public void setUp() {
     client = mock(OkHttpClient.class);
     github = GitHubClient.create(client, URI.create("http://bogus"), "token");
+  }
+
+  @Test
+  public void createPullRequest() throws Exception {
+    final String title = "Amazing new feature";
+    final String body = "Please pull these awesome changes in!";
+    final String head = "octocat:new-topic";
+    final String base = "master";
+
+    final Call call = mock(Call.class);
+    final ArgumentCaptor<Callback> capture = ArgumentCaptor.forClass(Callback.class);
+    doNothing().when(call).enqueue(capture.capture());
+
+    final Response response =
+        new Response.Builder()
+            .code(201)
+            .protocol(Protocol.HTTP_1_1)
+            .message("Created")
+            .body(
+                ResponseBody.create(
+                    MediaType.get("application/json"),
+                    getFixture("pull_request.json")))
+            .request(new Request.Builder().url("http://localhost/").build())
+            .build();
+
+    when(client.newCall(any())).thenReturn(call);
+
+    final PullRequestClient pullRequestClient =
+        PullRequestClient.create(github, "owner", "repo");
+
+    final PullRequestCreate request = ImmutablePullRequestCreate.builder().title(title).body(body)
+        .head(head).base(base).build();
+
+    final CompletableFuture<PullRequest> result = pullRequestClient.create(request);
+
+    capture.getValue().onResponse(call, response);
+
+    PullRequest pullRequest = result.get();
+
+    assertThat(pullRequest.title(), is(title));
+    assertThat(pullRequest.body().get(), is(body));
+    assertThat(pullRequest.head().label().get(), is(head));
+    assertThat(pullRequest.base().ref(), is(base));
+  }
+
+  @Test
+  public void updatePullRequest() throws Exception {
+    final String title = "Amazing new feature";
+    final String body = "Please pull these awesome changes in!";
+
+    final Call call = mock(Call.class);
+    final ArgumentCaptor<Callback> capture = ArgumentCaptor.forClass(Callback.class);
+    doNothing().when(call).enqueue(capture.capture());
+
+    final Response response =
+        new Response.Builder()
+            .code(200)
+            .protocol(Protocol.HTTP_1_1)
+            .message("OK")
+            .body(
+                ResponseBody.create(
+                    MediaType.get("application/json"),
+                    getFixture("pull_request.json")))
+            .request(new Request.Builder().url("http://localhost/").build())
+            .build();
+
+    when(client.newCall(any())).thenReturn(call);
+
+    final PullRequestClient pullRequestClient =
+        PullRequestClient.create(github, "owner", "repo");
+
+    final PullRequestUpdate request = ImmutablePullRequestUpdate.builder().title(title).body(body)
+        .build();
+
+    final CompletableFuture<PullRequest> result = pullRequestClient.update(1, request);
+
+    capture.getValue().onResponse(call, response);
+
+    PullRequest pullRequest = result.get();
+
+    assertThat(pullRequest.title(), is(title));
+    assertThat(pullRequest.body().get(), is(body));
   }
 
   @Test
