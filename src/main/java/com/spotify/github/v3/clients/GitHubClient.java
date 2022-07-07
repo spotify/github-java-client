@@ -552,7 +552,7 @@ public class GitHubClient {
    * @return response body deserialized as provided class
    */
   <T> CompletableFuture<T> patch(final String path, final String data, final Class<T> clazz) {
-    return put(path, data)
+    return patch(path, data)
         .thenApply(
             response -> json().fromJsonUncheckedNotNull(responseBodyUnchecked(response), clazz));
   }
