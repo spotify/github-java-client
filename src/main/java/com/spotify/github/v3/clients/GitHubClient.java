@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -65,6 +65,8 @@ import org.slf4j.LoggerFactory;
  * functionality as well as acts as a factory for the higher level API clients.
  */
 public class GitHubClient {
+
+  private static final int EXPIRY_MARGIN_IN_MINUTES = 3;
 
   private Tracer tracer = NoopTracer.INSTANCE;
 
@@ -686,7 +688,8 @@ public class GitHubClient {
   }
 
   private boolean isExpired(final AccessToken token) {
-    return token.expiresAt().isBefore(ZonedDateTime.now().plusMinutes(-1));
+    // Subtract a few minutes to avoid making calls with an expired token due to clock differences
+    return token.expiresAt().isBefore(ZonedDateTime.now().minusMinutes(EXPIRY_MARGIN_IN_MINUTES));
   }
 
   private AccessToken generateInstallationToken(final String jwtToken, final int installationId)
