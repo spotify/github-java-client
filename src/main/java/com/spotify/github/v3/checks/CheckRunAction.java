@@ -21,6 +21,7 @@
 package com.spotify.github.v3.checks;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.google.common.base.Preconditions;
 import com.spotify.github.GithubStyle;
 import org.immutables.value.Value;
 
@@ -57,4 +58,23 @@ public interface CheckRunAction {
    * @return the string
    */
   String description();
+
+  /**
+   * Automatically validates the maximum length of properties.
+   *
+   * GitHub does not validate these properly on their side (at least in GHE 3.2)
+   * and returns 5xx HTTP responses instead. To avoid that, let's validate the data
+   * in this client library.
+   */
+  @Value.Check
+  @SuppressWarnings("checkstyle:magicnumber")
+  default void check() {
+    // max values from https://docs.github.com/en/rest/checks/runs
+    Preconditions.checkState(label().length() <= 20,
+        "'label' exceeded max length of 20");
+    Preconditions.checkState(identifier().length() <= 20,
+        "'identifier' exceeded max length of 20");
+    Preconditions.checkState(description().length() <= 40,
+        "'description' exceeded max length of 40");
+  }
 }
