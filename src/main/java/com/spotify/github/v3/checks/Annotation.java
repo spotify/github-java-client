@@ -22,6 +22,7 @@ package com.spotify.github.v3.checks;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.google.common.base.Preconditions;
 import com.spotify.github.GithubStyle;
 import java.util.Optional;
 import org.immutables.value.Value;
@@ -114,4 +115,23 @@ public interface Annotation {
    * @return the optional
    */
   Optional<Integer> endColumn();
+
+  /**
+   * Automatically validates the maximum length of properties.
+   *
+   * GitHub does not validate these properly on their side (at least in GHE 3.2)
+   * and returns 5xx HTTP responses instead. To avoid that, let's validate the data
+   * in this client library.
+   */
+  @Value.Check
+  @SuppressWarnings("checkstyle:magicnumber")
+  default void check() {
+    // max values from https://docs.github.com/en/rest/checks/runs
+    Preconditions.checkState(title().map(String::length).orElse(0) <= 255,
+        "'title' exceeded max length of 255");
+    Preconditions.checkState(message().length() <= 64 * 1024,
+        "'message' exceeded max length of 64kB");
+    Preconditions.checkState(rawDetails().map(String::length).orElse(0) <= 64 * 1024,
+        "'rawDetails' exceeded max length of 64kB");
+  }
 }
