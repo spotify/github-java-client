@@ -24,11 +24,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.spotify.github.FixtureHelper;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.checks.ImmutableAnnotation.Builder;
-import java.io.IOException;
-import java.time.ZonedDateTime;
 import org.junit.Test;
 
 public class AnnotationTest {
@@ -65,5 +62,21 @@ public class AnnotationTest {
     assertThrows(IllegalStateException.class, () ->
         builder().rawDetails("a".repeat(66000)).build()
     );
+  }
+
+  @Test
+  public void serializesWithEmptyFields() {
+    Annotation annotationWithEmptyStringFields = ImmutableAnnotation.builder()
+        .message("")
+        .path("")
+        .title("")
+        .startLine(1)
+        .endLine(2)
+        .annotationLevel(AnnotationLevel.notice)
+        .build();
+
+    String serializedAnnotation = Json.create().toJsonUnchecked(annotationWithEmptyStringFields);
+    String expected = "{\"path\":\"\",\"annotation_level\":\"notice\",\"message\":\"\",\"title\":\"\",\"start_line\":1,\"end_line\":2}";
+    assertThat(serializedAnnotation, is(expected));
   }
 }
