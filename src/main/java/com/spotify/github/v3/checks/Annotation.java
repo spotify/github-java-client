@@ -43,7 +43,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @GithubStyle
 @JsonDeserialize(as = ImmutableAnnotation.class)
-@JsonInclude(JsonInclude.Include.NON_EMPTY)
+@JsonInclude(JsonInclude.Include.NON_ABSENT)
 public interface Annotation {
 
   /**
