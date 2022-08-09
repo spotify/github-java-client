@@ -27,6 +27,7 @@ import static com.spotify.github.v3.clients.GitHubClient.LIST_FOLDERCONTENT_TYPE
 import static com.spotify.github.v3.clients.GitHubClient.LIST_PR_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_REPOSITORY;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_STATUS_TYPE_REFERENCE;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_REPOSITORY_INVITATION;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -88,6 +89,8 @@ public class RepositoryClient {
   private static final String LIST_REPOSITORY_TEMPLATE = "/orgs/%s/repos";
   private static final String LIST_REPOSITORIES_FOR_AUTHENTICATED_USER = "/user/repos";
   private static final String REPOSITORY_COLLABORATOR = "/repos/%s/%s/collaborators/%s";
+  private static final String REPOSITORY_INVITATION = "/repos/%s/%s/invitations/%s";
+  private static final String REPOSITORY_INVITATIONS = "/repos/%s/%s/invitations";
   private final String owner;
   private final String repo;
   private final GitHubClient github;
@@ -227,6 +230,16 @@ public class RepositoryClient {
   public CompletableFuture<Void> removeCollaborator(final String user) {
     final String path = String.format(REPOSITORY_COLLABORATOR, owner, repo, user);
     return github.delete(path).thenAccept(IGNORE_RESPONSE_CONSUMER);
+  }
+
+  public CompletableFuture<Void> removeInvite(final String invitationId) {
+    final String path = String.format(REPOSITORY_INVITATION, owner, repo, invitationId);
+    return github.delete(path).thenAccept(IGNORE_RESPONSE_CONSUMER);
+  }
+
+  public CompletableFuture<List<RepositoryInvitation>> listInvitations() {
+    final String path = String.format(REPOSITORY_INVITATIONS, owner, repo);
+    return github.request(path, LIST_REPOSITORY_INVITATION);
   }
 
   /**
