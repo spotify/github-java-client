@@ -28,6 +28,7 @@ import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERE
 import static com.spotify.github.v3.clients.GitHubClient.LIST_FOLDERCONTENT_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_PR_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_REPOSITORY;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_REPOSITORY_INVITATION;
 import static com.spotify.github.v3.clients.MockHelper.createMockResponse;
 import static com.spotify.github.v3.clients.RepositoryClient.STATUS_URI_TEMPLATE;
 import static java.lang.String.format;
@@ -205,6 +206,33 @@ public class RepositoryClientTest {
     deleteResponse.get();
 
     assertThat(capture.getValue(), is("/repos/someowner/somerepo/collaborators/user"));
+  }
+
+  @Test
+  public void removeInvite() throws Exception {
+    CompletableFuture<Response> response = completedFuture(mock(Response.class));
+    final ArgumentCaptor<String> capture = ArgumentCaptor.forClass(String.class);
+    when(github.delete(capture.capture())).thenReturn(response);
+
+    CompletableFuture<Void> deleteResponse = repoClient.removeInvite("invitation1");
+    deleteResponse.get();
+
+    assertThat(capture.getValue(), is("/repos/someowner/somerepo/invitations/invitation1"));
+  }
+
+  @Test
+  public void listInvites() throws Exception {
+    final CompletableFuture<List<RepositoryInvitation>> fixture =
+            completedFuture(
+                    json.fromJson("[" + getFixture("repository_invitation.json") + "]", LIST_REPOSITORY_INVITATION));
+    when(github.request("/repos/someowner/somerepo/invitations", LIST_REPOSITORY_INVITATION))
+            .thenReturn(fixture);
+
+    final List<RepositoryInvitation> invitations = repoClient.listInvitations().get();
+    assertThat(invitations.size(), is(1));
+    assertThat(invitations.get(0).repository().name(), is("Hello-World"));
+    assertThat(
+            invitations.get(0).inviter().login(), is("octocat"));
   }
 
   @Test

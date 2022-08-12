@@ -39,6 +39,7 @@ import com.spotify.github.v3.repos.CommitItem;
 import com.spotify.github.v3.repos.FolderContent;
 import com.spotify.github.v3.repos.Repository;
 import com.spotify.github.v3.repos.Status;
+import com.spotify.github.v3.repos.RepositoryInvitation;
 
 import java.io.*;
 import java.lang.invoke.MethodHandles;
@@ -94,6 +95,7 @@ public class GitHubClient {
       new TypeReference<>() {};
   static final TypeReference<List<Reference>> LIST_REFERENCES =
       new TypeReference<>() {};
+  static final TypeReference<List<RepositoryInvitation>> LIST_REPOSITORY_INVITATION =  new TypeReference<>() {};
 
   private static final String GET_ACCESS_TOKEN_URL = "app/installations/%s/access_tokens";
 
