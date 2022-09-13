@@ -128,9 +128,24 @@ public class ChecksClientTest {
     final CompletableFuture<CheckRunResponse> actualResponse = checksClient.getCheckRun(4);
 
     assertThat(actualResponse.get().status(), is(completed));
-    assertThat(actualResponse.get().id(), is(4));
+    assertThat(actualResponse.get().id(), is(4L));
     assertThat(actualResponse.get().headSha(), is("ce587453ced02b1526dfb4cb910479d431683101"));
     assertThat(actualResponse.get().output().annotationsCount().get(), is(2));
+  }
+
+  @Test
+  public void getCompletedCheckRunWithLongId() throws Exception {
+    final CheckRunResponse checkRunResponse =
+        json.fromJson(
+            loadResource(FIXTURES_PATH + "checks-run-completed-long-id-response.json"),
+            CheckRunResponse.class);
+
+    final CompletableFuture<CheckRunResponse> fixtureResponse = completedFuture(checkRunResponse);
+    when(github.request(any(), eq(CheckRunResponse.class), any())).thenReturn(fixtureResponse);
+
+    final CompletableFuture<CheckRunResponse> actualResponse = checksClient.getCheckRun(6971753714L);
+
+    assertThat(actualResponse.get().id(), is(6971753714L));
   }
 
   @Test

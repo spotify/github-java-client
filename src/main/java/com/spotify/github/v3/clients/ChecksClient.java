@@ -92,7 +92,7 @@ public class ChecksClient {
    * @param id the checkRun id
    * @return a CheckRunResponse
    */
-  public CompletableFuture<CheckRunResponse> getCheckRun(final int id) {
+  public CompletableFuture<CheckRunResponse> getCheckRun(final long id) {
     final String path = String.format(GET_CHECK_RUN_URI, owner, repo, id);
     return github.request(path, CheckRunResponse.class, extraHeaders);
   }
