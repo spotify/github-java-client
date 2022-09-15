@@ -31,6 +31,7 @@ import static org.mockito.Mockito.*;
 
 import com.google.common.io.Resources;
 import com.spotify.github.Tracer;
+import com.spotify.github.v3.checks.CheckSuiteResponseList;
 import com.spotify.github.v3.exceptions.ReadOnlyRepositoryException;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.repos.CommitItem;
@@ -176,5 +177,34 @@ public class GitHubClientTest {
     assertThat(requestCapture.getValue().method(), is("PUT"));
     assertThat(requestCapture.getValue().url().toString(), is("http://bogus/collaborators/"));
     assertThat(invitation.id(), is(1));
+  }
+
+  @Test
+  public void testGetCheckSuites() throws Throwable {
+
+    final Call call = mock(Call.class);
+    final ArgumentCaptor<Callback> callbackCapture = ArgumentCaptor.forClass(Callback.class);
+    doNothing().when(call).enqueue(callbackCapture.capture());
+
+    final Response response = new okhttp3.Response.Builder()
+        .code(200)
+        .body(
+            ResponseBody.create(
+                MediaType.get("application/json"), getFixture("../checks/check_suites_response.json")))
+        .message("")
+        .protocol(Protocol.HTTP_1_1)
+        .request(new Request.Builder().url("http://localhost/").build())
+        .build();
+
+    when(client.newCall(any())).thenReturn(call);
+    ChecksClient client = github.createChecksClient("testorg", "testrepo");
+
+    CompletableFuture<CheckSuiteResponseList> future = client.getCheckSuites("sha");
+    callbackCapture.getValue().onResponse(call, response);
+    var result = future.get();
+
+    assertThat(result.totalCount(), is(1));
+    assertThat(result.checkSuites().get(0).app().slug().get(), is("octoapp"));
+
   }
 }

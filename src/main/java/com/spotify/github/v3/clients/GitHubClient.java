@@ -351,6 +351,17 @@ public class GitHubClient {
     return SearchClient.create(this);
   }
 
+  /**
+   * Create a checks API client
+   *
+   * @param owner repository owner
+   * @param repo repository name
+   * @return repository API client
+   */
+  public ChecksClient createChecksClient(final String owner, final String repo) {
+    return ChecksClient.create(this, owner, repo);
+  }
+
   Json json() {
     return json;
   }
