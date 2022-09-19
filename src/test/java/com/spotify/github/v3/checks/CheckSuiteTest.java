@@ -40,7 +40,7 @@ public class CheckSuiteTest {
             getResource(this.getClass(), "check_suites_response.json"), defaultCharset());
     final CheckSuiteResponseList checkSuiteResponseList = Json.create().fromJson(fixture, CheckSuiteResponseList.class);
     assertThat(checkSuiteResponseList.checkSuites().get(0).id(), is(5));
-    assertThat(checkSuiteResponseList.checkSuites().get(0).app().slug().get(), is("octoapp"));
+    assertThat(checkSuiteResponseList.checkSuites().get(0).app().get().slug().get(), is("octoapp"));
   }
 
 }

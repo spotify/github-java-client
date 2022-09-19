@@ -22,7 +22,7 @@ package com.spotify.github.v3.checks;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.spotify.github.GithubStyle;
-import javax.annotation.Nullable;
+import java.util.Optional;
 import org.immutables.value.Value;
 
 /** Github CheckSuite */
@@ -38,6 +38,5 @@ public interface CheckSuite {
    */
   Integer id();
 
-  @Nullable
-  App app();
+  Optional<App> app();
 }

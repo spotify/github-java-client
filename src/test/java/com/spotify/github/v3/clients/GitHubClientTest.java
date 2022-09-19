@@ -204,7 +204,7 @@ public class GitHubClientTest {
     var result = future.get();
 
     assertThat(result.totalCount(), is(1));
-    assertThat(result.checkSuites().get(0).app().slug().get(), is("octoapp"));
+    assertThat(result.checkSuites().get(0).app().get().slug().get(), is("octoapp"));
 
   }
 }
