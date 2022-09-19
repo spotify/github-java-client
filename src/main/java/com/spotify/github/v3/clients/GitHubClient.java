@@ -356,7 +356,7 @@ public class GitHubClient {
    *
    * @param owner repository owner
    * @param repo repository name
-   * @return repository API client
+   * @return checks API client
    */
   public ChecksClient createChecksClient(final String owner, final String repo) {
     return ChecksClient.create(this, owner, repo);
