@@ -60,6 +60,10 @@ public class ChecksClient {
     this.repo = repo;
   }
 
+  static ChecksClient create(final GitHubClient github, final String owner, final String repo) {
+    return new ChecksClient(github, owner, repo);
+  }
+
   /**
    * Create a checkRun.
    *

@@ -22,6 +22,7 @@ package com.spotify.github.v3.checks;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.spotify.github.GithubStyle;
+import java.util.Optional;
 import org.immutables.value.Value;
 
 /** Github CheckSuite */
@@ -36,4 +37,6 @@ public interface CheckSuite {
    * @return the integer
    */
   Integer id();
+
+  Optional<App> app();
 }
