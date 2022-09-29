@@ -39,4 +39,6 @@ public interface CheckSuite {
   Integer id();
 
   Optional<App> app();
+
+  Optional<String> headBranch();
 }

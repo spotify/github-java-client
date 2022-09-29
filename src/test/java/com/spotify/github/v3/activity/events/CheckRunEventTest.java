@@ -44,6 +44,7 @@ public class CheckRunEventTest {
         assertThat(checkRunEvent.action(), is("created"));
         assertThat(checkRunEvent.checkRun().name(), is("Octocoders-linter"));
         assertThat(checkRunEvent.repository().name(), is("Hello-World"));
+        assertThat(checkRunEvent.checkRun().checkSuite().get().headBranch().get(), is("changes"));
     }
 
 }
