@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,6 +22,7 @@ package com.spotify.github.v3.checks;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.google.common.base.Preconditions;
 import com.spotify.github.GithubStyle;
 import java.util.List;
 import java.util.Optional;
@@ -87,4 +88,20 @@ public interface CheckRunOutput {
    * @return the optional
    */
   Optional<String> annotationsUrl();
+
+  /**
+   * Automatically validates the maximum length of properties.
+   * <p>
+   * GitHub does not validate these properly on their side (at least in GHE 3.2) and returns 422
+   * HTTP responses instead. To avoid that, let's validate the data in this client library.
+   */
+  @Value.Check
+  @SuppressWarnings("checkstyle:magicnumber")
+  default void check() {
+    // max values from https://docs.github.com/en/enterprise-server@3.5/rest/checks/runs#create-a-check-run
+    Preconditions.checkState(summary().map(String::length).orElse(0) <= 64 * 1024,
+        "'summary' exceeded max length of 65535 characters");
+    Preconditions.checkState(text().map(String::length).orElse(0) <= 64 * 1024,
+        "'text' exceeded max length of 65535 characters");
+  }
 }
