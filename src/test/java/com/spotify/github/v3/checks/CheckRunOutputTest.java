@@ -22,38 +22,28 @@ package com.spotify.github.v3.checks;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.spotify.github.v3.checks.ImmutableCheckRunAction.Builder;
+import com.spotify.github.v3.checks.ImmutableCheckRunOutput.Builder;
 import org.junit.Test;
 
-public class CheckRunActionTest {
+public class CheckRunOutputTest {
+
   private Builder builder() {
-    return ImmutableCheckRunAction.builder()
-        .label("label")
-        .identifier("identifier")
-        .description("description");
+    return ImmutableCheckRunOutput.builder();
   }
 
   @Test
-  public void allowsCreationWithinLimits(){
+  public void allowsCreationWithinLimits() {
     builder().build();
-
     builder()
-        .label("a".repeat(20))
-        .identifier("a".repeat(20))
-        .description("a".repeat(40))
-        .build();
+        .text("t".repeat(65535)).summary("s".repeat(65535)).build();
   }
 
   @Test
-  public void failsCreationWhenMaxLengthExceeded(){
-    assertThrows(IllegalStateException.class, () ->
-        builder().label("a".repeat(21)).build()
-    );
-    assertThrows(IllegalStateException.class, () ->
-        builder().identifier("a".repeat(21)).build()
-    );
-    assertThrows(IllegalStateException.class, () ->
-        builder().description("a".repeat(41)).build()
-    );
+  public void failsCreationWhenMaxLengthExceeded() {
+    assertThrows(IllegalStateException.class,
+        () -> builder().text("t".repeat(65536)).build());
+    assertThrows(IllegalStateException.class,
+        () -> builder().summary("s".repeat(65536)).build());
   }
 }
+
