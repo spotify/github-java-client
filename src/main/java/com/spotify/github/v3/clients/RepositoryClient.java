@@ -37,18 +37,10 @@ import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.git.Tree;
 import com.spotify.github.v3.hooks.requests.WebhookCreate;
 import com.spotify.github.v3.prs.PullRequestItem;
-import com.spotify.github.v3.repos.Branch;
-import com.spotify.github.v3.repos.Commit;
-import com.spotify.github.v3.repos.CommitComparison;
-import com.spotify.github.v3.repos.CommitItem;
-import com.spotify.github.v3.repos.CommitStatus;
-import com.spotify.github.v3.repos.Content;
-import com.spotify.github.v3.repos.FolderContent;
-import com.spotify.github.v3.repos.Languages;
-import com.spotify.github.v3.repos.Repository;
-import com.spotify.github.v3.repos.RepositoryInvitation;
-import com.spotify.github.v3.repos.Status;
+import com.spotify.github.v3.repos.*;
 import com.spotify.github.v3.repos.requests.AuthenticatedUserRepositoriesFilter;
+import com.spotify.github.v3.repos.requests.FileCreate;
+import com.spotify.github.v3.repos.requests.FileUpdate;
 import com.spotify.github.v3.repos.requests.RepositoryCreateStatus;
 import java.lang.invoke.MethodHandles;
 import java.util.Iterator;
@@ -245,7 +237,7 @@ public class RepositoryClient {
   /**
    * Create a webhook.
    *
-   * @param request create request
+   * @param request        create request
    * @param ignoreExisting if true hook exists errors will be ignored
    */
   public CompletableFuture<Void> createWebhook(
@@ -276,7 +268,7 @@ public class RepositoryClient {
   /**
    * Set status for a given commit.
    *
-   * @param sha the commit sha to set the status for
+   * @param sha     the commit sha to set the status for
    * @param request The body of the request to sent to github to create a commit status
    */
   public CompletableFuture<Void> setCommitStatus(
@@ -312,7 +304,7 @@ public class RepositoryClient {
    * List statuses for a specific ref. Statuses are returned in reverse chronological order. The
    * first status in the list will be the latest one.
    *
-   * @param sha the commit sha to list the statuses for
+   * @param sha          the commit sha to list the statuses for
    * @param itemsPerPage number of items per page
    * @return iterator of Status
    */
@@ -387,11 +379,35 @@ public class RepositoryClient {
    * Get repository contents of a file.
    *
    * @param path path to a file
-   * @param ref name of the commit/branch/tag
+   * @param ref  name of the commit/branch/tag
    * @return content
    */
   public CompletableFuture<Content> getFileContent(final String path, final String ref) {
     return github.request(getContentPath(path, "?ref=" + ref), Content.class);
+  }
+
+  /**
+   * Update file in the repository.
+   *
+   * @param path       the path
+   * @param fileUpdate the file update
+   * @return the completable future
+   */
+  public CompletableFuture<FileCommit> updateFile(final String path, final FileUpdate fileUpdate) {
+    final String requestBody = github.json().toJsonUnchecked(fileUpdate);
+    return github.post(getContentPath(path, ""), requestBody, FileCommit.class);
+  }
+
+  /**
+   * Create file in the repository.
+   *
+   * @param path       the path
+   * @param fileCreate the file create
+   * @return the completable future
+   */
+  public CompletableFuture<FileCommit> createFile(final String path, final FileCreate fileCreate) {
+    final String requestBody = github.json().toJsonUnchecked(fileCreate);
+    return github.post(getContentPath(path, ""), requestBody, FileCommit.class);
   }
 
   /**
@@ -407,7 +423,7 @@ public class RepositoryClient {
   /**
    * Create a comment for a given issue number.
    *
-   * @param sha the commit sha to create the comment on
+   * @param sha  the commit sha to create the comment on
    * @param body comment content
    * @return the Comment that was just created
    */
@@ -432,7 +448,7 @@ public class RepositoryClient {
    * Get repository contents of a folder.
    *
    * @param path path to a folder
-   * @param ref name of the commit/branch/tag
+   * @param ref  name of the commit/branch/tag
    * @return content
    */
   public CompletableFuture<List<FolderContent>> getFolderContent(
