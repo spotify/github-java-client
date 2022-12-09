@@ -35,15 +35,15 @@ public class CheckRunOutputTest {
   public void allowsCreationWithinLimits() {
     builder().build();
     builder()
-        .text("t".repeat((64 * 1024) - 1)).summary("s".repeat((1024 * 64) - 1)).build();
+        .text("t".repeat(65535)).summary("s".repeat(65535)).build();
   }
 
   @Test
   public void failsCreationWhenMaxLengthExceeded() {
     assertThrows(IllegalStateException.class,
-        () -> builder().text("t".repeat(64 * 1024)).build());
+        () -> builder().text("t".repeat(65536)).build());
     assertThrows(IllegalStateException.class,
-        () -> builder().summary("s".repeat(64 * 1024)).build());
+        () -> builder().summary("s".repeat(65536)).build());
   }
 }
 
