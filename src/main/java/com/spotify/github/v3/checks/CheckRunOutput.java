@@ -99,9 +99,9 @@ public interface CheckRunOutput {
   @SuppressWarnings("checkstyle:magicnumber")
   default void check() {
     // max values from https://docs.github.com/en/enterprise-server@3.5/rest/checks/runs#create-a-check-run
-    Preconditions.checkState(summary().map(String::length).orElse(0) <= 64 * 1024,
+    Preconditions.checkState(summary().map(String::length).orElse(0) < 64 * 1024,
         "'summary' exceeded max length of 65535 characters");
-    Preconditions.checkState(text().map(String::length).orElse(0) <= 64 * 1024,
+    Preconditions.checkState(text().map(String::length).orElse(0) < 64 * 1024,
         "'text' exceeded max length of 65535 characters");
   }
 }
