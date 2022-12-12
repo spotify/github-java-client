@@ -37,7 +37,6 @@ import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.git.Tree;
 import com.spotify.github.v3.hooks.requests.WebhookCreate;
 import com.spotify.github.v3.prs.PullRequestItem;
-
 import com.spotify.github.v3.repos.Branch;
 import com.spotify.github.v3.repos.Commit;
 import com.spotify.github.v3.repos.CommitComparison;
@@ -203,7 +202,7 @@ public class RepositoryClient {
    * @return
    */
   public CompletableFuture<Optional<RepositoryInvitation>> addCollaborator(final String user,
-                                                                           final String permission) {
+      final String permission) {
     final String path = String.format(REPOSITORY_COLLABORATOR, owner, repo, user);
     final String data = github.json().toJsonUnchecked(Map.of("permission", permission));
     return github
@@ -249,7 +248,7 @@ public class RepositoryClient {
   /**
    * Create a webhook.
    *
-   * @param request        create request
+   * @param request create request
    * @param ignoreExisting if true hook exists errors will be ignored
    */
   public CompletableFuture<Void> createWebhook(
@@ -280,7 +279,7 @@ public class RepositoryClient {
   /**
    * Set status for a given commit.
    *
-   * @param sha     the commit sha to set the status for
+   * @param sha the commit sha to set the status for
    * @param request The body of the request to sent to github to create a commit status
    */
   public CompletableFuture<Void> setCommitStatus(
@@ -316,7 +315,7 @@ public class RepositoryClient {
    * List statuses for a specific ref. Statuses are returned in reverse chronological order. The
    * first status in the list will be the latest one.
    *
-   * @param sha          the commit sha to list the statuses for
+   * @param sha the commit sha to list the statuses for
    * @param itemsPerPage number of items per page
    * @return iterator of Status
    */
@@ -391,7 +390,7 @@ public class RepositoryClient {
    * Get repository contents of a file.
    *
    * @param path path to a file
-   * @param ref  name of the commit/branch/tag
+   * @param ref name of the commit/branch/tag
    * @return content
    */
   public CompletableFuture<Content> getFileContent(final String path, final String ref) {
@@ -435,7 +434,7 @@ public class RepositoryClient {
   /**
    * Create a comment for a given issue number.
    *
-   * @param sha  the commit sha to create the comment on
+   * @param sha the commit sha to create the comment on
    * @param body comment content
    * @return the Comment that was just created
    */
@@ -460,7 +459,7 @@ public class RepositoryClient {
    * Get repository contents of a folder.
    *
    * @param path path to a folder
-   * @param ref  name of the commit/branch/tag
+   * @param ref name of the commit/branch/tag
    * @return content
    */
   public CompletableFuture<List<FolderContent>> getFolderContent(
