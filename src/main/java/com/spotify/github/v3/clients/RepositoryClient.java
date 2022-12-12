@@ -395,7 +395,7 @@ public class RepositoryClient {
    */
   public CompletableFuture<FileCommit> updateFile(final String path, final FileUpdate fileUpdate) {
     final String requestBody = github.json().toJsonUnchecked(fileUpdate);
-    return github.post(getContentPath(path, ""), requestBody, FileCommit.class);
+    return github.put(getContentPath(path, ""), requestBody, FileCommit.class);
   }
 
   /**
@@ -407,7 +407,7 @@ public class RepositoryClient {
    */
   public CompletableFuture<FileCommit> createFile(final String path, final FileCreate fileCreate) {
     final String requestBody = github.json().toJsonUnchecked(fileCreate);
-    return github.post(getContentPath(path, ""), requestBody, FileCommit.class);
+    return github.put(getContentPath(path, ""), requestBody, FileCommit.class);
   }
 
   /**
