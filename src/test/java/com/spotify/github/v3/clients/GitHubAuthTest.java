@@ -186,7 +186,7 @@ public class GitHubAuthTest {
     mockServer.enqueue(validTokenResponse);
     mockServer.enqueue(checkRunResponse);
 
-    checksClient.updateCheckRun(12, null).join();
+    checksClient.updateCheckRun(12L, null).join();
     assertThat(mockServer.getRequestCount(), is(2));
 
     assertThat(mockServer.takeRequest().getPath(), is("/app/installations/1/access_tokens"));
