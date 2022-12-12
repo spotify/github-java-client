@@ -84,7 +84,7 @@ public class ChecksClient {
    * @return the completable future
    */
   public CompletableFuture<CheckRunResponse> updateCheckRun(
-      final int id, final CheckRunRequest checkRun) {
+      final long id, final CheckRunRequest checkRun) {
     final String path = String.format(GET_CHECK_RUN_URI, owner, repo, id);
     return github.patch(
         path, github.json().toJsonUnchecked(checkRun), CheckRunResponse.class, extraHeaders);
