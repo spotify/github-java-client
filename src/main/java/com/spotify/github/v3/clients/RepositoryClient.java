@@ -37,7 +37,19 @@ import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.git.Tree;
 import com.spotify.github.v3.hooks.requests.WebhookCreate;
 import com.spotify.github.v3.prs.PullRequestItem;
-import com.spotify.github.v3.repos.*;
+
+import com.spotify.github.v3.repos.Branch;
+import com.spotify.github.v3.repos.Commit;
+import com.spotify.github.v3.repos.CommitComparison;
+import com.spotify.github.v3.repos.CommitItem;
+import com.spotify.github.v3.repos.CommitStatus;
+import com.spotify.github.v3.repos.Content;
+import com.spotify.github.v3.repos.FileCommit;
+import com.spotify.github.v3.repos.FolderContent;
+import com.spotify.github.v3.repos.Languages;
+import com.spotify.github.v3.repos.Repository;
+import com.spotify.github.v3.repos.RepositoryInvitation;
+import com.spotify.github.v3.repos.Status;
 import com.spotify.github.v3.repos.requests.AuthenticatedUserRepositoriesFilter;
 import com.spotify.github.v3.repos.requests.FileCreate;
 import com.spotify.github.v3.repos.requests.FileUpdate;
@@ -191,7 +203,7 @@ public class RepositoryClient {
    * @return
    */
   public CompletableFuture<Optional<RepositoryInvitation>> addCollaborator(final String user,
-      final String permission) {
+                                                                           final String permission) {
     final String path = String.format(REPOSITORY_COLLABORATOR, owner, repo, user);
     final String data = github.json().toJsonUnchecked(Map.of("permission", permission));
     return github
