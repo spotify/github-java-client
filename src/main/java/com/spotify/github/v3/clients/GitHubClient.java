@@ -67,7 +67,7 @@ import org.slf4j.LoggerFactory;
  */
 public class GitHubClient {
 
-  private static final int EXPIRY_MARGIN_IN_MINUTES = 3;
+  private static final int EXPIRY_MARGIN_IN_MINUTES = 5;
 
   private Tracer tracer = NoopTracer.INSTANCE;
 
