@@ -70,6 +70,13 @@ public class GitHubAuthTest {
                   .toJson(
                       ImmutableAccessToken.copyOf(getTestInstallationToken())
                           .withExpiresAt(ZonedDateTime.now().minusHours(2))));
+  private final MockResponse expiredTokenWithinExpiryMarginResponse =
+      new MockResponse()
+          .setBody(
+              Json.create()
+                  .toJson(
+                      ImmutableAccessToken.copyOf(getTestInstallationToken())
+                          .withExpiresAt(ZonedDateTime.now().minusMinutes(3))));
   private final MockResponse checkRunResponse =
       new MockResponse().setBody(loadResource("com/spotify/github/v3/checks/checks-run-completed-response.json"));
 
@@ -133,6 +140,25 @@ public class GitHubAuthTest {
   @Test
   public void fetchesANewInstallationTokenIfExpired() throws Exception {
     mockServer.enqueue(expiredTokenResponse);
+    mockServer.enqueue(checkRunResponse);
+    mockServer.enqueue(validTokenResponse);
+    mockServer.enqueue(checkRunResponse);
+
+    checksClient.getCheckRun(123).join();
+    checksClient.getCheckRun(123).join();
+
+    // 2 to get the token, 2 checks
+    assertThat(mockServer.getRequestCount(), is(4));
+
+    assertThat(mockServer.takeRequest().getPath(), is("/app/installations/1/access_tokens"));
+    assertThat(mockServer.takeRequest().getPath(), is("/repos/foo/bar/check-runs/123"));
+    assertThat(mockServer.takeRequest().getPath(), is("/app/installations/1/access_tokens"));
+    assertThat(mockServer.takeRequest().getPath(), is("/repos/foo/bar/check-runs/123"));
+  }
+
+  @Test
+  public void fetchesANewInstallationTokenIfExpirationIsWithinExpiryMargin() throws Exception {
+    mockServer.enqueue(expiredTokenWithinExpiryMarginResponse);
     mockServer.enqueue(checkRunResponse);
     mockServer.enqueue(validTokenResponse);
     mockServer.enqueue(checkRunResponse);

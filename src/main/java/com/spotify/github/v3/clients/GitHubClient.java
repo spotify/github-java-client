@@ -701,8 +701,8 @@ public class GitHubClient {
   }
 
   private boolean isExpired(final AccessToken token) {
-    // Subtract a few minutes to avoid making calls with an expired token due to clock differences
-    return token.expiresAt().isBefore(ZonedDateTime.now().minusMinutes(EXPIRY_MARGIN_IN_MINUTES));
+    // Adds a few minutes to avoid making calls with an expired token due to clock differences
+    return token.expiresAt().isBefore(ZonedDateTime.now().plusMinutes(EXPIRY_MARGIN_IN_MINUTES));
   }
 
   private AccessToken generateInstallationToken(final String jwtToken, final int installationId)
