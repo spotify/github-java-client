@@ -37,6 +37,8 @@ public class AnnotationTest {
          .path("path")
          .startLine(1)
          .endLine(2)
+         .startColumn(1)
+         .endColumn(9)
          .annotationLevel(AnnotationLevel.notice);
    }
 
@@ -78,5 +80,17 @@ public class AnnotationTest {
     String serializedAnnotation = Json.create().toJsonUnchecked(annotationWithEmptyStringFields);
     String expected = "{\"path\":\"\",\"annotation_level\":\"notice\",\"message\":\"\",\"title\":\"\",\"start_line\":1,\"end_line\":2}";
     assertThat(serializedAnnotation, is(expected));
+  }
+
+  @Test
+  public void clearsColumnFieldsForMultiLineAnnotation() {
+    Annotation annotationSpanningMultipleLines = builder().startLine(1).endLine(2).build();
+    String serializedAnnotation = Json.create().toJsonUnchecked(annotationSpanningMultipleLines);
+    String serializedWithoutColumns = "{\"path\":\"path\",\"annotation_level\":\"notice\",\"message\":\"message\",\"title\":\"title\",\"raw_details\":\"rawDetails\",\"start_line\":1,\"end_line\":2";
+    assertThat(serializedAnnotation, is(serializedWithoutColumns + "}"));
+
+    Annotation annotationOnSingleLine = builder().startLine(1).endLine(1).build();
+    serializedAnnotation = Json.create().toJsonUnchecked(annotationOnSingleLine);
+    assertThat(serializedAnnotation, is(serializedWithoutColumns + ",\"start_column\":1,\"end_column\":9}"));
   }
 }

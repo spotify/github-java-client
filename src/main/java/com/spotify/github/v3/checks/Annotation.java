@@ -125,7 +125,7 @@ public interface Annotation {
    */
   @Value.Check
   @SuppressWarnings("checkstyle:magicnumber")
-  default void check() {
+  default Annotation check() {
     // max values from https://docs.github.com/en/rest/checks/runs
     Preconditions.checkState(title().map(String::length).orElse(0) <= 255,
         "'title' exceeded max length of 255");
@@ -133,5 +133,16 @@ public interface Annotation {
         "'message' exceeded max length of 64kB");
     Preconditions.checkState(rawDetails().map(String::length).orElse(0) <= 64 * 1024,
         "'rawDetails' exceeded max length of 64kB");
+
+    // Omit this (start_column, end_column) parameter if start_line and end_line have different values
+    // from https://docs.github.com/en/rest/checks/runs
+    if (startLine() != endLine()) {
+      return ImmutableAnnotation.builder()
+          .from(this)
+          .startColumn(Optional.empty())
+          .endColumn(Optional.empty())
+          .build();
+    }
+    return this;
   }
 }
