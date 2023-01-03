@@ -22,10 +22,13 @@ package com.spotify.github.v3.checks;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.checks.ImmutableAnnotation.Builder;
+import java.util.Optional;
 import org.junit.Test;
 
 public class AnnotationTest {
@@ -84,13 +87,20 @@ public class AnnotationTest {
 
   @Test
   public void clearsColumnFieldsForMultiLineAnnotation() {
-    Annotation annotationSpanningMultipleLines = builder().startLine(1).endLine(2).build();
-    String serializedAnnotation = Json.create().toJsonUnchecked(annotationSpanningMultipleLines);
-    String serializedWithoutColumns = "{\"path\":\"path\",\"annotation_level\":\"notice\",\"message\":\"message\",\"title\":\"title\",\"raw_details\":\"rawDetails\",\"start_line\":1,\"end_line\":2";
-    assertThat(serializedAnnotation, is(serializedWithoutColumns + "}"));
+    Annotation multiLineAnnotation = builder().startLine(1).endLine(2).build();
+    assertTrue(multiLineAnnotation.startColumn().isEmpty());
+    assertTrue(multiLineAnnotation.endColumn().isEmpty());
 
-    Annotation annotationOnSingleLine = builder().startLine(1).endLine(1).build();
-    serializedAnnotation = Json.create().toJsonUnchecked(annotationOnSingleLine);
-    assertThat(serializedAnnotation, is(serializedWithoutColumns + ",\"start_column\":1,\"end_column\":9}"));
+    Annotation anotherMultiLineAnnotation = builder().startLine(1).endLine(2).startColumn(Optional.empty()).endColumn(1).build();
+    assertTrue(anotherMultiLineAnnotation.startColumn().isEmpty());
+    assertTrue(anotherMultiLineAnnotation.endColumn().isEmpty());
+
+    Annotation yetAnotherMultiLineAnnotation = builder().startLine(1).endLine(2).startColumn(1).endColumn(Optional.empty()).build();
+    assertTrue(yetAnotherMultiLineAnnotation.startColumn().isEmpty());
+    assertTrue(yetAnotherMultiLineAnnotation.endColumn().isEmpty());
+
+    Annotation singleLineAnnotation = builder().startLine(1).endLine(1).build();
+    assertEquals(1, singleLineAnnotation.startColumn().orElse(0));
+    assertEquals(9, singleLineAnnotation.endColumn().orElse(0));
   }
 }

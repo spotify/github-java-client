@@ -136,7 +136,7 @@ public interface Annotation {
 
     // Omit this (start_column, end_column) parameter if start_line and end_line have different values
     // from https://docs.github.com/en/rest/checks/runs
-    if (startLine() != endLine()) {
+    if (startLine() != endLine() && (startColumn().isPresent() || endColumn().isPresent())) {
       return ImmutableAnnotation.builder()
           .from(this)
           .startColumn(Optional.empty())
