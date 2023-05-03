@@ -34,7 +34,7 @@ public class ReadOnlyRepositoryException extends RequestNotOkException {
    * @param msg the msg
    */
   public ReadOnlyRepositoryException(
-      final String method, final String path, final int statusCode, final String msg, final Map<String, List<String>>headers) {
+      final String method, final String path, final int statusCode, final String msg, final Map<String, List<String>> headers) {
     super(method, path, statusCode, msg, headers);
   }
 }
