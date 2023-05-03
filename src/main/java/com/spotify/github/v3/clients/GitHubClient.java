@@ -783,12 +783,15 @@ public class GitHubClient {
   private RequestNotOkException mapException(final Response res, final Request request)
       throws IOException {
     String bodyString = res.body() != null ? res.body().string() : "";
+    Map<String, List<String>> headersMap = res.headers().toMultimap();
+
     if (res.code() == FORBIDDEN) {
       if (bodyString.contains("Repository was archived so is read-only")) {
-        return new ReadOnlyRepositoryException(request.method(), request.url().encodedPath(), res.code(), bodyString);
+        return new ReadOnlyRepositoryException(request.method(), request.url().encodedPath(), res.code(), bodyString, headersMap);
       }
     }
-    return new RequestNotOkException(request.method(), request.url().encodedPath(), res.code(), bodyString);
+
+    return new RequestNotOkException(request.method(), request.url().encodedPath(), res.code(), bodyString, headersMap);
   }
 
   CompletableFuture<Response> processPossibleRedirects(

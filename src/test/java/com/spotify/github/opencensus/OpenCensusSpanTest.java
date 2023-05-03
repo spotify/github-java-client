@@ -24,9 +24,9 @@ import com.spotify.github.Span;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import io.opencensus.trace.AttributeValue;
 import io.opencensus.trace.Status;
+import java.util.Collections;
 import org.junit.jupiter.api.Test;
 
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -46,7 +46,7 @@ class OpenCensusSpanTest {
     @Test
     public void fail() {
         final Span span = new OpenCensusSpan(wrapped);
-        span.failure(new RequestNotOkException("method", "path", 404, "Not found"));
+        span.failure(new RequestNotOkException("method", "path", 404, "Not found", Collections.emptyMap()));
         span.close();
 
         verify(wrapped).setStatus(Status.UNKNOWN);
@@ -57,7 +57,7 @@ class OpenCensusSpanTest {
     @Test
     public void failOnServerError() {
         final Span span = new OpenCensusSpan(wrapped);
-        span.failure(new RequestNotOkException("method", "path", 500, "Internal Server Error"));
+        span.failure(new RequestNotOkException("method", "path", 500, "Internal Server Error", Collections.emptyMap()));
         span.close();
 
         verify(wrapped).setStatus(Status.UNKNOWN);
