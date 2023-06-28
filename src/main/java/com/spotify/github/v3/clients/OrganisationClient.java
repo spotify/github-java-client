@@ -46,8 +46,8 @@ public class OrganisationClient {
   /**
    * Get a specific team.
    *
-   * @param slug team slug
-   * @param org organisation
+   * @param slug slug of the team name
+   * @param org organisation name
    * @return team
    */
   public CompletableFuture<Team> getTeam(final String org, final String slug) {
