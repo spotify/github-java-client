@@ -20,7 +20,18 @@
 //
 package com.spotify.github.v3.clients;
 
+import com.spotify.github.v3.Team;
+import java.lang.invoke.MethodHandles;
+import java.util.concurrent.CompletableFuture;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class OrganisationClient {
+
+  private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+  private static final String TEAM_TEMPLATE = "/orgs/%s/teams";
+
+  private static final String TEAM_SLUG_TEMPLATE = "/orgs/%s/teams/%s";
 
   private final GitHubClient github;
 
@@ -30,5 +41,18 @@ public class OrganisationClient {
 
   static OrganisationClient create(final GitHubClient github) {
     return new OrganisationClient(github);
+  }
+
+  /**
+   * Get a specific team.
+   *
+   * @param slug team slug
+   * @param org organisation
+   * @return team
+   */
+  public CompletableFuture<Team> getTeam(final String org, final String slug) {
+    final String path = String.format(TEAM_SLUG_TEMPLATE, org, slug);
+    log.debug("Fetching team from " + path);
+    return github.request(path, Team.class);
   }
 }
