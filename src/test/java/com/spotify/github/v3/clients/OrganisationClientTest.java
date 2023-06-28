@@ -21,6 +21,7 @@
 package com.spotify.github.v3.clients;
 
 import static com.google.common.io.Resources.getResource;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAMS;
 import static java.nio.charset.Charset.defaultCharset;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -32,6 +33,7 @@ import com.google.common.io.Resources;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.Team;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import okhttp3.Headers;
 import okhttp3.Response;
@@ -70,5 +72,16 @@ public class OrganisationClientTest {
     final Team team = organisationClient.getTeam("github", "justice-league").get();
     assertThat(team.id(), is(1));
     assertThat(team.name(), is("Justice League"));
+  }
+
+  @Test
+  public void listTeams() throws Exception {
+    final CompletableFuture<List<Team>> fixture =
+        completedFuture(json.fromJson(getFixture("teams_list.json"), LIST_TEAMS));
+    when(github.request("/orgs/github/teams", LIST_TEAMS)).thenReturn(fixture);
+    final List<Team> teams = organisationClient.listTeams("github").get();
+    assertThat(teams.get(0).slug(), is("justice-league"));
+    assertThat(teams.get(1).slug(), is("x-men"));
+    assertThat(teams.size(), is(2));
   }
 }

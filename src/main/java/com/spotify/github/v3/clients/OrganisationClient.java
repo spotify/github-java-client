@@ -20,8 +20,11 @@
 //
 package com.spotify.github.v3.clients;
 
+import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAMS;
+
 import com.spotify.github.v3.Team;
 import java.lang.invoke.MethodHandles;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +47,7 @@ public class OrganisationClient {
   }
 
   /**
-   * Get a specific team.
+   * Get a specific team in an organisation.
    *
    * @param slug slug of the team name
    * @param org organisation name
@@ -54,5 +57,17 @@ public class OrganisationClient {
     final String path = String.format(TEAM_SLUG_TEMPLATE, org, slug);
     log.debug("Fetching team from " + path);
     return github.request(path, Team.class);
+  }
+
+  /**
+   * List teams within an organisation.
+   *
+   * @param org organisation name
+   * @return list of all teams in an organisation
+   */
+  public CompletableFuture<List<Team>> listTeams(final String org) {
+    final String path = String.format(TEAM_TEMPLATE, org);
+    log.debug("Fetching team from " + path);
+    return github.request(path, LIST_TEAMS);
   }
 }
