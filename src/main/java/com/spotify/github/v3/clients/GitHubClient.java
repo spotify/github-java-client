@@ -362,6 +362,15 @@ public class GitHubClient {
     return ChecksClient.create(this, owner, repo);
   }
 
+  /**
+   * Create organisation API client
+   *
+   * @return organisation API client
+   */
+  public OrganisationClient createOrganisationClient() {
+    return OrganisationClient.create(this);
+  }
+
   Json json() {
     return json;
   }
