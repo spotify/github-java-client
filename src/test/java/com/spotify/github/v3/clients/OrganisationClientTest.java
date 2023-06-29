@@ -41,6 +41,7 @@ import okhttp3.ResponseBody;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -83,5 +84,17 @@ public class OrganisationClientTest {
     assertThat(teams.get(0).slug(), is("justice-league"));
     assertThat(teams.get(1).slug(), is("x-men"));
     assertThat(teams.size(), is(2));
+  }
+
+  @Test
+  public void deleteTeam() throws Exception {
+    final CompletableFuture<Response> response = completedFuture(mock(Response.class));
+    final ArgumentCaptor<String> capture = ArgumentCaptor.forClass(String.class);
+    when(github.delete(capture.capture())).thenReturn(response);
+
+    CompletableFuture<Void> deleteResponse = organisationClient.deleteTeam("github", "justice-league");
+    deleteResponse.get();
+    assertThat(capture.getValue(), is("/orgs/github/teams/justice-league"));
+
   }
 }

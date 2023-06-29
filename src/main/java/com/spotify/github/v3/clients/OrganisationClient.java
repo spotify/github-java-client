@@ -20,6 +20,7 @@
 //
 package com.spotify.github.v3.clients;
 
+import static com.spotify.github.v3.clients.GitHubClient.IGNORE_RESPONSE_CONSUMER;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAMS;
 
 import com.spotify.github.v3.Team;
@@ -69,5 +70,18 @@ public class OrganisationClient {
     final String path = String.format(TEAM_TEMPLATE, org);
     log.debug("Fetching team from " + path);
     return github.request(path, LIST_TEAMS);
+  }
+
+  /**
+   * Delete a specific team in an organisation.
+   *
+   * @param slug slug of the team name
+   * @param org organisation name
+   * @return team
+   */
+  public CompletableFuture<Void> deleteTeam(final String org, final String slug) {
+    final String path = String.format(TEAM_SLUG_TEMPLATE, org, slug);
+    log.debug("Fetching team from " + path);
+    return github.delete(path).thenAccept(IGNORE_RESPONSE_CONSUMER);
   }
 }
