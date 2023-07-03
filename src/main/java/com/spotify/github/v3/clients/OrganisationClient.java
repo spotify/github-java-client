@@ -86,6 +86,18 @@ public class OrganisationClient {
   }
 
   /**
+   * Update a team in an organisation.
+   *
+   * @param request update team request
+   * @return team
+   */
+  public CompletableFuture<Team> updateTeam(final TeamCreate request, final String org) {
+    final String path = String.format(TEAM_TEMPLATE, org);
+    log.debug("Updating team in: " + path);
+    return github.patch(path, github.json().toJsonUnchecked(request), Team.class);
+  }
+
+  /**
    * Delete a specific team in an organisation.
    *
    * @param slug slug of the team name
