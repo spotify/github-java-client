@@ -21,17 +21,25 @@
 package com.spotify.github.v3.clients;
 
 import static com.google.common.io.Resources.getResource;
+import static com.spotify.github.v3.clients.ChecksClientTest.loadResource;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAMS;
 import static java.nio.charset.Charset.defaultCharset;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.Team;
+import com.spotify.github.v3.checks.CheckRunRequest;
+import com.spotify.github.v3.checks.CheckRunResponse;
+import com.spotify.github.v3.orgs.requests.ImmutableTeamCreate;
+import com.spotify.github.v3.orgs.requests.TeamCreate;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -50,7 +58,9 @@ import org.powermock.modules.junit4.PowerMockRunner;
 public class OrganisationClientTest {
 
   private GitHubClient github;
+
   private OrganisationClient organisationClient;
+
   private Json json;
 
   private static String getFixture(String resource) throws IOException {
@@ -95,6 +105,21 @@ public class OrganisationClientTest {
     CompletableFuture<Void> deleteResponse = organisationClient.deleteTeam("github", "justice-league");
     deleteResponse.get();
     assertThat(capture.getValue(), is("/orgs/github/teams/justice-league"));
+  }
 
+  @Test
+  public void createTeam() throws Exception {
+    final TeamCreate teamCreateRequest =
+        json.fromJson(
+            getFixture("teams_request.json"),
+            TeamCreate.class);
+
+    final CompletableFuture<Team> fixtureResponse = completedFuture(json.fromJson(
+        getFixture("team_get.json"),
+        Team.class));
+    when(github.post(any(), any(), eq(Team.class))).thenReturn(fixtureResponse);
+    final CompletableFuture<Team> actualResponse = organisationClient.createTeam(teamCreateRequest, "github");
+
+    assertThat(actualResponse.get().name(), is("Justice League"));
   }
 }

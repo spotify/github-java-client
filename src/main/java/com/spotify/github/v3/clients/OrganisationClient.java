@@ -24,6 +24,7 @@ import static com.spotify.github.v3.clients.GitHubClient.IGNORE_RESPONSE_CONSUME
 import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAMS;
 
 import com.spotify.github.v3.Team;
+import com.spotify.github.v3.orgs.requests.TeamCreate;
 import java.lang.invoke.MethodHandles;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -48,6 +49,18 @@ public class OrganisationClient {
   }
 
   /**
+   * Create a team in an organisation.
+   *
+   * @param request create team request
+   * @return team
+   */
+  public CompletableFuture<Team> createTeam(final TeamCreate request, final String org) {
+    final String path = String.format(TEAM_TEMPLATE, org);
+    log.debug("Creating team in: " + path);
+    return github.post(path, github.json().toJsonUnchecked(request), Team.class);
+  }
+
+  /**
    * Get a specific team in an organisation.
    *
    * @param slug slug of the team name
@@ -68,7 +81,7 @@ public class OrganisationClient {
    */
   public CompletableFuture<List<Team>> listTeams(final String org) {
     final String path = String.format(TEAM_TEMPLATE, org);
-    log.debug("Fetching team from " + path);
+    log.debug("Fetching teams from " + path);
     return github.request(path, LIST_TEAMS);
   }
 
@@ -81,7 +94,7 @@ public class OrganisationClient {
    */
   public CompletableFuture<Void> deleteTeam(final String org, final String slug) {
     final String path = String.format(TEAM_SLUG_TEMPLATE, org, slug);
-    log.debug("Fetching team from " + path);
+    log.debug("Deleting team from: " + path);
     return github.delete(path).thenAccept(IGNORE_RESPONSE_CONSUMER);
   }
 }
