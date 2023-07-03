@@ -91,8 +91,8 @@ public class OrganisationClient {
    * @param request update team request
    * @return team
    */
-  public CompletableFuture<Team> updateTeam(final TeamCreate request, final String org) {
-    final String path = String.format(TEAM_TEMPLATE, org);
+  public CompletableFuture<Team> updateTeam(final TeamCreate request, final String org, final String slug) {
+    final String path = String.format(TEAM_SLUG_TEMPLATE, org, slug);
     log.debug("Updating team in: " + path);
     return github.patch(path, github.json().toJsonUnchecked(request), Team.class);
   }

@@ -110,7 +110,7 @@ public class OrganisationClientTest {
             TeamCreate.class);
 
     final CompletableFuture<Team> fixtureResponse = completedFuture(json.fromJson(
-        getFixture("team_get.json"),
+        getFixture("teams_patch_response.json"),
         Team.class));
     when(github.post(any(), any(), eq(Team.class))).thenReturn(fixtureResponse);
     final CompletableFuture<Team> actualResponse = organisationClient.createTeam(teamCreateRequest, "github");
@@ -122,15 +122,15 @@ public class OrganisationClientTest {
   public void updateTeam() throws Exception {
     final TeamCreate teamCreateRequest =
         json.fromJson(
-            getFixture("teams_request.json"),
+            getFixture("teams_patch.json"),
             TeamCreate.class);
 
     final CompletableFuture<Team> fixtureResponse = completedFuture(json.fromJson(
-        getFixture("team_get.json"),
+        getFixture("teams_patch_response.json"),
         Team.class));
     when(github.patch(any(), any(), eq(Team.class))).thenReturn(fixtureResponse);
-    final CompletableFuture<Team> actualResponse = organisationClient.updateTeam(teamCreateRequest, "github");
+    final CompletableFuture<Team> actualResponse = organisationClient.updateTeam(teamCreateRequest, "github", "justice-league");
 
-    assertThat(actualResponse.get().name(), is("Justice League"));
+    assertThat(actualResponse.get().name(), is("Justice League2"));
   }
 }
