@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 public class OrganisationClient {
 
   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
   private static final String TEAM_TEMPLATE = "/orgs/%s/teams";
 
   private static final String TEAM_SLUG_TEMPLATE = "/orgs/%s/teams/%s";
