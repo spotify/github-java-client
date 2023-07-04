@@ -110,7 +110,7 @@ public class OrganisationClientTest {
             TeamCreate.class);
 
     final CompletableFuture<Team> fixtureResponse = completedFuture(json.fromJson(
-        getFixture("teams_patch_response.json"),
+        getFixture("team_get.json"),
         Team.class));
     when(github.post(any(), any(), eq(Team.class))).thenReturn(fixtureResponse);
     final CompletableFuture<Team> actualResponse = organisationClient.createTeam(teamCreateRequest, "github");
