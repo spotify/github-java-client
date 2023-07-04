@@ -26,6 +26,7 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
+/** Request to create a team within a given organisation */
 @Value.Immutable
 @GithubStyle
 @JsonSerialize(as = ImmutableTeamCreate.class)
