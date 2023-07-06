@@ -371,8 +371,8 @@ public class GitHubClient {
    *
    * @return organisation API client
    */
-  public OrganisationClient createOrganisationClient() {
-    return OrganisationClient.create(this);
+  public OrganisationClient createOrganisationClient(final String org) {
+    return OrganisationClient.create(this, org);
   }
 
   Json json() {

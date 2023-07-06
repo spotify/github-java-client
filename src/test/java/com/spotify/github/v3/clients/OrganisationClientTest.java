@@ -65,7 +65,7 @@ public class OrganisationClientTest {
   @Before
   public void setUp() {
     github = mock(GitHubClient.class);
-    organisationClient = new OrganisationClient(github);
+    organisationClient = new OrganisationClient(github, "github");
     json = Json.create();
     when(github.json()).thenReturn(json);
   }
@@ -75,7 +75,7 @@ public class OrganisationClientTest {
     final CompletableFuture<Team> fixture =
         completedFuture(json.fromJson(getFixture("team_get.json"), Team.class));
     when(github.request("/orgs/github/teams/justice-league", Team.class)).thenReturn(fixture);
-    final Team team = organisationClient.getTeam("github", "justice-league").get();
+    final Team team = organisationClient.getTeam("justice-league").get();
     assertThat(team.id(), is(1));
     assertThat(team.name(), is("Justice League"));
   }
@@ -85,7 +85,7 @@ public class OrganisationClientTest {
     final CompletableFuture<List<Team>> fixture =
         completedFuture(json.fromJson(getFixture("teams_list.json"), LIST_TEAMS));
     when(github.request("/orgs/github/teams", LIST_TEAMS)).thenReturn(fixture);
-    final List<Team> teams = organisationClient.listTeams("github").get();
+    final List<Team> teams = organisationClient.listTeams().get();
     assertThat(teams.get(0).slug(), is("justice-league"));
     assertThat(teams.get(1).slug(), is("x-men"));
     assertThat(teams.size(), is(2));
@@ -97,7 +97,7 @@ public class OrganisationClientTest {
     final ArgumentCaptor<String> capture = ArgumentCaptor.forClass(String.class);
     when(github.delete(capture.capture())).thenReturn(response);
 
-    CompletableFuture<Void> deleteResponse = organisationClient.deleteTeam("github", "justice-league");
+    CompletableFuture<Void> deleteResponse = organisationClient.deleteTeam("justice-league");
     deleteResponse.get();
     assertThat(capture.getValue(), is("/orgs/github/teams/justice-league"));
   }
@@ -113,7 +113,7 @@ public class OrganisationClientTest {
         getFixture("team_get.json"),
         Team.class));
     when(github.post(any(), any(), eq(Team.class))).thenReturn(fixtureResponse);
-    final CompletableFuture<Team> actualResponse = organisationClient.createTeam(teamCreateRequest, "github");
+    final CompletableFuture<Team> actualResponse = organisationClient.createTeam(teamCreateRequest);
 
     assertThat(actualResponse.get().name(), is("Justice League"));
   }
@@ -129,7 +129,7 @@ public class OrganisationClientTest {
         getFixture("teams_patch_response.json"),
         Team.class));
     when(github.patch(any(), any(), eq(Team.class))).thenReturn(fixtureResponse);
-    final CompletableFuture<Team> actualResponse = organisationClient.updateTeam(teamCreateRequest, "github", "justice-league");
+    final CompletableFuture<Team> actualResponse = organisationClient.updateTeam(teamCreateRequest, "justice-league");
 
     assertThat(actualResponse.get().name(), is("Justice League2"));
   }

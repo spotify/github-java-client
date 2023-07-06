@@ -41,12 +41,15 @@ public class OrganisationClient {
 
   private final GitHubClient github;
 
-  OrganisationClient(final GitHubClient github) {
+  private final String org;
+
+  OrganisationClient(final GitHubClient github, final String org) {
     this.github = github;
+    this.org = org;
   }
 
-  static OrganisationClient create(final GitHubClient github) {
-    return new OrganisationClient(github);
+  static OrganisationClient create(final GitHubClient github, final String org) {
+    return new OrganisationClient(github, org);
   }
 
   /**
@@ -55,7 +58,7 @@ public class OrganisationClient {
    * @param request create team request
    * @return team
    */
-  public CompletableFuture<Team> createTeam(final TeamCreate request, final String org) {
+  public CompletableFuture<Team> createTeam(final TeamCreate request) {
     final String path = String.format(TEAM_TEMPLATE, org);
     log.debug("Creating team in: " + path);
     return github.post(path, github.json().toJsonUnchecked(request), Team.class);
@@ -65,10 +68,9 @@ public class OrganisationClient {
    * Get a specific team in an organisation.
    *
    * @param slug slug of the team name
-   * @param org organisation name
    * @return team
    */
-  public CompletableFuture<Team> getTeam(final String org, final String slug) {
+  public CompletableFuture<Team> getTeam(final String slug) {
     final String path = String.format(TEAM_SLUG_TEMPLATE, org, slug);
     log.debug("Fetching team from " + path);
     return github.request(path, Team.class);
@@ -77,10 +79,9 @@ public class OrganisationClient {
   /**
    * List teams within an organisation.
    *
-   * @param org organisation name
    * @return list of all teams in an organisation
    */
-  public CompletableFuture<List<Team>> listTeams(final String org) {
+  public CompletableFuture<List<Team>> listTeams() {
     final String path = String.format(TEAM_TEMPLATE, org);
     log.debug("Fetching teams from " + path);
     return github.request(path, LIST_TEAMS);
@@ -90,9 +91,10 @@ public class OrganisationClient {
    * Update a team in an organisation.
    *
    * @param request update team request
+   * @param slug slug of the team name
    * @return team
    */
-  public CompletableFuture<Team> updateTeam(final TeamCreate request, final String org, final String slug) {
+  public CompletableFuture<Team> updateTeam(final TeamCreate request, final String slug) {
     final String path = String.format(TEAM_SLUG_TEMPLATE, org, slug);
     log.debug("Updating team in: " + path);
     return github.patch(path, github.json().toJsonUnchecked(request), Team.class);
@@ -102,10 +104,9 @@ public class OrganisationClient {
    * Delete a specific team in an organisation.
    *
    * @param slug slug of the team name
-   * @param org organisation name
    * @return team
    */
-  public CompletableFuture<Void> deleteTeam(final String org, final String slug) {
+  public CompletableFuture<Void> deleteTeam(final String slug) {
     final String path = String.format(TEAM_SLUG_TEMPLATE, org, slug);
     log.debug("Deleting team from: " + path);
     return github.delete(path).thenAccept(IGNORE_RESPONSE_CONSUMER);
