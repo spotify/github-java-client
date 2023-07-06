@@ -86,7 +86,15 @@ This project uses Maven. To run the tests locally, just run:
 mvn clean verify
 ```
 
-If you are a maintainer, you can release a new version by running this command locally: `mvn release:prepare`
+If you are a maintainer, you can release a new version by doing the following:
+
+- Merge the changes the need to be released into the `master` branch
+- Checkout on to master locally and pull the latest changes
+- Run `mvn release:prepare`, this will generate 2 commits that will bump the version of the github-java-client
+- Push these changes to master
+- Once the [release pipeline](https://github.com/spotify/github-java-client/actions/workflows/release.yml) has completed, the changes will have been tagged
+- [Navigate to the tag](https://github.com/spotify/github-java-client/tags) associated with the changes and generate a manual release
+- Once the release is generated, select the "Set as the latest release" checkbox and publish the release
 
 ## Notes about maturity
 
