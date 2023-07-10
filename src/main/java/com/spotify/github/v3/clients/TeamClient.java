@@ -33,6 +33,7 @@ import com.spotify.github.v3.orgs.TeamInvitation;
 import com.spotify.github.v3.orgs.requests.MembershipCreate;
 import com.spotify.github.v3.orgs.requests.TeamCreate;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Member;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
@@ -144,7 +145,7 @@ public class TeamClient {
    * @param username username of the team member
    * @return membership
    */
-  public CompletableFuture<Membership> getMembership(final String slug, final String username) {
+  public CompletableFuture<Membership> getTeamMembership(final String slug, final String username) {
     final String path = String.format(MEMBERSHIP_TEMPLATE, org, slug, username);
     log.debug("Fetching membership for: " + path);
     return github.request(path, Membership.class);

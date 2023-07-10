@@ -146,7 +146,7 @@ public class TeamClientTest {
     final CompletableFuture<Membership> fixture =
         completedFuture(json.fromJson(getFixture("membership.json"), Membership.class));
     when(github.request("/orgs/github/teams/1/memberships/octocat", Membership.class)).thenReturn(fixture);
-    final Membership membership = teamClient.getMembership("1", "octocat").get();
+    final Membership membership = teamClient.getTeamMembership("1", "octocat").get();
     assertThat(membership.url().toString(), is("https://api.github.com/teams/1/memberships/octocat"));
     assertThat(membership.role(), is("maintainer"));
     assertThat(membership.state(), is("active"));
