@@ -58,67 +58,7 @@ public class OrganisationClient {
    *
    * @return membership API client
    */
-  public MembershipClient createMembershipClient(final GitHubClient github, final String org, final String team) {
-    return MembershipClient.create(github, org, team);
-  }
-
-  /**
-   * Create a team in an organisation.
-   *
-   * @param request create team request
-   * @return team
-   */
-  public CompletableFuture<Team> createTeam(final TeamCreate request) {
-    final String path = String.format(TEAM_TEMPLATE, org);
-    log.debug("Creating team in: " + path);
-    return github.post(path, github.json().toJsonUnchecked(request), Team.class);
-  }
-
-  /**
-   * Get a specific team in an organisation.
-   *
-   * @param slug slug of the team name
-   * @return team
-   */
-  public CompletableFuture<Team> getTeam(final String slug) {
-    final String path = String.format(TEAM_SLUG_TEMPLATE, org, slug);
-    log.debug("Fetching team from " + path);
-    return github.request(path, Team.class);
-  }
-
-  /**
-   * List teams within an organisation.
-   *
-   * @return list of all teams in an organisation
-   */
-  public CompletableFuture<List<Team>> listTeams() {
-    final String path = String.format(TEAM_TEMPLATE, org);
-    log.debug("Fetching teams from " + path);
-    return github.request(path, LIST_TEAMS);
-  }
-
-  /**
-   * Update a team in an organisation.
-   *
-   * @param request update team request
-   * @param slug slug of the team name
-   * @return team
-   */
-  public CompletableFuture<Team> updateTeam(final TeamCreate request, final String slug) {
-    final String path = String.format(TEAM_SLUG_TEMPLATE, org, slug);
-    log.debug("Updating team in: " + path);
-    return github.patch(path, github.json().toJsonUnchecked(request), Team.class);
-  }
-
-  /**
-   * Delete a specific team in an organisation.
-   *
-   * @param slug slug of the team name
-   * @return team
-   */
-  public CompletableFuture<Void> deleteTeam(final String slug) {
-    final String path = String.format(TEAM_SLUG_TEMPLATE, org, slug);
-    log.debug("Deleting team from: " + path);
-    return github.delete(path).thenAccept(IGNORE_RESPONSE_CONSUMER);
+  public TeamClient createTeamClient(final GitHubClient github, final String org) {
+    return TeamClient.create(github, org);
   }
 }
