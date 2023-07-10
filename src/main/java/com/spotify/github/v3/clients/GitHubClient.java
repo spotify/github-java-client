@@ -27,6 +27,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.spotify.github.Tracer;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.Team;
+import com.spotify.github.v3.User;
 import com.spotify.github.v3.checks.AccessToken;
 import com.spotify.github.v3.comment.Comment;
 import com.spotify.github.v3.exceptions.ReadOnlyRepositoryException;
@@ -99,6 +100,9 @@ public class GitHubClient {
   static final TypeReference<List<RepositoryInvitation>> LIST_REPOSITORY_INVITATION =  new TypeReference<>() {};
 
   static final TypeReference<List<Team>> LIST_TEAMS =
+      new TypeReference<>() {};
+
+  static final TypeReference<List<User>> LIST_TEAM_MEMBERS =
       new TypeReference<>() {};
 
   private static final String GET_ACCESS_TOKEN_URL = "app/installations/%s/access_tokens";

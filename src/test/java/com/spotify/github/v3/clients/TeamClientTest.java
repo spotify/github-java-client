@@ -23,6 +23,7 @@ package com.spotify.github.v3.clients;
 
 import static com.google.common.io.Resources.getResource;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAMS;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAM_MEMBERS;
 import static java.nio.charset.Charset.defaultCharset;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -35,6 +36,7 @@ import static org.mockito.Mockito.when;
 import com.google.common.io.Resources;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.Team;
+import com.spotify.github.v3.User;
 import com.spotify.github.v3.orgs.Membership;
 import com.spotify.github.v3.orgs.requests.TeamCreate;
 import java.io.IOException;
@@ -141,9 +143,20 @@ public class TeamClientTest {
     final CompletableFuture<Membership> fixture =
         completedFuture(json.fromJson(getFixture("membership.json"), Membership.class));
     when(github.request("/orgs/github/teams/1/memberships/octocat", Membership.class)).thenReturn(fixture);
-    final Membership membership = teamClient.getMembership("1", "octocat").get();
+    final Membership membership = teamClient.getTeamMembership("1", "octocat").get();
     assertThat(membership.url().toString(), is("https://api.github.com/teams/1/memberships/octocat"));
     assertThat(membership.role(), is("maintainer"));
     assertThat(membership.state(), is("active"));
+  }
+
+  @Test
+  public void listTeamMembers() throws Exception {
+    final CompletableFuture<List<User>> fixture =
+        completedFuture(json.fromJson(getFixture("list_members.json"), LIST_TEAM_MEMBERS));
+    when(github.request("/orgs/github/teams/1/members", LIST_TEAM_MEMBERS)).thenReturn(fixture);
+    final List<User> teamMembers = teamClient.listTeamMembers("1").get();
+    assertThat(teamMembers.get(0).login(), is("octocat"));
+    assertThat(teamMembers.get(1).id(), is(2));
+    assertThat(teamMembers.size(), is(2));
   }
 }

@@ -2,11 +2,14 @@ package com.spotify.github.v3.clients;
 
 import static com.spotify.github.v3.clients.GitHubClient.IGNORE_RESPONSE_CONSUMER;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAMS;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAM_MEMBERS;
 
 import com.spotify.github.v3.Team;
+import com.spotify.github.v3.User;
 import com.spotify.github.v3.orgs.Membership;
 import com.spotify.github.v3.orgs.requests.TeamCreate;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Member;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
@@ -107,9 +110,21 @@ public class TeamClient {
    * @param username username of the team member
    * @return membership
    */
-  public CompletableFuture<Membership> getMembership(final String slug, final String username) {
+  public CompletableFuture<Membership> getTeamMembership(final String slug, final String username) {
     final String path = String.format(MEMBERSHIP_TEMPLATE, org, slug, username);
     log.debug("Fetching membership for: " + path);
     return github.request(path, Membership.class);
+  }
+
+  /**
+   * List team members.
+   *
+   * @param slug the team slug
+   * @return list of all members in a team
+   */
+  public CompletableFuture<List<User>> listTeamMembers(final String slug) {
+    final String path = String.format(MEMBERS_TEMPLATE, org, slug);
+    log.debug("Fetching members for: " + path);
+    return github.request(path, LIST_TEAM_MEMBERS);
   }
 }
