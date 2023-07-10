@@ -45,16 +45,6 @@ public class OrganisationClient {
     return new OrganisationClient(github, org);
   }
 
-
-  /**
-   * Create a membership API client.
-   *
-   * @return membership API client
-   */
-  public MembershipClient createMembershipClient(final GitHubClient github, final String org, final String team) {
-    return MembershipClient.create(github, org, team);
-  }
-
   /**
    * Create a Teams API client.
    *
