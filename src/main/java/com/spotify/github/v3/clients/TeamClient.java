@@ -7,6 +7,7 @@ import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAM_MEMBERS;
 import com.spotify.github.v3.Team;
 import com.spotify.github.v3.User;
 import com.spotify.github.v3.orgs.Membership;
+import com.spotify.github.v3.orgs.requests.MembershipCreate;
 import com.spotify.github.v3.orgs.requests.TeamCreate;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Member;
@@ -101,6 +102,18 @@ public class TeamClient {
     final String path = String.format(TEAM_SLUG_TEMPLATE, org, slug);
     log.debug("Deleting team from: " + path);
     return github.delete(path).thenAccept(IGNORE_RESPONSE_CONSUMER);
+  }
+
+  /**
+   * Add or update team membership for a user
+   *
+   * @param request update membership request
+   * @return membership
+   */
+  public CompletableFuture<Membership> updateMembership(final MembershipCreate request, final String slug, final String username) {
+    final String path = String.format(MEMBERSHIP_TEMPLATE, org, slug, username);
+    log.debug("Updating membership in: " + path);
+    return github.put(path, github.json().toJsonUnchecked(request), Membership.class);
   }
 
   /**

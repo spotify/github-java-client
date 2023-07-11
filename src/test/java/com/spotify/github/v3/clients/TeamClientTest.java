@@ -38,6 +38,7 @@ import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.Team;
 import com.spotify.github.v3.User;
 import com.spotify.github.v3.orgs.Membership;
+import com.spotify.github.v3.orgs.requests.MembershipCreate;
 import com.spotify.github.v3.orgs.requests.TeamCreate;
 import java.io.IOException;
 import java.util.List;
@@ -158,5 +159,21 @@ public class TeamClientTest {
     assertThat(teamMembers.get(0).login(), is("octocat"));
     assertThat(teamMembers.get(1).id(), is(2));
     assertThat(teamMembers.size(), is(2));
+  }
+
+  @Test
+  public void updateMembership() throws Exception {
+    final MembershipCreate membershipCreateRequest =
+        json.fromJson(
+            getFixture("membership_update.json"),
+            MembershipCreate.class);
+
+    final CompletableFuture<Membership> fixtureResponse = completedFuture(json.fromJson(
+        getFixture("membership_update_response.json"),
+        Membership.class));
+    when(github.put(any(), any(), eq(Membership.class))).thenReturn(fixtureResponse);
+    final CompletableFuture<Membership> actualResponse = teamClient.updateMembership(membershipCreateRequest, "1", "octocat");
+
+    assertThat(actualResponse.get().role(), is("member"));
   }
 }
