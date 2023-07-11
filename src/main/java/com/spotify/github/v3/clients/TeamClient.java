@@ -164,7 +164,6 @@ public class TeamClient {
   }
 
   /**
-<<<<<<< HEAD
    * Delete a membership for a user.
    *
    * @param slug slug of the team name

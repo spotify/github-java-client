@@ -189,7 +189,6 @@ public class TeamClientTest {
     deleteResponse.get();
     assertThat(capture.getValue(), is("/orgs/github/teams/1/memberships/octocat"));
   }
-<<<<<<< HEAD
 
   @Test
   public void listPendingTeamInvitations() throws Exception {
@@ -201,6 +200,4 @@ public class TeamClientTest {
     assertThat(pendingInvitations.get(1).id(), is(2));
     assertThat(pendingInvitations.size(), is(2));
   }
-=======
->>>>>>> 7b6a00b (feat: add delete membership functionality)
 }
