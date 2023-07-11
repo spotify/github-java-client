@@ -67,8 +67,10 @@ final RepositoryClient repositoryClient = githubClient.createRepositoryClient("m
 log.info(repositoryClient.getCommit("sha").get().htmlUrl());
 ```
 
-Some APIs, such as Checks API are nested in the Repository API. Endpoints such as `POST /repos/:owner/:repo/check-runs` live in the ChecksClient:
+Another way the structure is mirrored is that some of the APIs are nested under a parent API.
+For example:
 
+Endpoints related to check runs or issues are nested under the Repository client:
 ```java
 final ChecksClient checksClient = repositoryClient.createChecksApiClient();
 checksClient.createCheckRun(CHECK_RUN_REQUEST);
@@ -76,7 +78,14 @@ checksClient.createCheckRun(CHECK_RUN_REQUEST);
 final IssueClient issueClient = repositoryClient.createIssueClient();
 issueClient.createComment(ISSUE_ID, "comment body")
   .thenAccept(comment -> log.info("created comment " + comment.htmlUrl()));
+
 ``` 
+
+Endpoints related to teams and memberships are nested under the Organisation client:
+```java
+final TeamClient teamClient = organisationClient.createTeamClient();
+    teamClient.getMembership("username");
+```
 
 ## Contributing
 
