@@ -127,7 +127,7 @@ public class TeamClient {
   }
 
   /**
-   * Add or update team membership for a user
+   * Add or update a team membership for a user.
    *
    * @param request update membership request
    * @return membership
@@ -139,7 +139,7 @@ public class TeamClient {
   }
 
   /**
-   * Get team membership of a user.
+   * Get a team membership of a user.
    *
    * @param slug the team slug
    * @param username username of the team member
@@ -152,10 +152,10 @@ public class TeamClient {
   }
 
   /**
-   * List team members.
+   * List members of a specific team.
    *
    * @param slug the team slug
-   * @return list of all members in a team
+   * @return list of all users in a team
    */
   public CompletableFuture<List<User>> listTeamMembers(final String slug) {
     final String path = String.format(MEMBERS_TEMPLATE, org, slug);
@@ -164,10 +164,10 @@ public class TeamClient {
   }
 
   /**
-   * Delete a membership for a specific user.
+   * Delete a membership for a user.
    *
    * @param slug slug of the team name
-   * @return team
+   * @return membership
    */
   public CompletableFuture<Void> deleteMembership(final String slug, final String username) {
     final String path = String.format(MEMBERSHIP_TEMPLATE, org, slug, username);
@@ -179,7 +179,7 @@ public class TeamClient {
    * List pending invitations for a team.
    *
    * @param slug the team slug
-   * @return list of all members in a team
+   * @return list of pending invitations for a team
    */
   public CompletableFuture<List<TeamInvitation>> listPendingTeamInvitations(final String slug) {
     final String path = String.format(INVITATIONS_TEMPLATE, org, slug);
