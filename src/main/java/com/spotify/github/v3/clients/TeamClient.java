@@ -123,7 +123,7 @@ public class TeamClient {
    * @param username username of the team member
    * @return membership
    */
-  public CompletableFuture<Membership> getTeamMembership(final String slug, final String username) {
+  public CompletableFuture<Membership> getMembership(final String slug, final String username) {
     final String path = String.format(MEMBERSHIP_TEMPLATE, org, slug, username);
     log.debug("Fetching membership for: " + path);
     return github.request(path, Membership.class);
@@ -139,5 +139,17 @@ public class TeamClient {
     final String path = String.format(MEMBERS_TEMPLATE, org, slug);
     log.debug("Fetching members for: " + path);
     return github.request(path, LIST_TEAM_MEMBERS);
+  }
+
+  /**
+   * Delete a specific team in an organisation.
+   *
+   * @param slug slug of the team name
+   * @return team
+   */
+  public CompletableFuture<Void> deleteMembership(final String slug, final String username) {
+    final String path = String.format(MEMBERSHIP_TEMPLATE, org, slug, username);
+    log.debug("Deleting membership from: " + path);
+    return github.delete(path).thenAccept(IGNORE_RESPONSE_CONSUMER);
   }
 }
