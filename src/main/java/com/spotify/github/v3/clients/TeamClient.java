@@ -127,11 +127,7 @@ public class TeamClient {
   }
 
   /**
-<<<<<<< HEAD
    * Add or update a team membership for a user.
-=======
-   * Add or update team membership for a user
->>>>>>> c0e39e9 (feat: add update membership functionality)
    *
    * @param request update membership request
    * @return membership
@@ -143,17 +139,13 @@ public class TeamClient {
   }
 
   /**
-<<<<<<< HEAD
    * Get a team membership of a user.
-=======
-   * Get team membership of a user.
->>>>>>> c0e39e9 (feat: add update membership functionality)
    *
    * @param slug the team slug
    * @param username username of the team member
    * @return membership
    */
-  public CompletableFuture<Membership> getTeamMembership(final String slug, final String username) {
+  public CompletableFuture<Membership> getMembership(final String slug, final String username) {
     final String path = String.format(MEMBERSHIP_TEMPLATE, org, slug, username);
     log.debug("Fetching membership for: " + path);
     return github.request(path, Membership.class);
@@ -172,6 +164,7 @@ public class TeamClient {
   }
 
   /**
+<<<<<<< HEAD
    * Delete a membership for a user.
    *
    * @param slug slug of the team name
