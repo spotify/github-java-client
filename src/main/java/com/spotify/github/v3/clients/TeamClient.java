@@ -127,7 +127,11 @@ public class TeamClient {
   }
 
   /**
+<<<<<<< HEAD
    * Add or update a team membership for a user.
+=======
+   * Add or update team membership for a user
+>>>>>>> c0e39e9 (feat: add update membership functionality)
    *
    * @param request update membership request
    * @return membership
@@ -139,7 +143,11 @@ public class TeamClient {
   }
 
   /**
+<<<<<<< HEAD
    * Get a team membership of a user.
+=======
+   * Get team membership of a user.
+>>>>>>> c0e39e9 (feat: add update membership functionality)
    *
    * @param slug the team slug
    * @param username username of the team member
