@@ -67,10 +67,8 @@ final RepositoryClient repositoryClient = githubClient.createRepositoryClient("m
 log.info(repositoryClient.getCommit("sha").get().htmlUrl());
 ```
 
-Another way the structure is mirrored is that some of the APIs are nested under a parent API.
-For example:
-
-Endpoints related to check runs or issues are nested under the Repository client:
+Another example of the mirrored structure is that some of the APIs are nested under a parent API.
+For example, endpoints related to check runs or issues are nested under the Repository client:
 ```java
 final ChecksClient checksClient = repositoryClient.createChecksApiClient();
 checksClient.createCheckRun(CHECK_RUN_REQUEST);
@@ -81,7 +79,7 @@ issueClient.createComment(ISSUE_ID, "comment body")
 
 ``` 
 
-Endpoints related to teams and memberships are nested under the Organisation client:
+And endpoints related to teams and memberships are nested under the Organisation client:
 ```java
 final TeamClient teamClient = organisationClient.createTeamClient();
     teamClient.getMembership("username");
