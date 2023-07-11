@@ -20,14 +20,7 @@
 //
 package com.spotify.github.v3.clients;
 
-import static com.spotify.github.v3.clients.GitHubClient.IGNORE_RESPONSE_CONSUMER;
-import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAMS;
-
-import com.spotify.github.v3.Team;
-import com.spotify.github.v3.orgs.requests.TeamCreate;
 import java.lang.invoke.MethodHandles;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -25,7 +25,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.spotify.github.GithubStyle;
 import com.spotify.github.v3.User;
 import java.net.URI;
-import java.util.Map;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
