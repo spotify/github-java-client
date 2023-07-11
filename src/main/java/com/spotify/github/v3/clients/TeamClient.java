@@ -33,7 +33,6 @@ import com.spotify.github.v3.orgs.TeamInvitation;
 import com.spotify.github.v3.orgs.requests.MembershipCreate;
 import com.spotify.github.v3.orgs.requests.TeamCreate;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Member;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
