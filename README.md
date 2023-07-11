@@ -69,6 +69,7 @@ log.info(repositoryClient.getCommit("sha").get().htmlUrl());
 
 Another example of the mirrored structure is that some of the APIs are nested under a parent API.
 For example, endpoints related to check runs or issues are nested under the Repository client:
+
 ```java
 final ChecksClient checksClient = repositoryClient.createChecksApiClient();
 checksClient.createCheckRun(CHECK_RUN_REQUEST);
