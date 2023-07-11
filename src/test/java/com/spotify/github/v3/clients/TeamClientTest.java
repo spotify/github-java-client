@@ -22,6 +22,7 @@
 package com.spotify.github.v3.clients;
 
 import static com.google.common.io.Resources.getResource;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_PENDING_TEAM_INVITATIONS;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAMS;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAM_MEMBERS;
 import static java.nio.charset.Charset.defaultCharset;
@@ -38,6 +39,7 @@ import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.Team;
 import com.spotify.github.v3.User;
 import com.spotify.github.v3.orgs.Membership;
+import com.spotify.github.v3.orgs.TeamInvitation;
 import com.spotify.github.v3.orgs.requests.MembershipCreate;
 import com.spotify.github.v3.orgs.requests.TeamCreate;
 import java.io.IOException;
@@ -186,5 +188,16 @@ public class TeamClientTest {
     CompletableFuture<Void> deleteResponse = teamClient.deleteMembership("1", "octocat");
     deleteResponse.get();
     assertThat(capture.getValue(), is("/orgs/github/teams/1/memberships/octocat"));
+  }
+
+  @Test
+  public void listPendingTeamInvitations() throws Exception {
+    final CompletableFuture<List<TeamInvitation>> fixture =
+        completedFuture(json.fromJson(getFixture("list_team_invitations.json"), LIST_PENDING_TEAM_INVITATIONS));
+    when(github.request("/orgs/github/teams/1/invitations", LIST_PENDING_TEAM_INVITATIONS)).thenReturn(fixture);
+    final List<TeamInvitation> pendingInvitations = teamClient.listPendingTeamInvitations("1").get();
+    assertThat(pendingInvitations.get(0).login(), is("octocat"));
+    assertThat(pendingInvitations.get(1).id(), is(2));
+    assertThat(pendingInvitations.size(), is(2));
   }
 }

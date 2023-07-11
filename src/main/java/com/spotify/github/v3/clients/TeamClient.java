@@ -1,12 +1,14 @@
 package com.spotify.github.v3.clients;
 
 import static com.spotify.github.v3.clients.GitHubClient.IGNORE_RESPONSE_CONSUMER;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_PENDING_TEAM_INVITATIONS;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAMS;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAM_MEMBERS;
 
 import com.spotify.github.v3.Team;
 import com.spotify.github.v3.User;
 import com.spotify.github.v3.orgs.Membership;
+import com.spotify.github.v3.orgs.TeamInvitation;
 import com.spotify.github.v3.orgs.requests.MembershipCreate;
 import com.spotify.github.v3.orgs.requests.TeamCreate;
 import java.lang.invoke.MethodHandles;
@@ -142,7 +144,7 @@ public class TeamClient {
   }
 
   /**
-   * Delete a specific team in an organisation.
+   * Delete a membership for a specific user.
    *
    * @param slug slug of the team name
    * @return team
@@ -151,5 +153,17 @@ public class TeamClient {
     final String path = String.format(MEMBERSHIP_TEMPLATE, org, slug, username);
     log.debug("Deleting membership from: " + path);
     return github.delete(path).thenAccept(IGNORE_RESPONSE_CONSUMER);
+  }
+
+  /**
+   * List pending invitations for a team.
+   *
+   * @param slug the team slug
+   * @return list of all members in a team
+   */
+  public CompletableFuture<List<TeamInvitation>> listPendingTeamInvitations(final String slug) {
+    final String path = String.format(INVITATIONS_TEMPLATE, org, slug);
+    log.debug("Fetching pending invitations for: " + path);
+    return github.request(path, LIST_PENDING_TEAM_INVITATIONS);
   }
 }
