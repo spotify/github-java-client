@@ -45,7 +45,6 @@ public class OrganisationClient {
     return new OrganisationClient(github, org);
   }
 
-
   /**
    * Create a Teams API client.
    *

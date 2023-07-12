@@ -65,7 +65,6 @@ public class TeamClient {
     return new TeamClient(github, org);
   }
 
-
   /**
    * Create a team in an organisation.
    *
