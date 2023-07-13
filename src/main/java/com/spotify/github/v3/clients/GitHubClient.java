@@ -403,6 +403,21 @@ public class GitHubClient {
    * Make an http GET request for the given path on the server
    *
    * @param path relative to the Github base url
+   * @param extraHeaders extra github headers to be added to the call
+   * @return a reader of response body
+   */
+  CompletableFuture<Response> request(final String path, final Map<String, String> extraHeaders) {
+    final Request.Builder builder = requestBuilder(path);
+    extraHeaders.forEach(builder::addHeader);
+    final Request request = builder.build();
+    log.debug("Making request to {}", request.url().toString());
+    return call(request);
+  }
+
+  /**
+   * Make an http GET request for the given path on the server
+   *
+   * @param path relative to the Github base url
    * @return body deserialized as provided type
    */
   <T> CompletableFuture<T> request(final String path, final Class<T> clazz) {
