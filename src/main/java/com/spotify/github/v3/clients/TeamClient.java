@@ -28,6 +28,7 @@ import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAM_MEMBERS;
 
 import com.spotify.github.v3.Team;
 import com.spotify.github.v3.User;
+import com.spotify.github.v3.clients.orgs.Project;
 import com.spotify.github.v3.orgs.Membership;
 import com.spotify.github.v3.orgs.TeamInvitation;
 import com.spotify.github.v3.orgs.requests.MembershipCreate;
@@ -51,6 +52,8 @@ public class TeamClient {
   private static final String MEMBERSHIP_TEMPLATE = "/orgs/%s/teams/%s/memberships/%s";
 
   private static final String INVITATIONS_TEMPLATE = "/orgs/%s/teams/%s/invitations";
+
+  private static final String TEAM_PROJECTS_TEMPLATE = "orgs/%s/teams/%s/projects";
 
   private final GitHubClient github;
 
@@ -184,5 +187,17 @@ public class TeamClient {
     final String path = String.format(INVITATIONS_TEMPLATE, org, slug);
     log.debug("Fetching pending invitations for: " + path);
     return github.request(path, LIST_PENDING_TEAM_INVITATIONS);
+  }
+
+  /**
+   * List projects of a specific team.
+   *
+   * @param slug the team slug
+   * @return list of all projects belonging to a team
+   */
+  public CompletableFuture<List<Project>> listTeamProjects(final String slug) {
+    final String path = String.format(TEAM_PROJECTS_TEMPLATE, org, slug);
+    log.debug("Fetching projects for: " + path);
+    return github.request(path, TEAM_PROJECTS_TEMPLATE);
   }
 }
