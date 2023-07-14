@@ -25,6 +25,7 @@ import static com.google.common.io.Resources.getResource;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_PENDING_TEAM_INVITATIONS;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAMS;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAM_MEMBERS;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAM_PROJECTS;
 import static java.nio.charset.Charset.defaultCharset;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -39,6 +40,7 @@ import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.Team;
 import com.spotify.github.v3.User;
 import com.spotify.github.v3.orgs.Membership;
+import com.spotify.github.v3.orgs.Project;
 import com.spotify.github.v3.orgs.TeamInvitation;
 import com.spotify.github.v3.orgs.requests.MembershipCreate;
 import com.spotify.github.v3.orgs.requests.TeamCreate;
@@ -199,5 +201,16 @@ public class TeamClientTest {
     assertThat(pendingInvitations.get(0).login(), is("octocat"));
     assertThat(pendingInvitations.get(1).id(), is(2));
     assertThat(pendingInvitations.size(), is(2));
+  }
+
+  @Test
+  public void listTeamProjects() throws Exception {
+    final CompletableFuture<List<Project>> fixture =
+        completedFuture(json.fromJson(getFixture("list_team_projects.json"), LIST_TEAM_PROJECTS));
+    when(github.request("/orgs/github/teams/1/projects", LIST_TEAM_PROJECTS)).thenReturn(fixture);
+    final List<Project> teamProjects = teamClient.listTeamProjects("1").get();
+    assertThat(teamProjects.get(0).name(), is("Organization Roadmap"));
+    assertThat(teamProjects.get(1).number(), is(2));
+    assertThat(teamProjects.size(), is(2));
   }
 }

@@ -33,6 +33,7 @@ import com.spotify.github.v3.comment.Comment;
 import com.spotify.github.v3.exceptions.ReadOnlyRepositoryException;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.git.Reference;
+import com.spotify.github.v3.orgs.Project;
 import com.spotify.github.v3.orgs.TeamInvitation;
 import com.spotify.github.v3.prs.PullRequestItem;
 import com.spotify.github.v3.prs.Review;
@@ -107,6 +108,9 @@ public class GitHubClient {
       new TypeReference<>() {};
 
   static final TypeReference<List<TeamInvitation>> LIST_PENDING_TEAM_INVITATIONS =
+      new TypeReference<>() {};
+
+  static final TypeReference<List<Project>> LIST_TEAM_PROJECTS =
       new TypeReference<>() {};
 
   private static final String GET_ACCESS_TOKEN_URL = "app/installations/%s/access_tokens";

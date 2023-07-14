@@ -25,6 +25,7 @@ import static com.spotify.github.v3.clients.GitHubClient.IGNORE_RESPONSE_CONSUME
 import static com.spotify.github.v3.clients.GitHubClient.LIST_PENDING_TEAM_INVITATIONS;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAMS;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAM_MEMBERS;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAM_PROJECTS;
 
 import com.spotify.github.v3.Team;
 import com.spotify.github.v3.User;
@@ -53,7 +54,7 @@ public class TeamClient {
 
   private static final String INVITATIONS_TEMPLATE = "/orgs/%s/teams/%s/invitations";
 
-  private static final String TEAM_PROJECTS_TEMPLATE = "orgs/%s/teams/%s/projects";
+  private static final String TEAM_PROJECTS_TEMPLATE = "/orgs/%s/teams/%s/projects";
 
   private final GitHubClient github;
 
@@ -198,6 +199,6 @@ public class TeamClient {
   public CompletableFuture<List<Project>> listTeamProjects(final String slug) {
     final String path = String.format(TEAM_PROJECTS_TEMPLATE, org, slug);
     log.debug("Fetching projects for: " + path);
-    return github.request(path, TEAM_PROJECTS_TEMPLATE);
+    return github.request(path, LIST_TEAM_PROJECTS);
   }
 }

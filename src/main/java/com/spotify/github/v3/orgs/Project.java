@@ -47,6 +47,38 @@ public interface Project {
   @Nullable
   URI url();
 
+  /** HTML URL */
+  @Nullable
+  URI htmlUrl();
+
+  /** Columns URL */
+  @Nullable
+  URI columnsUrl();
+
+  /** ID */
+  @Nullable
+  Integer id();
+
+  /** Node ID */
+  @Nullable
+  String nodeId();
+
+  /** Name */
+  @Nullable
+  String name();
+
+  /** body */
+  @Nullable
+  String body();
+
+  /** Number */
+  @Nullable
+  Integer number();
+
+  /** Stage */
+  @Nullable
+  String state();
+
   /** Creator */
   @Nullable
   User creator();
