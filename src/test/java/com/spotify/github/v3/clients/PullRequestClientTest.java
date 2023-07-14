@@ -46,6 +46,7 @@ import com.spotify.github.v3.prs.requests.ImmutablePullRequestUpdate;
 import com.spotify.github.v3.prs.requests.PullRequestCreate;
 import com.spotify.github.v3.prs.requests.PullRequestUpdate;
 import java.io.IOException;
+import java.io.Reader;
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -57,6 +58,7 @@ import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -258,5 +260,38 @@ public class PullRequestClientTest {
       throw e.getCause();
       // expecting RequestNotOkException
     }
+  }
+
+  @Test
+  public void testGetPatch() throws Throwable {
+    final Call call = mock(Call.class);
+    final ArgumentCaptor<Callback> capture = ArgumentCaptor.forClass(Callback.class);
+    doNothing().when(call).enqueue(capture.capture());
+
+    final Response response =
+        new Response.Builder()
+            .code(200)
+            .protocol(Protocol.HTTP_1_1)
+            .message("OK")
+            .body(
+                ResponseBody.create(
+                    MediaType.get("application/vnd.github.patch"),
+                    getFixture("patch.txt")))
+            .request(new Request.Builder().url("http://localhost/").build())
+            .build();
+
+    when(client.newCall(any())).thenReturn(call);
+
+    final PullRequestClient pullRequestClient =
+        PullRequestClient.create(github, "owner", "repo");
+
+    final CompletableFuture<Reader> result =
+        pullRequestClient.patch(1);
+
+    capture.getValue().onResponse(call, response);
+
+    Reader patchReader = result.get();
+
+    assertEquals(getFixture("patch.txt"), IOUtils.toString(patchReader));
   }
 }
