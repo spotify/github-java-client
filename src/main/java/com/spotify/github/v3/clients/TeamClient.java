@@ -56,6 +56,8 @@ public class TeamClient {
 
   private static final String TEAM_PROJECTS_TEMPLATE = "/orgs/%s/teams/%s/projects";
 
+  private static final String CHILD_TEAMS_TEMPLATE = "/orgs/%s/teams/%s/teams";
+
   private final GitHubClient github;
 
   private final String org;
@@ -200,5 +202,17 @@ public class TeamClient {
     final String path = String.format(TEAM_PROJECTS_TEMPLATE, org, slug);
     log.debug("Fetching projects for: " + path);
     return github.request(path, LIST_TEAM_PROJECTS);
+  }
+
+  /**
+   * List child teams of a specific team.
+   *
+   * @param slug the team slug
+   * @return list of all child teams of a team
+   */
+  public CompletableFuture<List<Team>> listChildTeams(final String slug) {
+    final String path = String.format(CHILD_TEAMS_TEMPLATE, org, slug);
+    log.debug("Fetching projects for: " + path);
+    return github.request(path, LIST_TEAMS);
   }
 }

@@ -75,4 +75,8 @@ public interface Team {
   /** Repositories URL */
   @Nullable
   URI repositoriesUrl();
+
+  /** Parent */
+  @Nullable
+  Team parent();
 }

@@ -213,4 +213,15 @@ public class TeamClientTest {
     assertThat(teamProjects.get(1).number(), is(2));
     assertThat(teamProjects.size(), is(2));
   }
+
+  @Test
+  public void listChildTeams() throws Exception {
+    final CompletableFuture<List<Team>> fixture =
+        completedFuture(json.fromJson(getFixture("teams_list.json"), LIST_TEAMS));
+    when(github.request("/orgs/github/teams/1/teams", LIST_TEAMS)).thenReturn(fixture);
+    final List<Team> teams = teamClient.listTeams().get();
+    assertThat(teams.get(0).parent().slug(), is("justice-league-parent"));
+    assertThat(teams.get(1).slug(), is("x-men"));
+    assertThat(teams.size(), is(2));
+  }
 }
