@@ -50,7 +50,7 @@ public class OrganisationClient {
    *
    * @return Teams API client
    */
-  public TeamClient createTeamClient(final GitHubClient github, final String org) {
+  public TeamClient createTeamClient() {
     return TeamClient.create(github, org);
   }
 }
