@@ -58,7 +58,7 @@ public class OrganisationClientTest {
 
   @Test
   public void testTeamClient() throws Exception {
-    final TeamClient teamClient = organisationClient.createTeamClient(github, "github");
+    final TeamClient teamClient = organisationClient.createTeamClient();
     final CompletableFuture<Team> fixture =
         completedFuture(json.fromJson(getFixture("team_get.json"), Team.class));
     when(github.request("/orgs/github/teams/justice-league", Team.class)).thenReturn(fixture);
