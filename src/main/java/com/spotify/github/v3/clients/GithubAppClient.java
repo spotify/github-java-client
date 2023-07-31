@@ -38,6 +38,11 @@ public class GithubAppClient {
   private static final String GET_INSTALLATIONS_URL = "/app/installations?per_page=100";
   private static final String GET_INSTALLATION_REPO_URL = "/repos/%s/%s/installation";
   private static final String LIST_ACCESSIBLE_REPOS_URL = "/installation/repositories";
+
+  /*
+    Owner and org are interchangeable and therefore "owner" is used to
+    refer to the organisation in the installation endpoint
+  */
   private static final String GET_INSTALLATION_ORG_URL = "/orgs/%s/installation";
 
   private final GitHubClient github;
@@ -72,21 +77,20 @@ public class GithubAppClient {
   }
 
   /**
-   * Get Installation of a repo
+   * Get Installation
    *
-   * @return a list of Installation
+   * @return an Installation
    */
   public CompletableFuture<Installation> getInstallation() {
     return maybeRepo.map(repo-> github.request(
-        String.format(GET_INSTALLATION_REPO_URL, owner, repo), Installation.class, extraHeaders)).orElseGet(() -> getOrgInstallation(owner));
+        String.format(GET_INSTALLATION_REPO_URL, owner, repo), Installation.class, extraHeaders)).orElseGet(this::getOrgInstallation);
   }
 
   /**
    * Get an installation of an org
-   * @param owner the owner/organisation
    * @return an Installation
    */
-  private CompletableFuture<Installation> getOrgInstallation(final String owner) {
+  private CompletableFuture<Installation> getOrgInstallation() {
     return github.request(
         String.format(GET_INSTALLATION_ORG_URL, owner), Installation.class);
   }
