@@ -82,8 +82,16 @@ public class GithubAppClient {
    * @return an Installation
    */
   public CompletableFuture<Installation> getInstallation() {
-    return maybeRepo.map(repo-> github.request(
-        String.format(GET_INSTALLATION_REPO_URL, owner, repo), Installation.class, extraHeaders)).orElseGet(this::getOrgInstallation);
+    return maybeRepo.map(this::getRepoInstallation).orElseGet(this::getOrgInstallation);
+  }
+
+  /**
+   * Get an installation of an org
+   * @return an Installation
+   */
+  private CompletableFuture<Installation> getRepoInstallation(final String repo) {
+    return github.request(
+        String.format(GET_INSTALLATION_REPO_URL, owner, repo), Installation.class);
   }
 
   /**
