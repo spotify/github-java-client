@@ -27,6 +27,7 @@ import com.spotify.github.v3.checks.AccessToken;
 import com.spotify.github.v3.checks.Installation;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import javax.ws.rs.core.HttpHeaders;
 
@@ -37,10 +38,11 @@ public class GithubAppClient {
   private static final String GET_INSTALLATIONS_URL = "/app/installations?per_page=100";
   private static final String GET_INSTALLATION_REPO_URL = "/repos/%s/%s/installation";
   private static final String LIST_ACCESSIBLE_REPOS_URL = "/installation/repositories";
+  private static final String GET_INSTALLATION_ORG_URL = "/orgs/%s/installation";
 
   private final GitHubClient github;
   private final String owner;
-  private final String repo;
+  private final Optional<String> maybeRepo;
 
   private final Map<String, String> extraHeaders =
       ImmutableMap.of(HttpHeaders.ACCEPT, "application/vnd.github.machine-man-preview+json");
@@ -51,7 +53,13 @@ public class GithubAppClient {
   GithubAppClient(final GitHubClient github, final String owner, final String repo) {
     this.github = github;
     this.owner = owner;
-    this.repo = repo;
+    this.maybeRepo = Optional.of(repo);
+  }
+
+  GithubAppClient(final GitHubClient github, final String owner) {
+    this.github = github;
+    this.owner = owner;
+    this.maybeRepo = Optional.empty();
   }
 
   /**
@@ -69,8 +77,18 @@ public class GithubAppClient {
    * @return a list of Installation
    */
   public CompletableFuture<Installation> getInstallation() {
+    return maybeRepo.map(repo-> github.request(
+        String.format(GET_INSTALLATION_REPO_URL, owner, repo), Installation.class, extraHeaders)).orElseGet(() -> getOrgInstallation(owner));
+  }
+
+  /**
+   * Get an installation of an org
+   * @param owner the owner/organisation
+   * @return an Installation
+   */
+  private CompletableFuture<Installation> getOrgInstallation(final String owner) {
     return github.request(
-        String.format(GET_INSTALLATION_REPO_URL, owner, repo), Installation.class, extraHeaders);
+        String.format(GET_INSTALLATION_ORG_URL, owner), Installation.class);
   }
 
   /**

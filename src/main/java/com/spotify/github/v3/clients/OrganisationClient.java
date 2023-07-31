@@ -20,17 +20,7 @@
 //
 package com.spotify.github.v3.clients;
 
-import java.lang.invoke.MethodHandles;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class OrganisationClient {
-
-  private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-
-  private static final String TEAM_TEMPLATE = "/orgs/%s/teams";
-
-  private static final String TEAM_SLUG_TEMPLATE = "/orgs/%s/teams/%s";
 
   private final GitHubClient github;
 
@@ -52,5 +42,14 @@ public class OrganisationClient {
    */
   public TeamClient createTeamClient() {
     return TeamClient.create(github, org);
+  }
+
+  /**
+   * Create GitHub App API client
+   *
+   * @return GitHub App API client
+   */
+  public GithubAppClient createGithubAppClient() {
+    return new GithubAppClient(github, org);
   }
 }
