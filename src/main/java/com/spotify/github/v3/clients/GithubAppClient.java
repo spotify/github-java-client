@@ -86,7 +86,7 @@ public class GithubAppClient {
   }
 
   /**
-   * Get an installation of an org
+   * Get an installation of a repo
    * @return an Installation
    */
   private CompletableFuture<Installation> getRepoInstallation(final String repo) {
