@@ -190,7 +190,7 @@ public class GitHubClientTest {
         .code(200)
         .body(
             ResponseBody.create(
-                MediaType.get("application/json"), getFixture("../checks/check_suites_response.json")))
+                MediaType.get("application/json"), getFixture("../checks/check-suites-response.json")))
         .message("")
         .protocol(Protocol.HTTP_1_1)
         .request(new Request.Builder().url("http://localhost/").build())
