@@ -36,7 +36,7 @@ public interface CheckSuite {
    *
    * @return the integer
    */
-  Integer id();
+  Long id();
 
   Optional<App> app();
 

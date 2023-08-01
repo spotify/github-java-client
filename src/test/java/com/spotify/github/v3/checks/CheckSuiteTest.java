@@ -43,4 +43,16 @@ public class CheckSuiteTest {
     assertThat(checkSuiteResponseList.checkSuites().get(0).app().get().slug().get(), is("octoapp"));
   }
 
+
+  @Test
+  public void testDeserializationWithLongId() throws IOException {
+    // sample payload from https://docs.github.com/en/rest/checks/suites#list-check-suites-for-a-git-reference
+    String fixture =
+            Resources.toString(
+                    getResource(this.getClass(), "check-suites-response-long-id.json"), defaultCharset());
+    final CheckSuiteResponseList checkSuiteResponseList = Json.create().fromJson(fixture, CheckSuiteResponseList.class);
+    assertThat(checkSuiteResponseList.checkSuites().get(0).id(), is(14707641936L));
+    assertThat(checkSuiteResponseList.checkSuites().get(0).app().get().slug().get(), is("octoapp"));
+  }
+
 }
