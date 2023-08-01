@@ -31,6 +31,7 @@ import static org.mockito.Mockito.when;
 import com.google.common.io.Resources;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.Team;
+import com.spotify.github.v3.checks.Installation;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import org.junit.Before;
@@ -65,5 +66,16 @@ public class OrganisationClientTest {
     final Team team = teamClient.getTeam("justice-league").get();
     assertThat(team.id(), is(1));
     assertThat(team.name(), is("Justice League"));
+  }
+
+  @Test
+  public void testAppClient() throws Exception {
+    final GithubAppClient githubAppClient = organisationClient.createGithubAppClient();
+    final CompletableFuture<Installation> fixture =
+        completedFuture(json.fromJson(getFixture("../githubapp/installation.json"), Installation.class));
+    when(github.request("/orgs/github/installation", Installation.class)).thenReturn(fixture);
+    final Installation installation = githubAppClient.getInstallation().get();
+    assertThat(installation.id(), is(1));
+    assertThat(installation.account().login(), is("github"));
   }
 }
