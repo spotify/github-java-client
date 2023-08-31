@@ -42,6 +42,7 @@ import com.spotify.github.v3.orgs.Membership;
 import com.spotify.github.v3.orgs.TeamInvitation;
 import com.spotify.github.v3.orgs.requests.MembershipCreate;
 import com.spotify.github.v3.orgs.requests.TeamCreate;
+import com.spotify.github.v3.orgs.requests.TeamUpdate;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -127,16 +128,16 @@ public class TeamClientTest {
 
   @Test
   public void updateTeam() throws Exception {
-    final TeamCreate teamCreateRequest =
+    final TeamUpdate teamUpdateRequest =
         json.fromJson(
             getFixture("teams_patch.json"),
-            TeamCreate.class);
+            TeamUpdate.class);
 
     final CompletableFuture<Team> fixtureResponse = completedFuture(json.fromJson(
         getFixture("teams_patch_response.json"),
         Team.class));
     when(github.patch(any(), any(), eq(Team.class))).thenReturn(fixtureResponse);
-    final CompletableFuture<Team> actualResponse = teamClient.updateTeam(teamCreateRequest, "justice-league");
+    final CompletableFuture<Team> actualResponse = teamClient.updateTeam(teamUpdateRequest, "justice-league");
 
     assertThat(actualResponse.get().name(), is("Justice League2"));
   }

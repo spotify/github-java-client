@@ -29,9 +29,9 @@ import org.immutables.value.Value;
 /** Request to create a team within a given organisation */
 @Value.Immutable
 @GithubStyle
-@JsonSerialize(as = ImmutableTeamCreate.class)
-@JsonDeserialize(as = ImmutableTeamCreate.class)
-public interface TeamCreate {
+@JsonSerialize(as = ImmutableTeamUpdate.class)
+@JsonDeserialize(as = ImmutableTeamUpdate.class)
+public interface TeamUpdate {
 
   /** The name of the team. */
   @Nullable
@@ -63,17 +63,6 @@ public interface TeamCreate {
   @SuppressWarnings("checkstyle:methodname")
   Optional<String> notification_setting();
 
-  /**
-   * List GitHub IDs for organization members who will
-   * become team maintainers.
-   */
-  Optional<String> maintainers();
-
-  /** The full name (e.g., "organization-name/repository-name")
-   * of repositories to add the team to.
-   */
-  @SuppressWarnings("checkstyle:methodname")
-  Optional<String> repo_names();
 
   /** The ID of a team to set as the parent team. */
   @SuppressWarnings("checkstyle:methodname")
