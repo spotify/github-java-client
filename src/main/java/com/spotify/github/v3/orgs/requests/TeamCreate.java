@@ -22,6 +22,7 @@ package com.spotify.github.v3.orgs.requests;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.spotify.github.GithubStyle;
+import java.util.ArrayList;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
@@ -67,13 +68,13 @@ public interface TeamCreate {
    * List GitHub IDs for organization members who will
    * become team maintainers.
    */
-  Optional<String> maintainers();
+  Optional<ArrayList<String>> maintainers();
 
   /** The full name (e.g., "organization-name/repository-name")
    * of repositories to add the team to.
    */
   @SuppressWarnings("checkstyle:methodname")
-  Optional<String> repo_names();
+  Optional<ArrayList<String>> repo_names();
 
   /** The ID of a team to set as the parent team. */
   @SuppressWarnings("checkstyle:methodname")
