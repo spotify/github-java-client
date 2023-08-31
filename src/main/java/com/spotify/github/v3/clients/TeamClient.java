@@ -32,6 +32,7 @@ import com.spotify.github.v3.orgs.Membership;
 import com.spotify.github.v3.orgs.TeamInvitation;
 import com.spotify.github.v3.orgs.requests.MembershipCreate;
 import com.spotify.github.v3.orgs.requests.TeamCreate;
+import com.spotify.github.v3.orgs.requests.TeamUpdate;
 import java.lang.invoke.MethodHandles;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -107,7 +108,7 @@ public class TeamClient {
    * @param slug slug of the team name
    * @return team
    */
-  public CompletableFuture<Team> updateTeam(final TeamCreate request, final String slug) {
+  public CompletableFuture<Team> updateTeam(final TeamUpdate request, final String slug) {
     final String path = String.format(TEAM_SLUG_TEMPLATE, org, slug);
     log.debug("Updating team in: " + path);
     return github.patch(path, github.json().toJsonUnchecked(request), Team.class);
