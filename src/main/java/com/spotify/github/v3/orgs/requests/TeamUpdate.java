@@ -19,6 +19,7 @@
  */
 package com.spotify.github.v3.orgs.requests;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -32,6 +33,7 @@ import org.immutables.value.Value;
 @GithubStyle
 @JsonSerialize(as = ImmutableTeamUpdate.class)
 @JsonDeserialize(as = ImmutableTeamUpdate.class)
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public interface TeamUpdate {
 
   /** The name of the team. */
@@ -61,16 +63,11 @@ public interface TeamUpdate {
    * Default: notifications_enabled
    * Can be one of: notifications_enabled, notifications_disabled
    */
-  @Nullable
-  @Value.Default
   @JsonProperty("notification_setting")
-  default String notificationSetting() {
-    return "notifications_enabled";
-  }
+  Optional<String> notificationSetting();
 
 
   /** The ID of a team to set as the parent team. */
-  @Nullable
   @JsonProperty("parent_team_id")
-  Integer parentTeamId();
+  Optional<Integer> parentTeamId();
 }
