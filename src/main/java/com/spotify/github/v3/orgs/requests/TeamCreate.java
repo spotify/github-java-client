@@ -19,6 +19,7 @@
  */
 package com.spotify.github.v3.orgs.requests;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.spotify.github.GithubStyle;
@@ -42,41 +43,45 @@ public interface TeamCreate {
   Optional<String> description();
 
   /**
-   * The level of privacy this team should have.
-   * For a non-nested team:
-   * secret - only visible to organization owners and members of this team.
-   * closed - visible to all members of this organization.
-   * Default: secret
-   * For a parent or child team:
-   * closed - visible to all members of this organization.
-   * Default for child team: closed
-   * Can be one of: secret, closed
+   * The level of privacy this team should have. For a non-nested team: secret - only visible to
+   * organization owners and members of this team. closed - visible to all members of this
+   * organization. Default: secret For a parent or child team: closed - visible to all members of
+   * this organization. Default for child team: closed Can be one of: secret, closed
    */
   Optional<String> privacy();
 
   /**
-   * The notification setting the team has chosen. The options are:
-   * notifications_enabled - team members receive notifications when the team is @mentioned.
-   * notifications_disabled - no one receives notifications.
-   * Default: notifications_enabled
-   * Can be one of: notifications_enabled, notifications_disabled
+   * The notification setting the team has chosen. The options are: notifications_enabled - team
+   * members receive notifications when the team is @mentioned. notifications_disabled - no one
+   * receives notifications. Default: notifications_enabled Can be one of: notifications_enabled,
+   * notifications_disabled
    */
-  @SuppressWarnings("checkstyle:methodname")
-  Optional<String> notification_setting();
+  @Nullable
+  @Value.Default
+  @JsonProperty("notification_setting")
+  default String notificationSetting() {
+    return "notifications_enabled";
+  }
+
+  /** List GitHub IDs for organization members who will become team maintainers. */
+  @Nullable
+  @Value.Default
+  default List<String> maintainers() {
+    return List.of();
+  }
 
   /**
-   * List GitHub IDs for organization members who will
-   * become team maintainers.
+   * The full name (e.g., "organization-name/repository-name") of repositories to add the team to.
    */
-  Optional<List<String>> maintainers();
-
-  /** The full name (e.g., "organization-name/repository-name")
-   * of repositories to add the team to.
-   */
-  @SuppressWarnings("checkstyle:methodname")
-  Optional<List<String>> repo_names();
+  @Nullable
+  @Value.Default
+  @JsonProperty("repo_names")
+  default List<String> repoNames(){
+    return List.of();
+  }
 
   /** The ID of a team to set as the parent team. */
-  @SuppressWarnings("checkstyle:methodname")
-  Optional<String> parent_team_id();
+  @Nullable
+  @JsonProperty("parent_team_id")
+  Integer parentTeamId();
 }

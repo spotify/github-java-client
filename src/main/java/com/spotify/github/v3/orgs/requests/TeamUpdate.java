@@ -19,6 +19,7 @@
  */
 package com.spotify.github.v3.orgs.requests;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.spotify.github.GithubStyle;
@@ -60,11 +61,16 @@ public interface TeamUpdate {
    * Default: notifications_enabled
    * Can be one of: notifications_enabled, notifications_disabled
    */
-  @SuppressWarnings("checkstyle:methodname")
-  Optional<String> notification_setting();
+  @Nullable
+  @Value.Default
+  @JsonProperty("notification_setting")
+  default String notificationSetting() {
+    return "notifications_enabled";
+  }
 
 
   /** The ID of a team to set as the parent team. */
-  @SuppressWarnings("checkstyle:methodname")
-  Optional<String> parent_team_id();
+  @Nullable
+  @JsonProperty("parent_team_id")
+  Integer parentTeamId();
 }
