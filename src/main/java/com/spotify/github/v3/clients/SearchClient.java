@@ -21,6 +21,7 @@
 package com.spotify.github.v3.clients;
 
 import com.google.common.base.Strings;
+import com.spotify.github.v3.search.SearchCommits;
 import com.spotify.github.v3.search.SearchIssues;
 import com.spotify.github.v3.search.SearchRepositories;
 import com.spotify.github.v3.search.SearchUsers;
@@ -37,6 +38,7 @@ public class SearchClient {
   static final String USERS_URI = "/search/users";
   static final String REPOSITORIES_URI = "/search/repositories";
   static final String ISSUES_URI = "/search/issues";
+  static final String COMMIT_URI = "/search/commits";
   private final GitHubClient github;
 
   SearchClient(final GitHubClient github) {
@@ -45,6 +47,16 @@ public class SearchClient {
 
   static SearchClient create(final GitHubClient github) {
     return new SearchClient(github);
+  }
+
+  /**
+   * Search commits.
+   *
+   * @param parameters commit search parameters
+   * @return commit search results
+   */
+  public CompletableFuture<SearchCommits> commits(final SearchParameters parameters) {
+    return search(COMMIT_URI, parameters, SearchCommits.class);
   }
 
   /**
