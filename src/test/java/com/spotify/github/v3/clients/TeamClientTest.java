@@ -18,7 +18,6 @@
  * -/-/-
  */
 
-
 package com.spotify.github.v3.clients;
 
 import static com.google.common.io.Resources.getResource;
@@ -31,8 +30,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import com.google.common.io.Resources;
 import com.spotify.github.jackson.Json;
@@ -57,7 +55,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ Headers.class, ResponseBody.class, Response.class})
+@PrepareForTest({Headers.class, ResponseBody.class, Response.class})
 public class TeamClientTest {
 
   private GitHubClient github;
@@ -113,42 +111,43 @@ public class TeamClientTest {
   @Test
   public void createTeam() throws Exception {
     final TeamCreate teamCreateRequest =
-        json.fromJson(
-            getFixture("teams_request.json"),
-            TeamCreate.class);
+        json.fromJson(getFixture("teams_request.json"), TeamCreate.class);
 
-    final CompletableFuture<Team> fixtureResponse = completedFuture(json.fromJson(
-        getFixture("team_get.json"),
-        Team.class));
+    final CompletableFuture<Team> fixtureResponse =
+        completedFuture(json.fromJson(getFixture("team_get.json"), Team.class));
     when(github.post(any(), any(), eq(Team.class))).thenReturn(fixtureResponse);
     final CompletableFuture<Team> actualResponse = teamClient.createTeam(teamCreateRequest);
 
     assertThat(actualResponse.get().name(), is("Justice League"));
+    verify(github, times(1))
+        .post(eq("/orgs/github/teams"), eq("{\"name\":\"Justice League\"}"), eq(Team.class));
   }
 
   @Test
   public void updateTeam() throws Exception {
     final TeamUpdate teamUpdateRequest =
-        json.fromJson(
-            getFixture("teams_patch.json"),
-            TeamUpdate.class);
+        json.fromJson(getFixture("teams_patch.json"), TeamUpdate.class);
 
-    final CompletableFuture<Team> fixtureResponse = completedFuture(json.fromJson(
-        getFixture("teams_patch_response.json"),
-        Team.class));
+    final CompletableFuture<Team> fixtureResponse =
+        completedFuture(json.fromJson(getFixture("teams_patch_response.json"), Team.class));
     when(github.patch(any(), any(), eq(Team.class))).thenReturn(fixtureResponse);
-    final CompletableFuture<Team> actualResponse = teamClient.updateTeam(teamUpdateRequest, "justice-league");
+    final CompletableFuture<Team> actualResponse =
+        teamClient.updateTeam(teamUpdateRequest, "justice-league");
 
     assertThat(actualResponse.get().name(), is("Justice League2"));
+    verify(github, times(1))
+            .patch(eq("/orgs/github/teams/justice-league"), eq("{\"name\":\"Justice League2\"}"), eq(Team.class));
   }
 
   @Test
   public void getMembership() throws Exception {
     final CompletableFuture<Membership> fixture =
         completedFuture(json.fromJson(getFixture("membership.json"), Membership.class));
-    when(github.request("/orgs/github/teams/1/memberships/octocat", Membership.class)).thenReturn(fixture);
+    when(github.request("/orgs/github/teams/1/memberships/octocat", Membership.class))
+        .thenReturn(fixture);
     final Membership membership = teamClient.getMembership("1", "octocat").get();
-    assertThat(membership.url().toString(), is("https://api.github.com/teams/1/memberships/octocat"));
+    assertThat(
+        membership.url().toString(), is("https://api.github.com/teams/1/memberships/octocat"));
     assertThat(membership.role(), is("maintainer"));
     assertThat(membership.state(), is("active"));
   }
@@ -167,15 +166,14 @@ public class TeamClientTest {
   @Test
   public void updateMembership() throws Exception {
     final MembershipCreate membershipCreateRequest =
-        json.fromJson(
-            getFixture("membership_update.json"),
-            MembershipCreate.class);
+        json.fromJson(getFixture("membership_update.json"), MembershipCreate.class);
 
-    final CompletableFuture<Membership> fixtureResponse = completedFuture(json.fromJson(
-        getFixture("membership_update_response.json"),
-        Membership.class));
+    final CompletableFuture<Membership> fixtureResponse =
+        completedFuture(
+            json.fromJson(getFixture("membership_update_response.json"), Membership.class));
     when(github.put(any(), any(), eq(Membership.class))).thenReturn(fixtureResponse);
-    final CompletableFuture<Membership> actualResponse = teamClient.updateMembership(membershipCreateRequest, "1", "octocat");
+    final CompletableFuture<Membership> actualResponse =
+        teamClient.updateMembership(membershipCreateRequest, "1", "octocat");
 
     assertThat(actualResponse.get().role(), is("member"));
   }
@@ -194,9 +192,12 @@ public class TeamClientTest {
   @Test
   public void listPendingTeamInvitations() throws Exception {
     final CompletableFuture<List<TeamInvitation>> fixture =
-        completedFuture(json.fromJson(getFixture("list_team_invitations.json"), LIST_PENDING_TEAM_INVITATIONS));
-    when(github.request("/orgs/github/teams/1/invitations", LIST_PENDING_TEAM_INVITATIONS)).thenReturn(fixture);
-    final List<TeamInvitation> pendingInvitations = teamClient.listPendingTeamInvitations("1").get();
+        completedFuture(
+            json.fromJson(getFixture("list_team_invitations.json"), LIST_PENDING_TEAM_INVITATIONS));
+    when(github.request("/orgs/github/teams/1/invitations", LIST_PENDING_TEAM_INVITATIONS))
+        .thenReturn(fixture);
+    final List<TeamInvitation> pendingInvitations =
+        teamClient.listPendingTeamInvitations("1").get();
     assertThat(pendingInvitations.get(0).login(), is("octocat"));
     assertThat(pendingInvitations.get(1).id(), is(2));
     assertThat(pendingInvitations.size(), is(2));
