@@ -1,0 +1,6 @@
+{
+  "message": "my commit message",
+  "content": "encoded content ...",
+  "sha": "12345",
+  "branch": "test-branch"
+}

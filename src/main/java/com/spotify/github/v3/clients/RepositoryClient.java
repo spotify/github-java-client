@@ -42,7 +42,10 @@ import com.spotify.github.v3.repos.Commit;
 import com.spotify.github.v3.repos.CommitComparison;
 import com.spotify.github.v3.repos.CommitItem;
 import com.spotify.github.v3.repos.CommitStatus;
+import com.spotify.github.v3.repos.CommitWithFolderContent;
 import com.spotify.github.v3.repos.Content;
+import com.spotify.github.v3.repos.requests.FileCreate;
+import com.spotify.github.v3.repos.requests.FileUpdate;
 import com.spotify.github.v3.repos.FolderContent;
 import com.spotify.github.v3.repos.Languages;
 import com.spotify.github.v3.repos.Repository;
@@ -445,6 +448,32 @@ public class RepositoryClient {
    */
   public CompletableFuture<Content> getFileContent(final String path, final String ref) {
     return github.request(getContentPath(path, "?ref=" + ref), Content.class);
+  }
+
+  /**
+   * Create a file
+   *
+   * @param path path to a file
+   * @param request file creation request
+   * @return commit with content
+   */
+  public CompletableFuture<CommitWithFolderContent> createFileContent(final String path, final FileCreate request) {
+    final String contentPath = getContentPath(path, "");
+    final String requestBody = github.json().toJsonUnchecked(request);
+    return github.put(contentPath, requestBody, CommitWithFolderContent.class);
+  }
+
+  /**
+   * Update file contents
+   *
+   * @param path path to a file
+   * @param request file update request
+   * @return commit with content
+   */
+  public CompletableFuture<CommitWithFolderContent> updateFileContent(final String path, final FileUpdate request) {
+    final String contentPath = getContentPath(path, "");
+    final String requestBody = github.json().toJsonUnchecked(request);
+    return github.put(contentPath, requestBody, CommitWithFolderContent.class);
   }
 
   /**
