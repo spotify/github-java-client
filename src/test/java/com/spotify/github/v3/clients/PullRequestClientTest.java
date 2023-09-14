@@ -319,12 +319,12 @@ public class PullRequestClientTest {
         PullRequestClient.create(github, "owner", "repo");
 
     final CompletableFuture<Reader> result =
-        pullRequestClient.patch(1);
+        pullRequestClient.diff(1);
 
     capture.getValue().onResponse(call, response);
 
-    Reader patchReader = result.get();
+    Reader diffReader = result.get();
 
-    assertEquals(getFixture("diff.txt"), IOUtils.toString(patchReader));
+    assertEquals(getFixture("diff.txt"), IOUtils.toString(diffReader));
   }
 }
