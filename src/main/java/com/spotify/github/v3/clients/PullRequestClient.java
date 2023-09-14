@@ -248,6 +248,22 @@ public class PullRequestClient {
         });
   }
 
+  public CompletableFuture<Reader> diff(final int number) {
+    final String path = String.format(PR_NUMBER_TEMPLATE, owner, repo, number);
+    final Map<String, String> extraHeaders = ImmutableMap.of(
+        HttpHeaders.ACCEPT, "application/vnd.github.diff"
+    );
+    log.debug("Fetching pull diff from " + path);
+    return github.request(path, extraHeaders)
+        .thenApply(response -> {
+          final var body = response.body();
+          if (isNull(body)) {
+            return Reader.nullReader();
+          }
+          return body.charStream();
+        });
+  }
+
   private CompletableFuture<List<PullRequestItem>> list(final String parameterPath) {
     final String path = String.format(PR_TEMPLATE + parameterPath, owner, repo);
     log.debug("Fetching pull requests from " + path);
