@@ -294,4 +294,37 @@ public class PullRequestClientTest {
 
     assertEquals(getFixture("patch.txt"), IOUtils.toString(patchReader));
   }
+
+  @Test
+  public void testGetDiff() throws Throwable {
+    final Call call = mock(Call.class);
+    final ArgumentCaptor<Callback> capture = ArgumentCaptor.forClass(Callback.class);
+    doNothing().when(call).enqueue(capture.capture());
+
+    final Response response =
+        new Response.Builder()
+            .code(200)
+            .protocol(Protocol.HTTP_1_1)
+            .message("OK")
+            .body(
+                ResponseBody.create(
+                    MediaType.get("application/vnd.github.diff"),
+                    getFixture("diff.txt")))
+            .request(new Request.Builder().url("http://localhost/").build())
+            .build();
+
+    when(client.newCall(any())).thenReturn(call);
+
+    final PullRequestClient pullRequestClient =
+        PullRequestClient.create(github, "owner", "repo");
+
+    final CompletableFuture<Reader> result =
+        pullRequestClient.patch(1);
+
+    capture.getValue().onResponse(call, response);
+
+    Reader patchReader = result.get();
+
+    assertEquals(getFixture("diff.txt"), IOUtils.toString(patchReader));
+  }
 }
