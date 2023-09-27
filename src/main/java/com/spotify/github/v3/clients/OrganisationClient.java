@@ -20,7 +20,18 @@
 //
 package com.spotify.github.v3.clients;
 
+import com.spotify.github.v3.orgs.OrgMembership;
+import com.spotify.github.v3.orgs.requests.OrgMembershipCreate;
+import java.lang.invoke.MethodHandles;
+import java.util.concurrent.CompletableFuture;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class OrganisationClient {
+
+  private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+  private static final String MEMBERSHIP_TEMPLATE = "/orgs/%s/memberships/%s";
 
   private final GitHubClient github;
 
@@ -51,5 +62,29 @@ public class OrganisationClient {
    */
   public GithubAppClient createGithubAppClient() {
     return new GithubAppClient(github, org);
+  }
+
+  /**
+   * Get an org membership of a user.
+   *
+   * @param username username of the org member
+   * @return membership
+   */
+  public CompletableFuture<OrgMembership> getOrgMembership(final String username) {
+    final String path = String.format(MEMBERSHIP_TEMPLATE, org, username);
+    log.debug("Fetching org membership for: " + path);
+    return github.request(path, OrgMembership.class);
+  }
+
+  /**
+   * Add or update an org membership for a user.
+   *
+   * @param request update org membership request
+   * @return membership
+   */
+  public CompletableFuture<OrgMembership> updateOrgMembership(final OrgMembershipCreate request, final String username) {
+    final String path = String.format(MEMBERSHIP_TEMPLATE, org, username);
+    log.debug("Updating membership in org: " + path);
+    return github.put(path, github.json().toJsonUnchecked(request), OrgMembership.class);
   }
 }
