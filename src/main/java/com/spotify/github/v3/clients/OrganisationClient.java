@@ -65,14 +65,14 @@ public class OrganisationClient {
   }
 
   /**
-   * Get a team membership of a user.
+   * Get an org membership of a user.
    *
-   * @param username username of the team member
+   * @param username username of the org member
    * @return membership
    */
   public CompletableFuture<OrgMembership> getOrgMembership(final String username) {
     final String path = String.format(MEMBERSHIP_TEMPLATE, org, username);
-    log.debug("Fetching membership for: " + path);
+    log.debug("Fetching org membership for: " + path);
     return github.request(path, OrgMembership.class);
   }
 
