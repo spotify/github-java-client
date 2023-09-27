@@ -26,7 +26,7 @@ import com.spotify.github.GithubStyle;
 import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
-/** Request to create a member within a given organisation */
+/** Request to create a member within a given org */
 @Value.Immutable
 @GithubStyle
 @JsonSerialize(as = ImmutableOrgMembershipCreate.class)
