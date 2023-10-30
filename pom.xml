@@ -8,7 +8,7 @@
     <parent>
         <groupId>com.spotify</groupId>
         <artifactId>foss-root</artifactId>
-        <version>15</version>
+        <version>16</version>
     </parent>
 
     <licenses>
@@ -90,14 +90,14 @@
         <checkstyle.config.location>checkstyle.xml</checkstyle.config.location>
 
         <!-- versions -->
-        <guava.version>32.0.0-jre</guava.version>
+        <guava.version>32.1.3-jre</guava.version>
         <jsr305.version>3.0.2</jsr305.version>
         <jsr311-api.version>1.1.1</jsr311-api.version>
         <junit.version>4.13.1</junit.version>
         <slf4j-api.version>1.7.36</slf4j-api.version>
         <mockito-core.version>3.2.4</mockito-core.version>
         <commons-io.version>2.6</commons-io.version>
-        <jackson.version>2.13.2.20220328</jackson.version>
+        <jackson.version>2.15.3</jackson.version>
         <immutables.version>2.9.3</immutables.version>
         <powermock.version>2.0.2</powermock.version>
         <objenesis.version>3.0.1</objenesis.version>
@@ -200,7 +200,7 @@
         <dependency>
             <groupId>uk.co.datumedge</groupId>
             <artifactId>hamcrest-json</artifactId>
-            <version>0.2</version>
+            <version>0.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>
