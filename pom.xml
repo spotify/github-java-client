@@ -97,7 +97,7 @@
         <slf4j-api.version>1.7.36</slf4j-api.version>
         <mockito-core.version>3.2.4</mockito-core.version>
         <commons-io.version>2.6</commons-io.version>
-        <jackson.version>2.13.2.20220328</jackson.version>
+        <jackson.version>2.15.3</jackson.version>
         <immutables.version>2.9.3</immutables.version>
         <powermock.version>2.0.2</powermock.version>
         <objenesis.version>3.0.1</objenesis.version>
