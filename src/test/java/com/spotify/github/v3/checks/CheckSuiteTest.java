@@ -39,7 +39,7 @@ public class CheckSuiteTest {
         Resources.toString(
             getResource(this.getClass(), "check-suites-response.json"), defaultCharset());
     final CheckSuiteResponseList checkSuiteResponseList = Json.create().fromJson(fixture, CheckSuiteResponseList.class);
-    assertThat(checkSuiteResponseList.checkSuites().get(0).id(), is(5));
+    assertThat(checkSuiteResponseList.checkSuites().get(0).id(), is(5L));
     assertThat(checkSuiteResponseList.checkSuites().get(0).app().get().slug().get(), is("octoapp"));
   }
 

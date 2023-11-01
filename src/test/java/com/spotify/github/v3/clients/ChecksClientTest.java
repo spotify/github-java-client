@@ -43,8 +43,8 @@ import com.spotify.github.v3.checks.ImmutableCheckRunRequest;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.concurrent.CompletableFuture;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ChecksClientTest {
 
@@ -61,7 +61,7 @@ public class ChecksClientTest {
     }
   }
 
-  @Before
+  @BeforeEach
   public void setUp() {
     github = mock(GitHubClient.class);
     checksClient = new ChecksClient(github, "someowner", "somerepo");

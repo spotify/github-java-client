@@ -23,7 +23,7 @@ package com.spotify.github.v3.prs.requests;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class PullRequestParametersTest {
 

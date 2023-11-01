@@ -28,11 +28,9 @@ import io.opencensus.trace.config.TraceParams;
 import io.opencensus.trace.export.SpanData;
 import io.opencensus.trace.samplers.Samplers;
 import io.opencensus.trace.unsafe.ContextUtils;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
@@ -115,13 +113,13 @@ public class OpenCensusTracerTest {
         return spans.stream().filter(s -> s.getName().equals(name)).findFirst().get();
     }
 
-    @Before
+    @BeforeEach
     public void setUpExporter() {
         spanExporterHandler = new TestExportHandler();
         Tracing.getExportComponent().getSpanExporter().registerHandler("test", spanExporterHandler);
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void setupTracing() {
         final TraceConfig traceConfig = Tracing.getTraceConfig();
         final Sampler sampler = Samplers.alwaysSample();

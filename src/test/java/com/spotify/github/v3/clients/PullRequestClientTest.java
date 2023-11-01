@@ -20,24 +20,20 @@
 
 package com.spotify.github.v3.clients;
 
-import static com.google.common.collect.ImmutableMap.of;
 import static com.google.common.io.Resources.getResource;
 import static java.nio.charset.Charset.defaultCharset;
-import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
-import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
-import com.spotify.github.v3.git.Reference;
 import com.spotify.github.v3.prs.ImmutableRequestReviewParameters;
 import com.spotify.github.v3.prs.PullRequest;
 import com.spotify.github.v3.prs.ReviewRequests;
@@ -59,8 +55,8 @@ import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import org.apache.commons.io.IOUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 public class PullRequestClientTest {
@@ -72,7 +68,7 @@ public class PullRequestClientTest {
     return Resources.toString(getResource(PullRequestClientTest.class, resource), defaultCharset());
   }
 
-  @Before
+  @BeforeEach
   public void setUp() {
     client = mock(OkHttpClient.class);
     github = GitHubClient.create(client, URI.create("http://bogus"), "token");
@@ -227,7 +223,7 @@ public class PullRequestClientTest {
     // Passes without throwing
   }
 
-  @Test(expected = RequestNotOkException.class)
+  @Test
   public void testRemoveRequestedReview_failure() throws Throwable {
 
     final Call call = mock(Call.class);
@@ -254,12 +250,8 @@ public class PullRequestClientTest {
 
     capture.getValue().onResponse(call, response);
 
-    try {
-      result.get();
-    } catch (ExecutionException e) {
-      throw e.getCause();
-      // expecting RequestNotOkException
-    }
+    Exception exception = assertThrows(ExecutionException.class, result::get);
+    assertEquals(RequestNotOkException.class, exception.getCause().getClass());
   }
 
   @Test

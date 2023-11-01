@@ -26,7 +26,6 @@ import io.opencensus.trace.AttributeValue;
 import io.opencensus.trace.Status;
 import org.junit.jupiter.api.Test;
 
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 

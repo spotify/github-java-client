@@ -25,7 +25,7 @@ import static org.hamcrest.core.Is.is;
 
 import com.google.common.collect.ImmutableList;
 import com.spotify.github.jackson.Json;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class RequestReviewParametersTest {
 
