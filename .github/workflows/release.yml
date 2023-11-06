@@ -32,6 +32,7 @@ jobs:
           mvn
           --batch-mode
           --activate-profiles deploy
+          --settings $GITHUB_WORKSPACE/settings.xml
           -Pcoverage
           clean deploy
         env:
