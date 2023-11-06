@@ -30,8 +30,8 @@ import com.spotify.github.jackson.Json;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Optional;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class UserTest {
 
@@ -50,7 +50,7 @@ public class UserTest {
     assertThat(user.siteAdmin().get(), is(false));
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     fixture = Resources.toString(getResource(this.getClass(), "user.json"), defaultCharset());
   }

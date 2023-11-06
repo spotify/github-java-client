@@ -38,8 +38,8 @@ import com.spotify.github.v3.orgs.OrgMembership;
 import com.spotify.github.v3.orgs.requests.OrgMembershipCreate;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class OrganisationClientTest {
 
@@ -53,7 +53,7 @@ public class OrganisationClientTest {
     return Resources.toString(getResource(TeamClientTest.class, resource), defaultCharset());
   }
 
-  @Before
+  @BeforeEach
   public void setUp() {
     github = mock(GitHubClient.class);
     organisationClient = new OrganisationClient(github, "github");

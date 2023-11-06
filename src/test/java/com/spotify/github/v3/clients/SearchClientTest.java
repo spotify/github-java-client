@@ -35,8 +35,8 @@ import com.spotify.github.v3.search.SearchTest;
 import com.spotify.github.v3.search.requests.ImmutableSearchParameters;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class SearchClientTest {
 
@@ -48,7 +48,7 @@ public class SearchClientTest {
     return Resources.toString(getResource(SearchTest.class, resource), defaultCharset());
   }
 
-  @Before
+  @BeforeEach
   public void setUp() {
     github = mock(GitHubClient.class);
     searchClient = SearchClient.create(github);

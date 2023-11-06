@@ -33,8 +33,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mock;
 
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
@@ -43,23 +43,16 @@ import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.comment.Comment;
 import java.io.IOException;
 import java.util.List;
-import okhttp3.Headers;
 import okhttp3.Response;
-import okhttp3.ResponseBody;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Headers.class, ResponseBody.class, Response.class})
 public class IssueClientTest {
 
   private GitHubClient github;
   private IssueClient issueClient;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     github = mock(GitHubClient.class);
     when(github.json()).thenReturn(Json.create());

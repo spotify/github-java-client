@@ -28,14 +28,14 @@ import static org.hamcrest.core.Is.is;
 import com.google.common.io.Resources;
 import com.spotify.github.jackson.Json;
 import java.io.IOException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class PushCommitTest {
 
   private String fixture;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     fixture =
         Resources.toString(getResource(this.getClass(), "push_commit.json"), defaultCharset());

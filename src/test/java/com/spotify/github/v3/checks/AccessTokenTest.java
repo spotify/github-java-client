@@ -27,7 +27,7 @@ import com.spotify.github.FixtureHelper;
 import com.spotify.github.jackson.Json;
 import java.io.IOException;
 import java.time.ZonedDateTime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class AccessTokenTest {
   private final Json json = Json.create();

@@ -29,7 +29,7 @@ import com.google.common.io.Resources;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.prs.PullRequestActionState;
 import java.io.IOException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class PullRequestEventTest {
 

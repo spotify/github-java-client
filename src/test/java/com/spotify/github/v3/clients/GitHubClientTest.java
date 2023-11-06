@@ -25,7 +25,7 @@ import static java.nio.charset.Charset.defaultCharset;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -49,8 +49,9 @@ import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 public class GitHubClientTest {
@@ -63,13 +64,13 @@ public class GitHubClientTest {
     return Resources.toString(getResource(GitHubClientTest.class, resource), defaultCharset());
   }
 
-  @Before
+  @BeforeEach
   public void setUp() {
     client = mock(OkHttpClient.class);
     github = GitHubClient.create(client, URI.create("http://bogus"), "token");
   }
 
-  @Test(expected = ReadOnlyRepositoryException.class)
+  @Test
   public void testSearchIssue() throws Throwable {
 
     final Call call = mock(Call.class);
@@ -103,11 +104,10 @@ public class GitHubClientTest {
     CompletableFuture<Void> maybeSucceeded = issueClient.editComment(1, "some comment");
     capture.getValue().onResponse(call, response);
     verify(tracer,times(1)).span(anyString(), anyString(),any());
-    try {
-      maybeSucceeded.get();
-    } catch (Exception e) {
-      throw e.getCause();
-    }
+
+    Exception exception = assertThrows(ExecutionException.class,
+        maybeSucceeded::get);
+    Assertions.assertEquals(ReadOnlyRepositoryException.class, exception.getCause().getClass());
   }
 
   @Test
@@ -135,7 +135,7 @@ public class GitHubClientTest {
     capture.getValue().onResponse(call, response);
     try {
       future.get();
-      fail("Did not throw");
+      Assertions.fail("Did not throw");
     } catch (ExecutionException e) {
       assertThat(e.getCause() instanceof RequestNotOkException, is(true));
       RequestNotOkException e1 = (RequestNotOkException) e.getCause();
