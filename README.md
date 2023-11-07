@@ -85,6 +85,12 @@ final TeamClient teamClient = organisationClient.createTeamClient();
     teamClient.getMembership("username");
 ```
 
+## Supported Java versions
+
+This library is written and published with Java version 11. In our CI workflows, we execute
+automated tests with the Java LTS versions 11, 17 and 21. Due to Java's backwards compatability,
+this library can definitely be used in all the tested versions.
+
 ## Contributing
 
 This project uses Maven. To run the tests locally, just run:
