@@ -1,0 +1,25 @@
+version: v1
+services:
+    - name: gh-mock
+      port: 8081
+      alias: gh-mock
+      protocol: rest
+endpoints:
+  - name: tag-endpoint
+    path: /repos/someowner/somerepo/git/refs/tags/0.0.1
+    methods:
+      - name: method
+        type: GET
+    serviceName: gh-mock
+  - name: annotated-tag-endpoint
+    path: /repos/someowner/somerepo/git/tags/27210625b551200e7d3dc608935b1454523eaa8
+    methods:
+      - name: method
+        type: GET
+    serviceName: gh-mock
+  - name: ref-list-endpoint
+    path: /repos/someowner/somerepo/git/matching-refs/heads/feature
+    methods:
+      - name: method
+        type: GET
+    serviceName: gh-mock

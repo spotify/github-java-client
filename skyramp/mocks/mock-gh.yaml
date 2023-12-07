@@ -1,0 +1,7 @@
+version: v1
+mock:
+    description: gh-mock
+    responses:
+        - responseName: tag-response
+        - responseName: annotated-tag-response
+        - responseName: ref-list-response
