@@ -36,8 +36,11 @@ import com.spotify.github.v3.exceptions.ReadOnlyRepositoryException;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.repos.CommitItem;
 import com.spotify.github.v3.repos.RepositoryInvitation;
+
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -68,6 +71,19 @@ public class GitHubClientTest {
   public void setUp() {
     client = mock(OkHttpClient.class);
     github = GitHubClient.create(client, URI.create("http://bogus"), "token");
+  }
+
+  @Test
+  public void withScopedInstallationIdShouldFailWhenMissingPrivateKey() {
+    assertThrows(RuntimeException.class, () -> github.withScopeForInstallationId(1));
+  }
+
+  @Test
+  public void testWithScopedInstallationId() throws URISyntaxException {
+    GitHubClient org = GitHubClient.create(new URI("http://apa.bepa.cepa"), "some_key_content".getBytes(), null, null);
+    GitHubClient scoped = org.withScopeForInstallationId(1);
+    Assertions.assertTrue(scoped.getPrivateKey().isPresent());
+    Assertions.assertEquals(org.getPrivateKey().get(), scoped.getPrivateKey().get());
   }
 
   @Test
