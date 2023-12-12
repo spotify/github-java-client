@@ -319,6 +319,19 @@ public class GitHubClient {
     }
   }
 
+  public GitHubClient withScopeForInstallationId(final int installationId) {
+    if (Optional.ofNullable(privateKey).isEmpty()) {
+      throw new RuntimeException("Installation ID scoped client needs a private key");
+    }
+    return new GitHubClient(
+        client,
+        baseUrl,
+        null,
+        privateKey,
+        appId,
+        installationId);
+  }
+
   public GitHubClient withTracer(final Tracer tracer) {
     this.tracer = tracer;
     return this;
