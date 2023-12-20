@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>github-client</artifactId>
-    <version>0.1.52-SNAPSHOT</version>
+    <version>0.2.2-SNAPSHOT</version>
 
     <parent>
         <groupId>com.spotify</groupId>
@@ -84,24 +84,24 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <project.build.outputTimestamp>1672829810</project.build.outputTimestamp>
+        <project.build.outputTimestamp>1702374828</project.build.outputTimestamp>
         <spotbugs.excludeFilterFile>spotbugsexclude.xml</spotbugs.excludeFilterFile>
         <checkstyle.violationSeverity>error</checkstyle.violationSeverity>
         <checkstyle.config.location>checkstyle.xml</checkstyle.config.location>
 
         <!-- versions -->
-        <guava.version>29.0-jre</guava.version>
+        <guava.version>32.1.3-jre</guava.version>
         <jsr305.version>3.0.2</jsr305.version>
         <jsr311-api.version>1.1.1</jsr311-api.version>
-        <junit.version>4.13.1</junit.version>
-        <slf4j-api.version>1.7.12</slf4j-api.version>
-        <mockito-core.version>3.2.4</mockito-core.version>
+        <junit.version>5.10.0</junit.version>
+        <slf4j-api.version>1.7.36</slf4j-api.version>
+        <mockito-core.version>5.6.0</mockito-core.version>
         <commons-io.version>2.6</commons-io.version>
-        <jackson.version>2.13.2.20220328</jackson.version>
-        <immutables.version>2.8.3</immutables.version>
-        <powermock.version>2.0.2</powermock.version>
-        <objenesis.version>3.0.1</objenesis.version>
-        <opencensus.version>0.26.0</opencensus.version>
+        <jackson.version>2.15.3</jackson.version>
+        <immutables.version>2.9.3</immutables.version>
+        <objenesis.version>3.3</objenesis.version>
+        <opencensus.version>0.31.1</opencensus.version>
+        <okhttp.version>4.11.0</okhttp.version>
 
         <shade.id>${project.groupId}.githubclient.shade</shade.id>
     </properties>
@@ -137,7 +137,7 @@
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
-            <version>3.14.7</version>
+            <version>${okhttp.version}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -172,7 +172,7 @@
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
-            <version>0.10.5</version>
+            <version>0.12.3</version>
         </dependency>
         <dependency>
             <groupId>io.opencensus</groupId>
@@ -182,13 +182,13 @@
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-impl</artifactId>
-            <version>0.10.5</version>
+            <version>0.12.3</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-jackson</artifactId>
-            <version>0.10.5</version>
+            <version>0.12.3</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -200,7 +200,7 @@
         <dependency>
             <groupId>uk.co.datumedge</groupId>
             <artifactId>hamcrest-json</artifactId>
-            <version>0.2</version>
+            <version>0.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -210,17 +210,18 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.5.0</version>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
@@ -242,32 +243,8 @@
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>mockwebserver</artifactId>
-            <version>3.14.7</version>
+            <version>${okhttp.version}</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-module-junit4</artifactId>
-            <version>${powermock.version}</version>
-            <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.mockito</groupId>
-                    <artifactId>mockito-core</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-api-mockito2</artifactId>
-            <version>${powermock.version}</version>
-            <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.mockito</groupId>
-                    <artifactId>mockito-core</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
@@ -343,7 +320,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>1.6</version>
+                        <version>3.1.0</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
@@ -409,7 +386,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.19.1</version>
+                <version>3.2.1</version>
             </plugin>
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>

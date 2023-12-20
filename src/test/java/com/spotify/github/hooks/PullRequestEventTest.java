@@ -27,7 +27,7 @@ import static org.hamcrest.core.Is.is;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.activity.events.PullRequestEvent;
 import java.io.IOException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class PullRequestEventTest {
 

@@ -32,5 +32,6 @@ public enum CheckRunConclusion {
   failure,
   neutral,
   success,
+  skipped,
   stale
 }

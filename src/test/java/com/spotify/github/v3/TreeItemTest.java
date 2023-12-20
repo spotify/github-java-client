@@ -29,8 +29,8 @@ import com.google.common.io.Resources;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.git.TreeItem;
 import java.io.IOException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class TreeItemTest {
 
@@ -42,7 +42,7 @@ public class TreeItemTest {
     assertThat(treeItem.size(), is(12L));
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     fixture = Resources.toString(getResource(this.getClass(), "treeItem.json"), defaultCharset());
   }

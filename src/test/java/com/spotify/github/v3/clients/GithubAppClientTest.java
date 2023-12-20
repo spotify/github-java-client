@@ -20,15 +20,19 @@
 
 package com.spotify.github.v3.clients;
 
+import static com.google.common.io.Resources.getResource;
+import static java.nio.charset.Charset.defaultCharset;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.io.Resources;
 import com.spotify.github.FixtureHelper;
 import com.spotify.github.v3.apps.InstallationRepositoriesResponse;
 import com.spotify.github.v3.checks.Installation;
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -36,26 +40,28 @@ import java.util.concurrent.TimeUnit;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class GithubAppClientTest {
 
-  @Rule
   public final MockWebServer mockServer = new MockWebServer();
 
   private final ObjectMapper objectMapper = new ObjectMapper();
   private final int appId = 42;
   private GithubAppClient client;
 
-  @Before
+  private static String getFixture(String resource) throws IOException {
+    return Resources.toString(getResource(GithubAppClientTest.class, resource), defaultCharset());
+  }
+
+  @BeforeEach
   public void setUp() throws Exception {
     URI uri = mockServer.url("").uri();
     File key = FixtureHelper.loadFile("githubapp/key.pem");
 
     GitHubClient rootclient = GitHubClient.create(uri, key, appId);
-    client = rootclient.createRepositoryClient("", "").createGithubAppClient();
+    client = rootclient.createRepositoryClient("owner", "repo").createGithubAppClient();
   }
 
   @Test
@@ -121,5 +127,21 @@ public class GithubAppClientTest {
     RecordedRequest listReposRequest = mockServer.takeRequest(1, TimeUnit.MILLISECONDS);
     assertThat(listReposRequest.getMethod(), is("GET"));
     assertThat(listReposRequest.getRequestUrl().encodedPath(), is("/installation/repositories"));
+  }
+
+  @Test
+  public void getInstallation() throws Exception {
+    mockServer.enqueue(
+        new MockResponse()
+            .setResponseCode(200)
+            .setBody(FixtureHelper.loadFixture("githubapp/installation.json")));
+
+    Installation installation = client.getInstallation().join();
+
+    assertThat(installation.id(), is(1));
+    assertThat(installation.account().login(), is("github"));
+
+    RecordedRequest recordedRequest = mockServer.takeRequest(1, TimeUnit.MILLISECONDS);
+    assertThat(recordedRequest.getRequestUrl().encodedPath(), is("/repos/owner/repo/installation"));
   }
 }

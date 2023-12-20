@@ -23,7 +23,7 @@ package com.spotify.github.v3.checks;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.spotify.github.v3.checks.ImmutableCheckRunAction.Builder;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class CheckRunActionTest {
   private Builder builder() {

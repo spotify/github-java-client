@@ -26,7 +26,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -37,8 +37,11 @@ import com.spotify.github.v3.exceptions.ReadOnlyRepositoryException;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.repos.CommitItem;
 import com.spotify.github.v3.repos.RepositoryInvitation;
+
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -52,8 +55,9 @@ import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 public class GitHubClientTest {
@@ -66,13 +70,26 @@ public class GitHubClientTest {
     return Resources.toString(getResource(GitHubClientTest.class, resource), defaultCharset());
   }
 
-  @Before
+  @BeforeEach
   public void setUp() {
     client = mock(OkHttpClient.class);
     github = GitHubClient.create(client, URI.create("http://bogus"), "token");
   }
 
-  @Test(expected = ReadOnlyRepositoryException.class)
+  @Test
+  public void withScopedInstallationIdShouldFailWhenMissingPrivateKey() {
+    assertThrows(RuntimeException.class, () -> github.withScopeForInstallationId(1));
+  }
+
+  @Test
+  public void testWithScopedInstallationId() throws URISyntaxException {
+    GitHubClient org = GitHubClient.create(new URI("http://apa.bepa.cepa"), "some_key_content".getBytes(), null, null);
+    GitHubClient scoped = org.withScopeForInstallationId(1);
+    Assertions.assertTrue(scoped.getPrivateKey().isPresent());
+    Assertions.assertEquals(org.getPrivateKey().get(), scoped.getPrivateKey().get());
+  }
+
+  @Test
   public void testSearchIssue() throws Throwable {
 
     final Call call = mock(Call.class);
@@ -106,11 +123,10 @@ public class GitHubClientTest {
     CompletableFuture<Void> maybeSucceeded = issueClient.editComment(1, "some comment");
     capture.getValue().onResponse(call, response);
     verify(tracer,times(1)).span(anyString(), anyString(),any());
-    try {
-      maybeSucceeded.get();
-    } catch (Exception e) {
-      throw e.getCause();
-    }
+
+    Exception exception = assertThrows(ExecutionException.class,
+        maybeSucceeded::get);
+    Assertions.assertEquals(ReadOnlyRepositoryException.class, exception.getCause().getClass());
   }
 
   @Test
@@ -139,7 +155,7 @@ public class GitHubClientTest {
     capture.getValue().onResponse(call, response);
     try {
       future.get();
-      fail("Did not throw");
+      Assertions.fail("Did not throw");
     } catch (ExecutionException e) {
       assertThat(e.getCause() instanceof RequestNotOkException, is(true));
       RequestNotOkException e1 = (RequestNotOkException) e.getCause();
@@ -195,7 +211,7 @@ public class GitHubClientTest {
         .code(200)
         .body(
             ResponseBody.create(
-                MediaType.get("application/json"), getFixture("../checks/check_suites_response.json")))
+                MediaType.get("application/json"), getFixture("../checks/check-suites-response.json")))
         .message("")
         .protocol(Protocol.HTTP_1_1)
         .request(new Request.Builder().url("http://localhost/").build())

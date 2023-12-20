@@ -22,12 +22,11 @@ package com.spotify.github.v3.clients;
 
 import static com.spotify.github.v3.clients.ChecksClientTest.loadResource;
 import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.spotify.github.jackson.Json;
@@ -44,9 +43,9 @@ import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class GitHubAuthTest {
 
@@ -82,7 +81,7 @@ public class GitHubAuthTest {
 
   public GitHubAuthTest() throws JsonProcessingException {}
 
-  @Before
+  @BeforeEach
   public void setUp() throws IOException {
     client =
         new OkHttpClient.Builder()
@@ -98,7 +97,7 @@ public class GitHubAuthTest {
             .createChecksApiClient();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws IOException {
     mockServer.shutdown();
   }
@@ -261,10 +260,12 @@ public class GitHubAuthTest {
     assertThat(request.getMethod(), is("GET"));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void assertNoTokenThrowsException() {
     final GitHubClient apiWithNoKey = GitHubClient.create(URI.create("someurl"), "a-token");
-    apiWithNoKey.createRepositoryClient("foo", "bar").createChecksApiClient();
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> apiWithNoKey.createRepositoryClient("foo", "bar").createChecksApiClient());
   }
 
   private AccessToken getTestInstallationToken() {

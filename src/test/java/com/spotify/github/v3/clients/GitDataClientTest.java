@@ -50,8 +50,8 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class GitDataClientTest {
 
@@ -63,7 +63,7 @@ public class GitDataClientTest {
     return Resources.toString(getResource(GitDataClientTest.class, resource), defaultCharset());
   }
 
-  @Before
+  @BeforeEach
   public void setUp() {
     github = mock(GitHubClient.class);
     gitDataClient = new GitDataClient(github, "someowner", "somerepo");

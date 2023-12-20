@@ -26,11 +26,14 @@ import static okhttp3.MediaType.parse;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.spotify.github.Tracer;
 import com.spotify.github.jackson.Json;
+import com.spotify.github.v3.Team;
+import com.spotify.github.v3.User;
 import com.spotify.github.v3.checks.AccessToken;
 import com.spotify.github.v3.comment.Comment;
 import com.spotify.github.v3.exceptions.ReadOnlyRepositoryException;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.git.Reference;
+import com.spotify.github.v3.orgs.TeamInvitation;
 import com.spotify.github.v3.prs.PullRequestItem;
 import com.spotify.github.v3.prs.Review;
 import com.spotify.github.v3.prs.ReviewRequests;
@@ -96,6 +99,15 @@ public class GitHubClient {
   static final TypeReference<List<Reference>> LIST_REFERENCES =
       new TypeReference<>() {};
   static final TypeReference<List<RepositoryInvitation>> LIST_REPOSITORY_INVITATION =  new TypeReference<>() {};
+
+  static final TypeReference<List<Team>> LIST_TEAMS =
+      new TypeReference<>() {};
+
+  static final TypeReference<List<User>> LIST_TEAM_MEMBERS =
+      new TypeReference<>() {};
+
+  static final TypeReference<List<TeamInvitation>> LIST_PENDING_TEAM_INVITATIONS =
+      new TypeReference<>() {};
 
   private static final String GET_ACCESS_TOKEN_URL = "app/installations/%s/access_tokens";
 
@@ -307,6 +319,19 @@ public class GitHubClient {
     }
   }
 
+  public GitHubClient withScopeForInstallationId(final int installationId) {
+    if (Optional.ofNullable(privateKey).isEmpty()) {
+      throw new RuntimeException("Installation ID scoped client needs a private key");
+    }
+    return new GitHubClient(
+        client,
+        baseUrl,
+        null,
+        privateKey,
+        appId,
+        installationId);
+  }
+
   public GitHubClient withTracer(final Tracer tracer) {
     this.tracer = tracer;
     return this;
@@ -362,6 +387,15 @@ public class GitHubClient {
     return ChecksClient.create(this, owner, repo);
   }
 
+  /**
+   * Create organisation API client
+   *
+   * @return organisation API client
+   */
+  public OrganisationClient createOrganisationClient(final String org) {
+    return OrganisationClient.create(this, org);
+  }
+
   Json json() {
     return json;
   }
@@ -374,6 +408,21 @@ public class GitHubClient {
    */
   CompletableFuture<Response> request(final String path) {
     final Request request = requestBuilder(path).build();
+    log.debug("Making request to {}", request.url().toString());
+    return call(request);
+  }
+
+  /**
+   * Make an http GET request for the given path on the server
+   *
+   * @param path relative to the Github base url
+   * @param extraHeaders extra github headers to be added to the call
+   * @return a reader of response body
+   */
+  CompletableFuture<Response> request(final String path, final Map<String, String> extraHeaders) {
+    final Request.Builder builder = requestBuilder(path);
+    extraHeaders.forEach(builder::addHeader);
+    final Request request = builder.build();
     log.debug("Making request to {}", request.url().toString());
     return call(request);
   }

@@ -67,8 +67,8 @@ final RepositoryClient repositoryClient = githubClient.createRepositoryClient("m
 log.info(repositoryClient.getCommit("sha").get().htmlUrl());
 ```
 
-Some APIs, such as Checks API are nested in the Repository API. Endpoints such as `POST /repos/:owner/:repo/check-runs` live in the ChecksClient:
-
+Another example of the mirrored structure is that some of the APIs are nested under a parent API.
+For example, endpoints related to check runs or issues are nested under the Repository client:
 ```java
 final ChecksClient checksClient = repositoryClient.createChecksApiClient();
 checksClient.createCheckRun(CHECK_RUN_REQUEST);
@@ -76,7 +76,20 @@ checksClient.createCheckRun(CHECK_RUN_REQUEST);
 final IssueClient issueClient = repositoryClient.createIssueClient();
 issueClient.createComment(ISSUE_ID, "comment body")
   .thenAccept(comment -> log.info("created comment " + comment.htmlUrl()));
+
 ``` 
+
+And endpoints related to teams and memberships are nested under the Organisation client:
+```java
+final TeamClient teamClient = organisationClient.createTeamClient();
+    teamClient.getMembership("username");
+```
+
+## Supported Java versions
+
+This library is written and published with Java version 11. In our CI workflows, we execute
+automated tests with the Java LTS versions 11, 17 and 21. Due to Java's backwards compatability,
+this library can definitely be used in all the tested versions.
 
 ## Contributing
 
@@ -86,7 +99,15 @@ This project uses Maven. To run the tests locally, just run:
 mvn clean verify
 ```
 
-If you are a maintainer, you can release a new version by running this command locally: `mvn release:prepare`
+If you are a maintainer, you can release a new version by doing the following:
+
+- Merge the changes the need to be released into the `master` branch
+- Checkout on to master locally and pull the latest changes
+- Run `mvn release:prepare`, this will generate 2 commits that will bump the version of the github-java-client
+- Push these changes to master
+- Once the [release pipeline](https://github.com/spotify/github-java-client/actions/workflows/release.yml) has completed, the changes will have been tagged
+- [Navigate to the tag](https://github.com/spotify/github-java-client/tags) associated with the changes and generate a manual release
+- Once the release is generated, select the "Set as the latest release" checkbox and publish the release
 
 ## Notes about maturity
 
