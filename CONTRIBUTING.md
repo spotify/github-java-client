@@ -28,12 +28,12 @@ feedback for changes that would be required.
 - Add tests relevant to the fixed bug or new feature. We love to increase our test coverage so any 
   contributions made to improving that will be very welcomed.
 
-## Coding standards
+## Coding Standards
 
 - This library is modelled after the [GitHub API](https://docs.github.com/en/rest?apiVersion=2022-11-28) and it has been structured to mimic that. 
-  For example, to access the Teams endpoints, you need to instantiate an Organisation Client  
-  and then a Teams Client as [seen here](./src/main/java/com/spotify/github/v3/clients/OrganisationClient.java). This mirrors the nested structure of the API endpoints such as the 
+  For example, to access the Teams endpoints, you need to instantiate an `OrganisationClient`  
+  and then a `TeamsClient` as [seen here](./src/main/java/com/spotify/github/v3/clients/OrganisationClient.java). This mirrors the nested structure of the API endpoints such as the 
   [/orgs/{org}/teams/{team_slug}](https://docs.github.com/en/rest/teams/teams?apiVersion=2022-11-28#list-teams) endpoint
 - We operate a monkey see, monkey do approach to this library. We understand that there are some inconsistencies in the library 
-  in terms of how the tests and/or endpoints are written but we, with your help, are working on creating
+  in terms of how the tests and/or endpoints are written but we, with your help, are working on creating a more consistent codebase.
 - All bug fixes and new features need to be fully tested.
