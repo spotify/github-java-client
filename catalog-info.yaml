@@ -4,4 +4,4 @@ metadata:
   name: github-java-client
 spec:
   type: resource
-  owner: pipedream
+  owner: hotsauce
