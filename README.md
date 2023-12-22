@@ -12,8 +12,8 @@ It supports authentication via simple access tokens, JWT endpoints and GitHub Ap
 
 It is also very light on GitHub, doing as few requests as necessary.
 
-This library is maintained by @spotify/gjc-maintainers. If you have any questions or issues, please 
-tag this team in the relevant PR/issue.
+This library is maintained by @spotify/gjc-maintainers. If you have any questions, issues or need a
+review, please tag this team in the relevant PR/issue.
 
 ## Getting Started
 
