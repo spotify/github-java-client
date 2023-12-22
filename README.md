@@ -4,13 +4,16 @@
 ![Maven Central](https://img.shields.io/maven-central/v/com.spotify/github-client)
 
 
-# github-client
+# github-java-client
 
 A small Java library for talking to GitHub/GitHub Enterprise and interacting with projects.
 
 It supports authentication via simple access tokens, JWT endpoints and GitHub Apps (via private key).
 
 It is also very light on GitHub, doing as few requests as necessary.
+
+This library is maintained by @spotify/gjc-maintainers. If you have any questions, issues or need a
+review, please tag this team in the relevant PR/issue.
 
 ## Getting Started
 

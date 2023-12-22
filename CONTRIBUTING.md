@@ -10,6 +10,9 @@ In time, we'll tag issues that would make a good first pull request for new cont
 way to get started helping the project is to *file an issue*. Issues can include bugs to fix, 
 features to add, or documentation that looks outdated.
 
+This library is maintained by @spotify/gjc-maintainers. If you have any questions, issues or need a 
+review, please tag this team in the relevant PR/issue.
+
 ## Contributions
 
 This project welcomes contributions from everyone.
