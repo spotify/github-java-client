@@ -65,6 +65,8 @@ import com.spotify.github.v3.repos.RepositoryTest;
 import com.spotify.github.v3.repos.Status;
 import com.spotify.github.v3.repos.requests.ImmutableAuthenticatedUserRepositoriesFilter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -536,5 +538,64 @@ public class RepositoryClientTest {
     when(github.post(any(), any())).thenReturn(okResponse);
     final Optional<CommitItem> maybeCommit = repoClient.merge("basebranch", "headbranch").join();
     assertThat(maybeCommit, is(Optional.empty()));
+  }
+
+  @Test
+  public void shouldDownloadTarball() throws Exception {
+    CompletableFuture<Response> fixture = completedFuture(
+        new Response.Builder()
+            .request(new Request.Builder().url("https://example.com/whatever").build())
+            .protocol(Protocol.HTTP_1_1)
+            .message("")
+            .code(200)
+            .body(
+                ResponseBody.create(
+                    "some bytes".getBytes(StandardCharsets.UTF_8),
+                    MediaType.get("application/gzip")
+                ))
+            .build());
+    when(github.request("/repos/someowner/somerepo/tarball/")).thenReturn(fixture);
+
+    try(InputStream response = repoClient.downloadTarball().get().orElseThrow()) {
+      String result = new String(response.readAllBytes(), StandardCharsets.UTF_8);
+      assertThat(result, is("some bytes"));
+    }
+  }
+
+  @Test
+  public void shouldDownloadZipball() throws Exception {
+    CompletableFuture<Response> fixture = completedFuture(
+        new Response.Builder()
+            .request(new Request.Builder().url("https://example.com/whatever").build())
+            .protocol(Protocol.HTTP_1_1)
+            .message("")
+            .code(200)
+            .body(
+                ResponseBody.create(
+                    "some bytes".getBytes(StandardCharsets.UTF_8),
+                    MediaType.get("application/gzip")
+                ))
+            .build());
+    when(github.request("/repos/someowner/somerepo/zipball/")).thenReturn(fixture);
+
+    try (InputStream response = repoClient.downloadZipball().get().orElseThrow()) {
+      String result = new String(response.readAllBytes(), StandardCharsets.UTF_8);
+      assertThat(result, is("some bytes"));
+    }
+  }
+
+  @Test
+  public void shouldReturnEmptyOptionalWhenResponseBodyNotPresent() throws Exception {
+    CompletableFuture<Response> fixture = completedFuture(
+        new Response.Builder()
+            .request(new Request.Builder().url("https://example.com/whatever").build())
+            .protocol(Protocol.HTTP_1_1)
+            .message("")
+            .code(204) // No Content
+            .build());
+    when(github.request("/repos/someowner/somerepo/zipball/master")).thenReturn(fixture);
+
+    Optional<InputStream> response = repoClient.downloadZipball("master").get();
+    assertThat(response, is(Optional.empty()));
   }
 }
