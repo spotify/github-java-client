@@ -36,7 +36,7 @@ public interface CheckRunResponse extends CheckRunBase {
    *
    * @return the int
    */
-  int id();
+  long id();
 
   /**
    * Url string.

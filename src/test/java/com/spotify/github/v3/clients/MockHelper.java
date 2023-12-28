@@ -20,8 +20,8 @@
 
 package com.spotify.github.v3.clients;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mock;
 
 import java.io.IOException;
 import okhttp3.Headers;

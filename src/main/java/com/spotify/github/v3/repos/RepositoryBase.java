@@ -58,6 +58,11 @@ public interface RepositoryBase extends UpdateTracking {
   @JsonProperty("private")
   Boolean isPrivate();
 
+  /** Is it archived */
+  @Nullable
+  @JsonProperty("archived")
+  Boolean isArchived();
+
   /** Is it public */
   @JsonProperty("public")
   Optional<Boolean> isPublic();
@@ -73,6 +78,18 @@ public interface RepositoryBase extends UpdateTracking {
   /** HTML URL */
   @Nullable
   URI htmlUrl();
+
+  /** Allow squash merges */
+  @Nullable
+  Boolean allowSquashMerge();
+
+  /** Allow merge commits */
+  @Nullable
+  Boolean allowMergeCommit();
+
+  /** Allow rebase merges */
+  @Nullable
+  Boolean allowRebaseMerge();
 
   /** Archive URL template */
   @Nullable

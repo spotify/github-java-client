@@ -25,18 +25,23 @@ import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERE
 import static com.spotify.github.v3.clients.GitHubClient.LIST_PR_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_REVIEW_REQUEST_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_REVIEW_TYPE_REFERENCE;
+import static java.util.Objects.isNull;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
 import com.spotify.github.async.AsyncPage;
 import com.spotify.github.v3.prs.*;
 import com.spotify.github.v3.prs.requests.PullRequestCreate;
 import com.spotify.github.v3.prs.requests.PullRequestParameters;
 import com.spotify.github.v3.prs.requests.PullRequestUpdate;
 import com.spotify.github.v3.repos.CommitItem;
+import java.io.Reader;
 import java.lang.invoke.MethodHandles;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import javax.ws.rs.core.HttpHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,12 +107,11 @@ public class PullRequestClient {
    * Create a pull request.
    *
    * @param request create request
+   * @return pull request
    */
-  public CompletableFuture<Void> create(final PullRequestCreate request) {
+  public CompletableFuture<PullRequest> create(final PullRequestCreate request) {
     final String path = String.format(PR_TEMPLATE, owner, repo);
-    return github
-        .post(path, github.json().toJsonUnchecked(request))
-        .thenAccept(IGNORE_RESPONSE_CONSUMER);
+    return github.post(path, github.json().toJsonUnchecked(request), PullRequest.class);
   }
 
   /**
@@ -115,12 +119,11 @@ public class PullRequestClient {
    *
    * @param number pull request number
    * @param request update request
+   * @return pull request
    */
-  public CompletableFuture<Void> update(final int number, final PullRequestUpdate request) {
+  public CompletableFuture<PullRequest> update(final int number, final PullRequestUpdate request) {
     final String path = String.format(PR_NUMBER_TEMPLATE, owner, repo, number);
-    return github
-        .patch(path, github.json().toJsonUnchecked(request))
-        .thenAccept(IGNORE_RESPONSE_CONSUMER);
+    return github.patch(path, github.json().toJsonUnchecked(request), PullRequest.class);
   }
 
   /**
@@ -227,6 +230,38 @@ public class PullRequestClient {
     final String jsonPayload = github.json().toJsonUnchecked(properties);
     log.debug("Merging pr, running: {}", path);
     return github.put(path, jsonPayload).thenAccept(IGNORE_RESPONSE_CONSUMER);
+  }
+
+  public CompletableFuture<Reader> patch(final int number) {
+    final String path = String.format(PR_NUMBER_TEMPLATE, owner, repo, number);
+    final Map<String, String> extraHeaders = ImmutableMap.of(
+        HttpHeaders.ACCEPT, "application/vnd.github.patch"
+    );
+    log.debug("Fetching pull request patch from " + path);
+    return github.request(path, extraHeaders)
+        .thenApply(response -> {
+          final var body = response.body();
+          if (isNull(body)) {
+            return Reader.nullReader();
+          }
+          return body.charStream();
+        });
+  }
+
+  public CompletableFuture<Reader> diff(final int number) {
+    final String path = String.format(PR_NUMBER_TEMPLATE, owner, repo, number);
+    final Map<String, String> extraHeaders = ImmutableMap.of(
+        HttpHeaders.ACCEPT, "application/vnd.github.diff"
+    );
+    log.debug("Fetching pull diff from " + path);
+    return github.request(path, extraHeaders)
+        .thenApply(response -> {
+          final var body = response.body();
+          if (isNull(body)) {
+            return Reader.nullReader();
+          }
+          return body.charStream();
+        });
   }
 
   private CompletableFuture<List<PullRequestItem>> list(final String parameterPath) {

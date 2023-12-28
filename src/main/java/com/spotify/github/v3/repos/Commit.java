@@ -23,6 +23,7 @@ package com.spotify.github.v3.repos;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.spotify.github.GithubStyle;
+import com.spotify.github.v3.git.ShaLink;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -42,4 +43,8 @@ public interface Commit extends CommitItem {
   /** File objects included in the commit. */
   @Nullable
   List<File> files();
+
+  /** The SHA of the tree object this commit points to. */
+  @Nullable
+  ShaLink tree();
 }

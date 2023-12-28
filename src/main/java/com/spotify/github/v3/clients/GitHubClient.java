@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,12 +24,16 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 import static okhttp3.MediaType.parse;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.spotify.github.Tracer;
 import com.spotify.github.jackson.Json;
+import com.spotify.github.v3.Team;
+import com.spotify.github.v3.User;
 import com.spotify.github.v3.checks.AccessToken;
 import com.spotify.github.v3.comment.Comment;
 import com.spotify.github.v3.exceptions.ReadOnlyRepositoryException;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.git.Reference;
+import com.spotify.github.v3.orgs.TeamInvitation;
 import com.spotify.github.v3.prs.PullRequestItem;
 import com.spotify.github.v3.prs.Review;
 import com.spotify.github.v3.prs.ReviewRequests;
@@ -38,6 +42,7 @@ import com.spotify.github.v3.repos.CommitItem;
 import com.spotify.github.v3.repos.FolderContent;
 import com.spotify.github.v3.repos.Repository;
 import com.spotify.github.v3.repos.Status;
+import com.spotify.github.v3.repos.RepositoryInvitation;
 
 import java.io.*;
 import java.lang.invoke.MethodHandles;
@@ -65,6 +70,10 @@ import org.slf4j.LoggerFactory;
  */
 public class GitHubClient {
 
+  private static final int EXPIRY_MARGIN_IN_MINUTES = 5;
+
+  private Tracer tracer = NoopTracer.INSTANCE;
+
   static final Consumer<Response> IGNORE_RESPONSE_CONSUMER = (response) -> {
     if (response.body() != null) {
       response.body().close();
@@ -88,6 +97,16 @@ public class GitHubClient {
   static final TypeReference<List<Branch>> LIST_BRANCHES =
       new TypeReference<>() {};
   static final TypeReference<List<Reference>> LIST_REFERENCES =
+      new TypeReference<>() {};
+  static final TypeReference<List<RepositoryInvitation>> LIST_REPOSITORY_INVITATION =  new TypeReference<>() {};
+
+  static final TypeReference<List<Team>> LIST_TEAMS =
+      new TypeReference<>() {};
+
+  static final TypeReference<List<User>> LIST_TEAM_MEMBERS =
+      new TypeReference<>() {};
+
+  static final TypeReference<List<TeamInvitation>> LIST_PENDING_TEAM_INVITATIONS =
       new TypeReference<>() {};
 
   private static final String GET_ACCESS_TOKEN_URL = "app/installations/%s/access_tokens";
@@ -300,6 +319,24 @@ public class GitHubClient {
     }
   }
 
+  public GitHubClient withScopeForInstallationId(final int installationId) {
+    if (Optional.ofNullable(privateKey).isEmpty()) {
+      throw new RuntimeException("Installation ID scoped client needs a private key");
+    }
+    return new GitHubClient(
+        client,
+        baseUrl,
+        null,
+        privateKey,
+        appId,
+        installationId);
+  }
+
+  public GitHubClient withTracer(final Tracer tracer) {
+    this.tracer = tracer;
+    return this;
+  }
+
   public Optional<byte[]> getPrivateKey() {
     return Optional.ofNullable(privateKey);
   }
@@ -339,6 +376,26 @@ public class GitHubClient {
     return SearchClient.create(this);
   }
 
+  /**
+   * Create a checks API client
+   *
+   * @param owner repository owner
+   * @param repo repository name
+   * @return checks API client
+   */
+  public ChecksClient createChecksClient(final String owner, final String repo) {
+    return ChecksClient.create(this, owner, repo);
+  }
+
+  /**
+   * Create organisation API client
+   *
+   * @return organisation API client
+   */
+  public OrganisationClient createOrganisationClient(final String org) {
+    return OrganisationClient.create(this, org);
+  }
+
   Json json() {
     return json;
   }
@@ -351,6 +408,21 @@ public class GitHubClient {
    */
   CompletableFuture<Response> request(final String path) {
     final Request request = requestBuilder(path).build();
+    log.debug("Making request to {}", request.url().toString());
+    return call(request);
+  }
+
+  /**
+   * Make an http GET request for the given path on the server
+   *
+   * @param path relative to the Github base url
+   * @param extraHeaders extra github headers to be added to the call
+   * @return a reader of response body
+   */
+  CompletableFuture<Response> request(final String path, final Map<String, String> extraHeaders) {
+    final Request.Builder builder = requestBuilder(path);
+    extraHeaders.forEach(builder::addHeader);
+    final Request request = builder.build();
     log.debug("Making request to {}", request.url().toString());
     return call(request);
   }
@@ -506,6 +578,20 @@ public class GitHubClient {
   }
 
   /**
+   * Make a HTTP PUT request for the given path with provided JSON body.
+   *
+   * @param path relative to the Github base url
+   * @param data request body as stringified JSON
+   * @param clazz class to cast response as
+   * @return response body deserialized as provided class
+   */
+  <T> CompletableFuture<T> put(final String path, final String data, final Class<T> clazz) {
+    return put(path, data)
+        .thenApply(
+            response -> json().fromJsonUncheckedNotNull(responseBodyUnchecked(response), clazz));
+  }
+
+  /**
    * Make an http PATCH request for the given path with provided JSON body.
    *
    * @param path relative to the Github base url
@@ -522,12 +608,26 @@ public class GitHubClient {
   }
 
   /**
+   * Make an http PATCH request for the given path with provided JSON body.
+   *
+   * @param path relative to the Github base url
+   * @param data request body as stringified JSON
+   * @param clazz class to cast response as
+   * @return response body deserialized as provided class
+   */
+  <T> CompletableFuture<T> patch(final String path, final String data, final Class<T> clazz) {
+    return patch(path, data)
+        .thenApply(
+            response -> json().fromJsonUncheckedNotNull(responseBodyUnchecked(response), clazz));
+  }
+
+  /**
    * Make an http PATCH request for the given path with provided JSON body
    *
    * @param path relative to the Github base url
    * @param data request body as stringified JSON
    * @param clazz class to cast response as
-   * @return response body as String
+   * @return response body deserialized as provided class
    */
   <T> CompletableFuture<T> patch(
       final String path,
@@ -650,7 +750,8 @@ public class GitHubClient {
   }
 
   private boolean isExpired(final AccessToken token) {
-    return token.expiresAt().isBefore(ZonedDateTime.now().plusMinutes(-1));
+    // Adds a few minutes to avoid making calls with an expired token due to clock differences
+    return token.expiresAt().isBefore(ZonedDateTime.now().plusMinutes(EXPIRY_MARGIN_IN_MINUTES));
   }
 
   private AccessToken generateInstallationToken(final String jwtToken, final int installationId)
@@ -724,7 +825,7 @@ public class GitHubClient {
                     });
           }
         });
-
+    tracer.span(request.url().toString(), request.method(), future);
     return future;
   }
 
@@ -733,10 +834,10 @@ public class GitHubClient {
     String bodyString = res.body() != null ? res.body().string() : "";
     if (res.code() == FORBIDDEN) {
       if (bodyString.contains("Repository was archived so is read-only")) {
-        return new ReadOnlyRepositoryException(request.url().encodedPath(), res.code(), bodyString);
+        return new ReadOnlyRepositoryException(request.method(), request.url().encodedPath(), res.code(), bodyString);
       }
     }
-    return new RequestNotOkException(request.url().encodedPath(), res.code(), bodyString);
+    return new RequestNotOkException(request.method(), request.url().encodedPath(), res.code(), bodyString);
   }
 
   CompletableFuture<Response> processPossibleRedirects(
@@ -750,7 +851,7 @@ public class GitHubClient {
       final Request request =
           requestBuilder(newLocation)
               .url(newLocation)
-              .method("POST", response.request().body())
+              .method(response.request().method(), response.request().body())
               .build();
       // Do the new call and complete the original future when the new call completes
       return call(request);

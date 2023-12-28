@@ -27,20 +27,28 @@ import com.spotify.github.v3.checks.AccessToken;
 import com.spotify.github.v3.checks.Installation;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import javax.ws.rs.core.HttpHeaders;
 
 /** Apps API client */
 public class GithubAppClient {
 
+  private static final String GET_INSTALLATION_BY_ID_URL = "/app/installations/%s";
   private static final String GET_ACCESS_TOKEN_URL = "/app/installations/%s/access_tokens";
   private static final String GET_INSTALLATIONS_URL = "/app/installations?per_page=100";
   private static final String GET_INSTALLATION_REPO_URL = "/repos/%s/%s/installation";
   private static final String LIST_ACCESSIBLE_REPOS_URL = "/installation/repositories";
 
+  /*
+    Owner and org are interchangeable and therefore "owner" is used to
+    refer to the organisation in the installation endpoint
+  */
+  private static final String GET_INSTALLATION_ORG_URL = "/orgs/%s/installation";
+
   private final GitHubClient github;
   private final String owner;
-  private final String repo;
+  private final Optional<String> maybeRepo;
 
   private final Map<String, String> extraHeaders =
       ImmutableMap.of(HttpHeaders.ACCEPT, "application/vnd.github.machine-man-preview+json");
@@ -51,7 +59,13 @@ public class GithubAppClient {
   GithubAppClient(final GitHubClient github, final String owner, final String repo) {
     this.github = github;
     this.owner = owner;
-    this.repo = repo;
+    this.maybeRepo = Optional.of(repo);
+  }
+
+  GithubAppClient(final GitHubClient github, final String owner) {
+    this.github = github;
+    this.owner = owner;
+    this.maybeRepo = Optional.empty();
   }
 
   /**
@@ -64,13 +78,40 @@ public class GithubAppClient {
   }
 
   /**
-   * Get Installation of a repo
+   * Get Installation
    *
-   * @return a list of Installation
+   * @return an Installation
    */
   public CompletableFuture<Installation> getInstallation() {
+    return maybeRepo.map(this::getRepoInstallation).orElseGet(this::getOrgInstallation);
+  }
+
+  /**
+   * Get Installation identified by its installation id
+   *
+   * @return an Installation
+   */
+  public CompletableFuture<Installation> getInstallation(final Integer installationId) {
     return github.request(
-        String.format(GET_INSTALLATION_REPO_URL, owner, repo), Installation.class, extraHeaders);
+        String.format(GET_INSTALLATION_BY_ID_URL, installationId), Installation.class);
+  }
+
+  /**
+   * Get an installation of a repo
+   * @return an Installation
+   */
+  private CompletableFuture<Installation> getRepoInstallation(final String repo) {
+    return github.request(
+        String.format(GET_INSTALLATION_REPO_URL, owner, repo), Installation.class);
+  }
+
+  /**
+   * Get an installation of an org
+   * @return an Installation
+   */
+  private CompletableFuture<Installation> getOrgInstallation() {
+    return github.request(
+        String.format(GET_INSTALLATION_ORG_URL, owner), Installation.class);
   }
 
   /**

@@ -20,16 +20,15 @@
 
 package com.spotify.github.v3.prs;
 
-import com.google.common.io.Resources;
-import com.spotify.github.jackson.Json;
-import org.junit.Test;
-
-import java.io.IOException;
-
 import static com.google.common.io.Resources.getResource;
 import static java.nio.charset.Charset.defaultCharset;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+
+import com.google.common.io.Resources;
+import com.spotify.github.jackson.Json;
+import java.io.IOException;
+import org.junit.jupiter.api.Test;
 
 public class ReviewParametersTest {
     @Test

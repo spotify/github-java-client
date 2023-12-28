@@ -26,14 +26,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import com.spotify.github.GitHubInstant;
 import java.io.IOException;
 import java.time.Instant;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class GitHubInstantModuleTest {
 
   private Json mapper;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mapper = Json.create();
   }

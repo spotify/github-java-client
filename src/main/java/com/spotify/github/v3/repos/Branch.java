@@ -50,5 +50,8 @@ public interface Branch {
   Optional<Boolean> isProtected();
 
   /** Branch protection API URL */
+  @JsonDeserialize(using = BranchProtectionUrlDeserializer.class)
   Optional<URI> protectionUrl();
+
+  Optional<Protection> protection();
 }

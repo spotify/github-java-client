@@ -43,8 +43,8 @@ import com.spotify.github.v3.checks.ImmutableCheckRunRequest;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.concurrent.CompletableFuture;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ChecksClientTest {
 
@@ -61,7 +61,7 @@ public class ChecksClientTest {
     }
   }
 
-  @Before
+  @BeforeEach
   public void setUp() {
     github = mock(GitHubClient.class);
     checksClient = new ChecksClient(github, "someowner", "somerepo");
@@ -128,9 +128,24 @@ public class ChecksClientTest {
     final CompletableFuture<CheckRunResponse> actualResponse = checksClient.getCheckRun(4);
 
     assertThat(actualResponse.get().status(), is(completed));
-    assertThat(actualResponse.get().id(), is(4));
+    assertThat(actualResponse.get().id(), is(4L));
     assertThat(actualResponse.get().headSha(), is("ce587453ced02b1526dfb4cb910479d431683101"));
     assertThat(actualResponse.get().output().annotationsCount().get(), is(2));
+  }
+
+  @Test
+  public void getCompletedCheckRunWithLongId() throws Exception {
+    final CheckRunResponse checkRunResponse =
+        json.fromJson(
+            loadResource(FIXTURES_PATH + "checks-run-completed-long-id-response.json"),
+            CheckRunResponse.class);
+
+    final CompletableFuture<CheckRunResponse> fixtureResponse = completedFuture(checkRunResponse);
+    when(github.request(any(), eq(CheckRunResponse.class), any())).thenReturn(fixtureResponse);
+
+    final CompletableFuture<CheckRunResponse> actualResponse = checksClient.getCheckRun(6971753714L);
+
+    assertThat(actualResponse.get().id(), is(6971753714L));
   }
 
   @Test

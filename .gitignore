@@ -23,3 +23,7 @@ dependency-reduced-pom.xml
 .classpath
 .project
 .settings/
+
+# mvn release
+pom.xml.releaseBackup
+release.properties

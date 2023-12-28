@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -38,38 +38,39 @@ package com.spotify.github.v3.exceptions;
 public class RequestNotOkException extends GithubException {
 
   private final int statusCode;
+  private final String method;
   private final String path;
+  private final String msg;
 
-  private static String decoratedMessage(final String path, final int statusCode, final String msg) {
-    return String.format("%s %d: %s", path, statusCode, msg);
+  private static String decoratedMessage(
+      final String method, final String path, final int statusCode, final String msg) {
+    return String.format("%s %s %d: %s", method, path, statusCode, msg);
   }
 
   /**
    * Response to request came back with non-2xx status code
    *
+   * @param method HTTP method
    * @param path URI path
    * @param statusCode status of repsonse
    * @param msg response body
-   */
-  public RequestNotOkException(final String path, final int statusCode, final String msg) {
-    super(decoratedMessage(path, statusCode, msg));
-    this.statusCode = statusCode;
-    this.path = path;
-  }
-
-  /**
-   * Response to request came back with non-2xx status code
-   *
-   * @param path URI path
-   * @param statusCode status of repsonse
-   * @param msg response body
-   * @param cause exception cause
    */
   public RequestNotOkException(
-      final String path, final int statusCode, final String msg, final Throwable cause) {
-    super(decoratedMessage(path, statusCode, msg), cause);
+      final String method, final String path, final int statusCode, final String msg) {
+    super(decoratedMessage(method, path, statusCode, msg));
     this.statusCode = statusCode;
+    this.method = method;
     this.path = path;
+    this.msg = msg;
+  }
+
+  /**
+   * Get the raw message from github
+   *
+   * @return msg
+   */
+  public String getRawMessage() {
+    return msg;
   }
 
   /**
@@ -79,6 +80,15 @@ public class RequestNotOkException extends GithubException {
    */
   public int statusCode() {
     return statusCode;
+  }
+
+  /**
+   * Get request HTTP method
+   *
+   * @return method
+   */
+  public String method() {
+    return method;
   }
 
   /**

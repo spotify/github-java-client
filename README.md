@@ -4,13 +4,16 @@
 ![Maven Central](https://img.shields.io/maven-central/v/com.spotify/github-client)
 
 
-# github-client
+# github-java-client
 
 A small Java library for talking to GitHub/GitHub Enterprise and interacting with projects.
 
 It supports authentication via simple access tokens, JWT endpoints and GitHub Apps (via private key).
 
 It is also very light on GitHub, doing as few requests as necessary.
+
+This library is maintained by @spotify/gjc-maintainers. If you have any questions, issues or need a
+review, please tag this team in the relevant PR/issue.
 
 ## Getting Started
 
@@ -25,22 +28,12 @@ In Maven:
 </dependency>
 ```
 
-Start talking to GitHub API.
-
-```java
-final GitHubClient github = GitHubClient.create(URI.create("https://api.github.com/"));
-final IssueApi issueClient = github.createRepositoryClient("my-org", "my-repo").createIssueClient();
-issueClient.listComments(ISSUE_ID).get().forEach(comment -> log.info(comment.body()));
-```
-
 ## Authenticating
 
 ### Simple access token
 
 ```java
-final GitHubClient github = GitHubClient.create(URI.create("https://api.github.com/"), "my-access-token");
-// Do the requests
-github.createRepositoryClient("my-org", "my-repo").getCommit("sha");
+final GitHubClient githubClient = GitHubClient.create(URI.create("https://api.github.com/"), "my-access-token");
 ```
 
 ### Private key
@@ -48,7 +41,7 @@ github.createRepositoryClient("my-org", "my-repo").getCommit("sha");
 To authenticate as a GitHub App, you must provide a private key and the App ID, together with the API URL.
 
 ```java
-final GitHubClient github =
+final GitHubClient githubClient =
   GitHubClient.create(
     URI.create("https://api.github.com/"),
     new File("/path-to-the/private-key.pem"),
@@ -60,9 +53,7 @@ The client will manage the generation of JWT tokens, as well as requesting and c
 from GitHub.
 
 ```java
-final GitHubClient scoped = GitHubClient.scopeForInstallationId(github, INSTALLATION_ID);
-// Do the requests now using the scoped client.
-scoped.createRepositoryClient("my-org", "my-repo").getCommit("sha");
+final GitHubClient scopedClient = GitHubClient.scopeForInstallationId(githubClient, INSTALLATION_ID);
 ```
 
 It is also possible to provide the installation to the root client.
@@ -75,24 +66,33 @@ This library attempts to mirror the structure of GitHub API endpoints. As an exa
 the `GET /repos/:owner/:repo/commits` API call, under the `repos` API. Therefore, the `getCommit` method lives in the RepositoryClient.
 
 ```java
-final GitHubClient github = GitHubClient.create(URI.create("https://api.github.com/"), "my-access-token");
-github.createRepositoryClient("my-org", "my-repo").getCommit("sha");
+final RepositoryClient repositoryClient = githubClient.createRepositoryClient("my-org", "my-repo");
+log.info(repositoryClient.getCommit("sha").get().htmlUrl());
 ```
 
-Some APIs, such as Checks API are nested in the Repository API. Endpoints such as `POST /repos/:owner/:repo/check-runs` live in the ChecksClient:
-
+Another example of the mirrored structure is that some of the APIs are nested under a parent API.
+For example, endpoints related to check runs or issues are nested under the Repository client:
 ```java
-final GitHubClient github =
-  GitHubClient.create(
-    URI.create("https://api.github.com/"),
-    new File("/path-to-the/private-key.der"),
-    APP_ID);
-// Checks API need to be used by GitHub Apps
-GitHubClient.scopeForInstallationId(github, INSTALLATION_ID)
-  .createRepositoryClient("my-org", "my-repo")
-  .createChecksApiClient()
-  .createCheckRun(CHECK_RUN_REQUEST);
+final ChecksClient checksClient = repositoryClient.createChecksApiClient();
+checksClient.createCheckRun(CHECK_RUN_REQUEST);
+
+final IssueClient issueClient = repositoryClient.createIssueClient();
+issueClient.createComment(ISSUE_ID, "comment body")
+  .thenAccept(comment -> log.info("created comment " + comment.htmlUrl()));
+
 ``` 
+
+And endpoints related to teams and memberships are nested under the Organisation client:
+```java
+final TeamClient teamClient = organisationClient.createTeamClient();
+    teamClient.getMembership("username");
+```
+
+## Supported Java versions
+
+This library is written and published with Java version 11. In our CI workflows, we execute
+automated tests with the Java LTS versions 11, 17 and 21. Due to Java's backward compatibility,
+this library can definitely be used in all the tested versions.
 
 ## Contributing
 
@@ -102,11 +102,21 @@ This project uses Maven. To run the tests locally, just run:
 mvn clean verify
 ```
 
+If you are a maintainer, you can release a new version by doing the following:
+
+- Merge the changes that need to be released into the `master` branch
+- Checkout on to master locally and pull the latest changes
+- Run `mvn release:prepare`, this will generate 2 commits that will bump the version of the github-java-client
+- Push these changes to master
+- Once the [release pipeline](https://github.com/spotify/github-java-client/actions/workflows/release.yml) has completed, the changes will have been tagged
+- [Navigate to the tag](https://github.com/spotify/github-java-client/tags) associated with the changes and generate a manual release
+- Once the release is generated, select the "Set as the latest release" checkbox and publish the release
+
 ## Notes about maturity
 
 This module was created after existing libraries were evaluated and dismissed, and we found that we were writing similar
 code in multiple projects. As such, it at least initially only contains enough functionality for our internal requirements
-which reflect that we were working on build system integration with the GitHub pull requests. It has been widely used for 4+ 
+which reflects that we were working on build system integration with the GitHub pull requests. It has been widely used for 4+ 
 years. It's important to notice that it does not cover all GitHub v3 API. Adding missing endpoints should be very straightforward.
 Pull Requests are welcome.
 

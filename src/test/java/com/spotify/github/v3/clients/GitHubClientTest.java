@@ -20,19 +20,27 @@
 
 package com.spotify.github.v3.clients;
 
+import static com.google.common.io.Resources.getResource;
+import static java.nio.charset.Charset.defaultCharset;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
+import com.google.common.io.Resources;
+import com.spotify.github.Tracer;
+import com.spotify.github.v3.checks.CheckSuiteResponseList;
 import com.spotify.github.v3.exceptions.ReadOnlyRepositoryException;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.repos.CommitItem;
+import com.spotify.github.v3.repos.RepositoryInvitation;
+
+import java.io.File;
+import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -44,22 +52,41 @@ import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 public class GitHubClientTest {
 
   private GitHubClient github;
   private OkHttpClient client;
+  private Tracer tracer = mock(Tracer.class);
 
-  @Before
+  private static String getFixture(String resource) throws IOException {
+    return Resources.toString(getResource(GitHubClientTest.class, resource), defaultCharset());
+  }
+
+  @BeforeEach
   public void setUp() {
     client = mock(OkHttpClient.class);
     github = GitHubClient.create(client, URI.create("http://bogus"), "token");
   }
 
-  @Test(expected = ReadOnlyRepositoryException.class)
+  @Test
+  public void withScopedInstallationIdShouldFailWhenMissingPrivateKey() {
+    assertThrows(RuntimeException.class, () -> github.withScopeForInstallationId(1));
+  }
+
+  @Test
+  public void testWithScopedInstallationId() throws URISyntaxException {
+    GitHubClient org = GitHubClient.create(new URI("http://apa.bepa.cepa"), "some_key_content".getBytes(), null, null);
+    GitHubClient scoped = org.withScopeForInstallationId(1);
+    Assertions.assertTrue(scoped.getPrivateKey().isPresent());
+    Assertions.assertEquals(org.getPrivateKey().get(), scoped.getPrivateKey().get());
+  }
+
+  @Test
   public void testSearchIssue() throws Throwable {
 
     final Call call = mock(Call.class);
@@ -88,15 +115,15 @@ public class GitHubClientTest {
 
     when(client.newCall(any())).thenReturn(call);
     IssueClient issueClient =
-        github.createRepositoryClient("testorg", "testrepo").createIssueClient();
+        github.withTracer(tracer).createRepositoryClient("testorg", "testrepo").createIssueClient();
 
     CompletableFuture<Void> maybeSucceeded = issueClient.editComment(1, "some comment");
     capture.getValue().onResponse(call, response);
-    try {
-      maybeSucceeded.get();
-    } catch (Exception e) {
-      throw e.getCause();
-    }
+    verify(tracer,times(1)).span(anyString(), anyString(),any());
+
+    Exception exception = assertThrows(ExecutionException.class,
+        maybeSucceeded::get);
+    Assertions.assertEquals(ReadOnlyRepositoryException.class, exception.getCause().getClass());
   }
 
   @Test
@@ -124,12 +151,76 @@ public class GitHubClientTest {
     capture.getValue().onResponse(call, response);
     try {
       future.get();
-      fail("Did not throw");
+      Assertions.fail("Did not throw");
     } catch (ExecutionException e) {
       assertThat(e.getCause() instanceof RequestNotOkException, is(true));
       RequestNotOkException e1 = (RequestNotOkException) e.getCause();
       assertThat(e1.statusCode(), is(409));
+      assertThat(e1.method(), is("POST"));
+      assertThat(e1.path(), is("/repos/testorg/testrepo/merges"));
+      assertThat(e1.getMessage(), containsString("POST"));
+      assertThat(e1.getMessage(), containsString("/repos/testorg/testrepo/merges"));
       assertThat(e1.getMessage(), containsString("Merge Conflict"));
+      assertThat(e1.getRawMessage(), containsString("Merge Conflict"));
     }
+  }
+
+  @Test
+  public void testPutConvertsToClass() throws Throwable {
+    final Call call = mock(Call.class);
+    final ArgumentCaptor<Callback> callbackCapture = ArgumentCaptor.forClass(Callback.class);
+    doNothing().when(call).enqueue(callbackCapture.capture());
+
+    final ArgumentCaptor<Request> requestCapture = ArgumentCaptor.forClass(Request.class);
+    when(client.newCall(requestCapture.capture())).thenReturn(call);
+
+    final Response response =
+        new okhttp3.Response.Builder()
+            .code(200)
+            .body(
+                ResponseBody.create(
+                    MediaType.get("application/json"), getFixture("repository_invitation.json")))
+            .message("")
+            .protocol(Protocol.HTTP_1_1)
+            .request(new Request.Builder().url("http://localhost/").build())
+            .build();
+
+    CompletableFuture<RepositoryInvitation> future = github.put("collaborators/", "",
+        RepositoryInvitation.class);
+    callbackCapture.getValue().onResponse(call, response);
+
+    RepositoryInvitation invitation = future.get();
+    assertThat(requestCapture.getValue().method(), is("PUT"));
+    assertThat(requestCapture.getValue().url().toString(), is("http://bogus/collaborators/"));
+    assertThat(invitation.id(), is(1));
+  }
+
+  @Test
+  public void testGetCheckSuites() throws Throwable {
+
+    final Call call = mock(Call.class);
+    final ArgumentCaptor<Callback> callbackCapture = ArgumentCaptor.forClass(Callback.class);
+    doNothing().when(call).enqueue(callbackCapture.capture());
+
+    final Response response = new okhttp3.Response.Builder()
+        .code(200)
+        .body(
+            ResponseBody.create(
+                MediaType.get("application/json"), getFixture("../checks/check-suites-response.json")))
+        .message("")
+        .protocol(Protocol.HTTP_1_1)
+        .request(new Request.Builder().url("http://localhost/").build())
+        .build();
+
+    when(client.newCall(any())).thenReturn(call);
+    ChecksClient client = github.createChecksClient("testorg", "testrepo");
+
+    CompletableFuture<CheckSuiteResponseList> future = client.getCheckSuites("sha");
+    callbackCapture.getValue().onResponse(call, response);
+    var result = future.get();
+
+    assertThat(result.totalCount(), is(1));
+    assertThat(result.checkSuites().get(0).app().get().slug().get(), is("octoapp"));
+
   }
 }

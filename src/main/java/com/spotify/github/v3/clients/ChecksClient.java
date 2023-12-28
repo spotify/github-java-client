@@ -60,6 +60,10 @@ public class ChecksClient {
     this.repo = repo;
   }
 
+  static ChecksClient create(final GitHubClient github, final String owner, final String repo) {
+    return new ChecksClient(github, owner, repo);
+  }
+
   /**
    * Create a checkRun.
    *
@@ -80,7 +84,7 @@ public class ChecksClient {
    * @return the completable future
    */
   public CompletableFuture<CheckRunResponse> updateCheckRun(
-      final int id, final CheckRunRequest checkRun) {
+      final long id, final CheckRunRequest checkRun) {
     final String path = String.format(GET_CHECK_RUN_URI, owner, repo, id);
     return github.patch(
         path, github.json().toJsonUnchecked(checkRun), CheckRunResponse.class, extraHeaders);
@@ -92,7 +96,7 @@ public class ChecksClient {
    * @param id the checkRun id
    * @return a CheckRunResponse
    */
-  public CompletableFuture<CheckRunResponse> getCheckRun(final int id) {
+  public CompletableFuture<CheckRunResponse> getCheckRun(final long id) {
     final String path = String.format(GET_CHECK_RUN_URI, owner, repo, id);
     return github.request(path, CheckRunResponse.class, extraHeaders);
   }

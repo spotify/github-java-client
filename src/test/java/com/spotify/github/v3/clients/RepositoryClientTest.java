@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,23 +23,26 @@ package com.spotify.github.v3.clients;
 import static com.google.common.io.Resources.getResource;
 import static com.spotify.github.FixtureHelper.loadFixture;
 import static com.spotify.github.v3.UserTest.assertUser;
-import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_BRANCHES;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_FOLDERCONTENT_TYPE_REFERENCE;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_PR_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_REPOSITORY;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_REPOSITORY_INVITATION;
 import static com.spotify.github.v3.clients.MockHelper.createMockResponse;
 import static com.spotify.github.v3.clients.RepositoryClient.STATUS_URI_TEMPLATE;
 import static java.lang.String.format;
 import static java.nio.charset.Charset.defaultCharset;
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static java.util.stream.StreamSupport.stream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static java.util.stream.StreamSupport.stream;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -47,6 +50,7 @@ import com.google.common.io.Resources;
 import com.spotify.github.async.AsyncPage;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.comment.Comment;
+import com.spotify.github.v3.prs.PullRequestItem;
 import com.spotify.github.v3.repos.Branch;
 import com.spotify.github.v3.repos.Commit;
 import com.spotify.github.v3.repos.CommitComparison;
@@ -55,28 +59,27 @@ import com.spotify.github.v3.repos.CommitStatus;
 import com.spotify.github.v3.repos.Content;
 import com.spotify.github.v3.repos.FolderContent;
 import com.spotify.github.v3.repos.Repository;
+import com.spotify.github.v3.repos.RepositoryInvitation;
+import com.spotify.github.v3.repos.RepositoryPermission;
 import com.spotify.github.v3.repos.RepositoryTest;
 import com.spotify.github.v3.repos.Status;
 import com.spotify.github.v3.repos.requests.ImmutableAuthenticatedUserRepositoriesFilter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-import okhttp3.Headers;
 import okhttp3.MediaType;
 import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ Headers.class, ResponseBody.class, Response.class})
 public class RepositoryClientTest {
 
   private GitHubClient github;
@@ -87,7 +90,7 @@ public class RepositoryClientTest {
     return Resources.toString(getResource(RepositoryTest.class, resource), defaultCharset());
   }
 
-  @Before
+  @BeforeEach
   public void setUp() {
     github = mock(GitHubClient.class);
     repoClient = new RepositoryClient(github, "someowner", "somerepo");
@@ -106,6 +109,7 @@ public class RepositoryClientTest {
     assertThat(repository.name(), is("Hello-World"));
     assertThat(repository.fullName(), is(repository.owner().login() + "/Hello-World"));
     assertThat(repository.isPrivate(), is(false));
+    assertThat(repository.isArchived(), is(false));
     assertThat(repository.fork(), is(false));
   }
 
@@ -156,6 +160,78 @@ public class RepositoryClientTest {
   }
 
   @Test
+  public void addCollaborator() throws Exception {
+    final Response response = createMockResponse("", getFixture("repository_invitation.json"));
+    when(github.put("/repos/someowner/somerepo/collaborators/user", "{\"permission\":\"pull\"}")).thenReturn(
+        completedFuture(response));
+
+    final Optional<RepositoryInvitation> maybeInvite = repoClient.addCollaborator("user",
+        RepositoryPermission.PULL).get();
+
+    assertTrue(maybeInvite.isPresent());
+    final RepositoryInvitation repoInvite = maybeInvite.get();
+    assertThat(repoInvite.id(), is(1));
+    assertThat(repoInvite.nodeId(), is("MDEwOlJlcG9zaXRvcnkxMjk2MjY5"));
+    assertThat(repoInvite.repository().id(), is(1296269));
+    assertUser(repoInvite.repository().owner());
+    assertUser(repoInvite.invitee());
+    assertUser(repoInvite.inviter());
+    assertThat(repoInvite.permissions(), is("write"));
+  }
+
+  @Test
+  public void addCollaboratorUserExists() throws Exception {
+    final Response response = mock(Response.class);
+    when(response.code()).thenReturn(204);
+    when(github.put("/repos/someowner/somerepo/collaborators/user", "{\"permission\":\"pull\"}")).thenReturn(
+        completedFuture(response));
+
+    final Optional<RepositoryInvitation> maybeInvite = repoClient.addCollaborator("user",
+        RepositoryPermission.PULL).get();
+
+    assertTrue(maybeInvite.isEmpty());
+  }
+
+  @Test
+  public void removeCollaborator() throws Exception {
+    CompletableFuture<Response> response = completedFuture(mock(Response.class));
+    final ArgumentCaptor<String> capture = ArgumentCaptor.forClass(String.class);
+    when(github.delete(capture.capture())).thenReturn(response);
+
+    CompletableFuture<Void> deleteResponse = repoClient.removeCollaborator("user");
+    deleteResponse.get();
+
+    assertThat(capture.getValue(), is("/repos/someowner/somerepo/collaborators/user"));
+  }
+
+  @Test
+  public void removeInvite() throws Exception {
+    CompletableFuture<Response> response = completedFuture(mock(Response.class));
+    final ArgumentCaptor<String> capture = ArgumentCaptor.forClass(String.class);
+    when(github.delete(capture.capture())).thenReturn(response);
+
+    CompletableFuture<Void> deleteResponse = repoClient.removeInvite("invitation1");
+    deleteResponse.get();
+
+    assertThat(capture.getValue(), is("/repos/someowner/somerepo/invitations/invitation1"));
+  }
+
+  @Test
+  public void listInvites() throws Exception {
+    final CompletableFuture<List<RepositoryInvitation>> fixture =
+            completedFuture(
+                    json.fromJson("[" + getFixture("repository_invitation.json") + "]", LIST_REPOSITORY_INVITATION));
+    when(github.request("/repos/someowner/somerepo/invitations", LIST_REPOSITORY_INVITATION))
+            .thenReturn(fixture);
+
+    final List<RepositoryInvitation> invitations = repoClient.listInvitations().get();
+    assertThat(invitations.size(), is(1));
+    assertThat(invitations.get(0).repository().name(), is("Hello-World"));
+    assertThat(
+            invitations.get(0).inviter().login(), is("octocat"));
+  }
+
+  @Test
   public void listCommits() throws Exception {
     final CompletableFuture<List<CommitItem>> fixture =
         completedFuture(
@@ -168,6 +244,18 @@ public class RepositoryClientTest {
     assertThat(commits.get(0).commit().message(), is("Fix all the bugs"));
     assertThat(
         commits.get(0).commit().tree().sha(), is("6dcb09b5b57875f334f61aebed695e2e4193db5e"));
+  }
+
+  @Test
+  public void listPullRequestsForCommit() throws Exception {
+    final CompletableFuture<List<PullRequestItem>> fixture =
+        completedFuture(
+            json.fromJson("[" + getFixture("../prs/pull_request_item.json") + "]", LIST_PR_TYPE_REFERENCE));
+    when(github.request(eq("/repos/someowner/somerepo/commits/thesha/pulls"), eq(LIST_PR_TYPE_REFERENCE), any()))
+        .thenReturn(fixture);
+    final List<PullRequestItem> prs = repoClient.listPullRequestsForCommit("thesha").get();
+    assertThat(prs.size(), is(1));
+    assertThat(prs.get(0).number(), is(1347));
   }
 
   @Test
@@ -249,7 +337,70 @@ public class RepositoryClientTest {
     when(github.request("/repos/someowner/somerepo/branches/somebranch", Branch.class))
         .thenReturn(fixture);
     final Branch branch = repoClient.getBranch("somebranch").get();
+    assertThat(branch.isProtected().orElse(false), is(true));
+    assertThat(branch.protectionUrl().get().toString(), is("https://api.github.com/repos/octocat/Hello-World/branches/master/protection"));
     assertThat(branch.commit().sha(), is("6dcb09b5b57875f334f61aebed695e2e4193db5e"));
+    assertThat(
+        branch.commit().url().toString(),
+        is("https://api.github.com/repos/octocat/Hello-World/commits/c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc"));
+    assertTrue(branch.protection().isPresent());
+    assertTrue(branch.protection().get().enabled());
+    assertThat(branch.protection().get().requiredStatusChecks().enforcementLevel(), is("non_admins"));
+    assertTrue(branch.protection().get().requiredStatusChecks().contexts().contains("Context 1"));
+    assertTrue(branch.protection().get().requiredStatusChecks().contexts().contains("Context 2"));
+  }
+
+  @Test
+  public void getBranchWithNoProtection() throws Exception {
+    final CompletableFuture<Branch> fixture =
+        completedFuture(json.fromJson(getFixture("branch-not-protected.json"), Branch.class));
+    when(github.request("/repos/someowner/somerepo/branches/somebranch", Branch.class))
+        .thenReturn(fixture);
+    final Branch branch = repoClient.getBranch("somebranch").get();
+    assertThat(branch.isProtected().orElse(false), is(false));
+    assertTrue(branch.protectionUrl().isEmpty());
+    assertThat(branch.commit().sha(), is("6dcb09b5b57875f334f61aebed695e2e4193db5e"));
+  }
+
+  @Test
+  public void getBranchWithoutProtectionFields() throws Exception {
+    final CompletableFuture<Branch> fixture =
+        completedFuture(json.fromJson(getFixture("branch-no-protection-fields.json"), Branch.class));
+    when(github.request("/repos/someowner/somerepo/branches/somebranch", Branch.class))
+        .thenReturn(fixture);
+    final Branch branch = repoClient.getBranch("somebranch").get();
+    assertThat(branch.isProtected().orElse(false), is(false));
+    assertTrue(branch.protectionUrl().isEmpty());
+    assertThat(branch.commit().sha(), is("6dcb09b5b57875f334f61aebed695e2e4193db5e"));
+    assertThat(
+        branch.commit().url().toString(),
+        is("https://api.github.com/repos/octocat/Hello-World/commits/c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc"));
+  }
+
+  @Test
+  public void getBranchWithCharactersIncorrectlyUnescapedByTheGithubApi() throws Exception {
+    final CompletableFuture<Branch> fixture =
+        completedFuture(json.fromJson(getFixture("branch-escape-chars.json"), Branch.class));
+    when(github.request("/repos/someowner/somerepo/branches/unescaped-percent-sign-%", Branch.class))
+        .thenReturn(fixture);
+    final Branch branch = repoClient.getBranch("unescaped-percent-sign-%").get();
+    assertThat(branch.commit().sha(), is("6dcb09b5b57875f334f61aebed695e2e4193db5e"));
+    assertThat(
+        branch.protectionUrl().get().toString(),
+        is("https://api.github.com/repos/octocat/Hello-World/branches/unescaped-percent-sign-%25/protection"));
+  }
+
+  @Test
+  public void getBranchWithCharactersIncorrectlyUnescapedByTheGithubApi_uriVariationTwo() throws Exception {
+    final CompletableFuture<Branch> fixture =
+        completedFuture(json.fromJson(getFixture("branch-escape-chars-url-variation-two.json"), Branch.class));
+    when(github.request("/repos/someowner/somerepo/branches/unescaped-percent-sign-%", Branch.class))
+        .thenReturn(fixture);
+    final Branch branch = repoClient.getBranch("unescaped-percent-sign-%").get();
+    assertThat(branch.commit().sha(), is("6dcb09b5b57875f334f61aebed695e2e4193db5e"));
+    assertThat(
+        branch.protectionUrl().get().toString(),
+        is("https://api.github.com/api/v3/repos/octocat/Hello-World/branches/branch-name-with-slashes/unescaped-percent-sign-%25/protection"));
   }
 
   @Test
@@ -387,5 +538,64 @@ public class RepositoryClientTest {
     when(github.post(any(), any())).thenReturn(okResponse);
     final Optional<CommitItem> maybeCommit = repoClient.merge("basebranch", "headbranch").join();
     assertThat(maybeCommit, is(Optional.empty()));
+  }
+
+  @Test
+  public void shouldDownloadTarball() throws Exception {
+    CompletableFuture<Response> fixture = completedFuture(
+        new Response.Builder()
+            .request(new Request.Builder().url("https://example.com/whatever").build())
+            .protocol(Protocol.HTTP_1_1)
+            .message("")
+            .code(200)
+            .body(
+                ResponseBody.create(
+                    "some bytes".getBytes(StandardCharsets.UTF_8),
+                    MediaType.get("application/gzip")
+                ))
+            .build());
+    when(github.request("/repos/someowner/somerepo/tarball/")).thenReturn(fixture);
+
+    try(InputStream response = repoClient.downloadTarball().get().orElseThrow()) {
+      String result = new String(response.readAllBytes(), StandardCharsets.UTF_8);
+      assertThat(result, is("some bytes"));
+    }
+  }
+
+  @Test
+  public void shouldDownloadZipball() throws Exception {
+    CompletableFuture<Response> fixture = completedFuture(
+        new Response.Builder()
+            .request(new Request.Builder().url("https://example.com/whatever").build())
+            .protocol(Protocol.HTTP_1_1)
+            .message("")
+            .code(200)
+            .body(
+                ResponseBody.create(
+                    "some bytes".getBytes(StandardCharsets.UTF_8),
+                    MediaType.get("application/gzip")
+                ))
+            .build());
+    when(github.request("/repos/someowner/somerepo/zipball/")).thenReturn(fixture);
+
+    try (InputStream response = repoClient.downloadZipball().get().orElseThrow()) {
+      String result = new String(response.readAllBytes(), StandardCharsets.UTF_8);
+      assertThat(result, is("some bytes"));
+    }
+  }
+
+  @Test
+  public void shouldReturnEmptyOptionalWhenResponseBodyNotPresent() throws Exception {
+    CompletableFuture<Response> fixture = completedFuture(
+        new Response.Builder()
+            .request(new Request.Builder().url("https://example.com/whatever").build())
+            .protocol(Protocol.HTTP_1_1)
+            .message("")
+            .code(204) // No Content
+            .build());
+    when(github.request("/repos/someowner/somerepo/zipball/master")).thenReturn(fixture);
+
+    Optional<InputStream> response = repoClient.downloadZipball("master").get();
+    assertThat(response, is(Optional.empty()));
   }
 }

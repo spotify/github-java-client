@@ -20,16 +20,13 @@
 
 package com.spotify.github.v3.prs.requests;
 
-import com.spotify.github.jackson.Json;
-import com.spotify.github.v3.prs.ImmutablePullRequest;
-import org.junit.Assert;
-import org.junit.Test;
-
-import java.util.function.Function;
-
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+
+import com.spotify.github.jackson.Json;
+import java.util.function.Function;
+import org.junit.jupiter.api.Test;
 
 public class PullRequestCreateTest {
 

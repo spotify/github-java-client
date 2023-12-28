@@ -22,6 +22,7 @@ package com.spotify.github.v3.checks;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.google.common.base.Preconditions;
 import com.spotify.github.GithubStyle;
 import java.util.Optional;
 import org.immutables.value.Value;
@@ -42,7 +43,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @GithubStyle
 @JsonDeserialize(as = ImmutableAnnotation.class)
-@JsonInclude(JsonInclude.Include.NON_EMPTY)
+@JsonInclude(JsonInclude.Include.NON_ABSENT)
 public interface Annotation {
 
   /**
@@ -114,4 +115,34 @@ public interface Annotation {
    * @return the optional
    */
   Optional<Integer> endColumn();
+
+  /**
+   * Automatically validates the maximum length of properties.
+   *
+   * GitHub does not validate these properly on their side (at least in GHE 3.2)
+   * and returns 5xx HTTP responses instead. To avoid that, let's validate the data
+   * in this client library.
+   */
+  @Value.Check
+  @SuppressWarnings("checkstyle:magicnumber")
+  default Annotation check() {
+    // max values from https://docs.github.com/en/rest/checks/runs
+    Preconditions.checkState(title().map(String::length).orElse(0) <= 255,
+        "'title' exceeded max length of 255");
+    Preconditions.checkState(message().length() <= 64 * 1024,
+        "'message' exceeded max length of 64kB");
+    Preconditions.checkState(rawDetails().map(String::length).orElse(0) <= 64 * 1024,
+        "'rawDetails' exceeded max length of 64kB");
+
+    // Omit this (start_column, end_column) parameter if start_line and end_line have different values
+    // from https://docs.github.com/en/rest/checks/runs
+    if (startLine() != endLine() && (startColumn().isPresent() || endColumn().isPresent())) {
+      return ImmutableAnnotation.builder()
+          .from(this)
+          .startColumn(Optional.empty())
+          .endColumn(Optional.empty())
+          .build();
+    }
+    return this;
+  }
 }

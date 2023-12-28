@@ -22,12 +22,11 @@ package com.spotify.github.v3.clients;
 
 import static com.spotify.github.v3.clients.ChecksClientTest.loadResource;
 import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.spotify.github.jackson.Json;
@@ -44,9 +43,9 @@ import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class GitHubAuthTest {
 
@@ -70,12 +69,19 @@ public class GitHubAuthTest {
                   .toJson(
                       ImmutableAccessToken.copyOf(getTestInstallationToken())
                           .withExpiresAt(ZonedDateTime.now().minusHours(2))));
+  private final MockResponse expiredTokenWithinExpiryMarginResponse =
+      new MockResponse()
+          .setBody(
+              Json.create()
+                  .toJson(
+                      ImmutableAccessToken.copyOf(getTestInstallationToken())
+                          .withExpiresAt(ZonedDateTime.now().minusMinutes(3))));
   private final MockResponse checkRunResponse =
       new MockResponse().setBody(loadResource("com/spotify/github/v3/checks/checks-run-completed-response.json"));
 
   public GitHubAuthTest() throws JsonProcessingException {}
 
-  @Before
+  @BeforeEach
   public void setUp() throws IOException {
     client =
         new OkHttpClient.Builder()
@@ -91,7 +97,7 @@ public class GitHubAuthTest {
             .createChecksApiClient();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws IOException {
     mockServer.shutdown();
   }
@@ -150,6 +156,25 @@ public class GitHubAuthTest {
   }
 
   @Test
+  public void fetchesANewInstallationTokenIfExpirationIsWithinExpiryMargin() throws Exception {
+    mockServer.enqueue(expiredTokenWithinExpiryMarginResponse);
+    mockServer.enqueue(checkRunResponse);
+    mockServer.enqueue(validTokenResponse);
+    mockServer.enqueue(checkRunResponse);
+
+    checksClient.getCheckRun(123).join();
+    checksClient.getCheckRun(123).join();
+
+    // 2 to get the token, 2 checks
+    assertThat(mockServer.getRequestCount(), is(4));
+
+    assertThat(mockServer.takeRequest().getPath(), is("/app/installations/1/access_tokens"));
+    assertThat(mockServer.takeRequest().getPath(), is("/repos/foo/bar/check-runs/123"));
+    assertThat(mockServer.takeRequest().getPath(), is("/app/installations/1/access_tokens"));
+    assertThat(mockServer.takeRequest().getPath(), is("/repos/foo/bar/check-runs/123"));
+  }
+
+  @Test
   public void throwsIfFetchingInstallationTokenRequestIsUnsuccessful() throws Exception {
     mockServer.enqueue(new MockResponse().setResponseCode(500));
     RuntimeException ex =
@@ -186,7 +211,7 @@ public class GitHubAuthTest {
     mockServer.enqueue(validTokenResponse);
     mockServer.enqueue(checkRunResponse);
 
-    checksClient.updateCheckRun(12, null).join();
+    checksClient.updateCheckRun(12L, null).join();
     assertThat(mockServer.getRequestCount(), is(2));
 
     assertThat(mockServer.takeRequest().getPath(), is("/app/installations/1/access_tokens"));
@@ -235,10 +260,12 @@ public class GitHubAuthTest {
     assertThat(request.getMethod(), is("GET"));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void assertNoTokenThrowsException() {
     final GitHubClient apiWithNoKey = GitHubClient.create(URI.create("someurl"), "a-token");
-    apiWithNoKey.createRepositoryClient("foo", "bar").createChecksApiClient();
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> apiWithNoKey.createRepositoryClient("foo", "bar").createChecksApiClient());
   }
 
   private AccessToken getTestInstallationToken() {

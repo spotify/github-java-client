@@ -30,7 +30,7 @@ import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.issues.Issue;
 import java.io.IOException;
 import java.net.URI;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SearchTest {
 

@@ -22,7 +22,10 @@ package com.spotify.github.v3.clients;
 
 import static com.google.common.io.Resources.getResource;
 import static java.nio.charset.Charset.defaultCharset;
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
@@ -32,8 +35,14 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.prs.ImmutableRequestReviewParameters;
+import com.spotify.github.v3.prs.PullRequest;
 import com.spotify.github.v3.prs.ReviewRequests;
+import com.spotify.github.v3.prs.requests.ImmutablePullRequestCreate;
+import com.spotify.github.v3.prs.requests.ImmutablePullRequestUpdate;
+import com.spotify.github.v3.prs.requests.PullRequestCreate;
+import com.spotify.github.v3.prs.requests.PullRequestUpdate;
 import java.io.IOException;
+import java.io.Reader;
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -45,8 +54,9 @@ import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
-import org.junit.Before;
-import org.junit.Test;
+import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 public class PullRequestClientTest {
@@ -58,10 +68,92 @@ public class PullRequestClientTest {
     return Resources.toString(getResource(PullRequestClientTest.class, resource), defaultCharset());
   }
 
-  @Before
+  @BeforeEach
   public void setUp() {
     client = mock(OkHttpClient.class);
     github = GitHubClient.create(client, URI.create("http://bogus"), "token");
+  }
+
+  @Test
+  public void createPullRequest() throws Exception {
+    final String title = "Amazing new feature";
+    final String body = "Please pull these awesome changes in!";
+    final String head = "octocat:new-topic";
+    final String base = "master";
+
+    final Call call = mock(Call.class);
+    final ArgumentCaptor<Callback> capture = ArgumentCaptor.forClass(Callback.class);
+    doNothing().when(call).enqueue(capture.capture());
+
+    final Response response =
+        new Response.Builder()
+            .code(201)
+            .protocol(Protocol.HTTP_1_1)
+            .message("Created")
+            .body(
+                ResponseBody.create(
+                    MediaType.get("application/json"),
+                    getFixture("pull_request.json")))
+            .request(new Request.Builder().url("http://localhost/").build())
+            .build();
+
+    when(client.newCall(any())).thenReturn(call);
+
+    final PullRequestClient pullRequestClient =
+        PullRequestClient.create(github, "owner", "repo");
+
+    final PullRequestCreate request = ImmutablePullRequestCreate.builder().title(title).body(body)
+        .head(head).base(base).build();
+
+    final CompletableFuture<PullRequest> result = pullRequestClient.create(request);
+
+    capture.getValue().onResponse(call, response);
+
+    PullRequest pullRequest = result.get();
+
+    assertThat(pullRequest.title(), is(title));
+    assertThat(pullRequest.body().get(), is(body));
+    assertThat(pullRequest.head().label().get(), is(head));
+    assertThat(pullRequest.base().ref(), is(base));
+  }
+
+  @Test
+  public void updatePullRequest() throws Exception {
+    final String title = "Amazing new feature";
+    final String body = "Please pull these awesome changes in!";
+
+    final Call call = mock(Call.class);
+    final ArgumentCaptor<Callback> capture = ArgumentCaptor.forClass(Callback.class);
+    doNothing().when(call).enqueue(capture.capture());
+
+    final Response response =
+        new Response.Builder()
+            .code(200)
+            .protocol(Protocol.HTTP_1_1)
+            .message("OK")
+            .body(
+                ResponseBody.create(
+                    MediaType.get("application/json"),
+                    getFixture("pull_request.json")))
+            .request(new Request.Builder().url("http://localhost/").build())
+            .build();
+
+    when(client.newCall(any())).thenReturn(call);
+
+    final PullRequestClient pullRequestClient =
+        PullRequestClient.create(github, "owner", "repo");
+
+    final PullRequestUpdate request = ImmutablePullRequestUpdate.builder().title(title).body(body)
+        .build();
+
+    final CompletableFuture<PullRequest> result = pullRequestClient.update(1, request);
+
+    capture.getValue().onResponse(call, response);
+
+    PullRequest pullRequest = result.get();
+
+    assertThat(pullRequest.title(), is(title));
+    assertThat(pullRequest.body().get(), is(body));
   }
 
   @Test
@@ -131,7 +223,7 @@ public class PullRequestClientTest {
     // Passes without throwing
   }
 
-  @Test(expected = RequestNotOkException.class)
+  @Test
   public void testRemoveRequestedReview_failure() throws Throwable {
 
     final Call call = mock(Call.class);
@@ -158,11 +250,73 @@ public class PullRequestClientTest {
 
     capture.getValue().onResponse(call, response);
 
-    try {
-      result.get();
-    } catch (ExecutionException e) {
-      throw e.getCause();
-      // expecting RequestNotOkException
-    }
+    Exception exception = assertThrows(ExecutionException.class, result::get);
+    assertEquals(RequestNotOkException.class, exception.getCause().getClass());
+  }
+
+  @Test
+  public void testGetPatch() throws Throwable {
+    final Call call = mock(Call.class);
+    final ArgumentCaptor<Callback> capture = ArgumentCaptor.forClass(Callback.class);
+    doNothing().when(call).enqueue(capture.capture());
+
+    final Response response =
+        new Response.Builder()
+            .code(200)
+            .protocol(Protocol.HTTP_1_1)
+            .message("OK")
+            .body(
+                ResponseBody.create(
+                    MediaType.get("application/vnd.github.patch"),
+                    getFixture("patch.txt")))
+            .request(new Request.Builder().url("http://localhost/").build())
+            .build();
+
+    when(client.newCall(any())).thenReturn(call);
+
+    final PullRequestClient pullRequestClient =
+        PullRequestClient.create(github, "owner", "repo");
+
+    final CompletableFuture<Reader> result =
+        pullRequestClient.patch(1);
+
+    capture.getValue().onResponse(call, response);
+
+    Reader patchReader = result.get();
+
+    assertEquals(getFixture("patch.txt"), IOUtils.toString(patchReader));
+  }
+
+  @Test
+  public void testGetDiff() throws Throwable {
+    final Call call = mock(Call.class);
+    final ArgumentCaptor<Callback> capture = ArgumentCaptor.forClass(Callback.class);
+    doNothing().when(call).enqueue(capture.capture());
+
+    final Response response =
+        new Response.Builder()
+            .code(200)
+            .protocol(Protocol.HTTP_1_1)
+            .message("OK")
+            .body(
+                ResponseBody.create(
+                    MediaType.get("application/vnd.github.diff"),
+                    getFixture("diff.txt")))
+            .request(new Request.Builder().url("http://localhost/").build())
+            .build();
+
+    when(client.newCall(any())).thenReturn(call);
+
+    final PullRequestClient pullRequestClient =
+        PullRequestClient.create(github, "owner", "repo");
+
+    final CompletableFuture<Reader> result =
+        pullRequestClient.diff(1);
+
+    capture.getValue().onResponse(call, response);
+
+    Reader diffReader = result.get();
+
+    assertEquals(getFixture("diff.txt"), IOUtils.toString(diffReader));
   }
 }

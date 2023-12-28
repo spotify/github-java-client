@@ -28,7 +28,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.repos.StatusState;
 import java.net.URI;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class RepositoryCreateStatusTest {
 
