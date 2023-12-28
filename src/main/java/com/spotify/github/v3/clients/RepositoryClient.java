@@ -251,7 +251,7 @@ public class RepositoryClient {
    * @return a CompletableFuture that resolves to an Optional InputStream
    */
   public CompletableFuture<Optional<InputStream>> downloadTarball() {
-    return downloadTarball(null);
+    return downloadRepository(REPOSITORY_DOWNLOAD_TARBALL, Optional.empty());
   }
 
   /**
@@ -260,7 +260,7 @@ public class RepositoryClient {
    * @return a CompletableFuture that resolves to an Optional InputStream
    */
   public CompletableFuture<Optional<InputStream>> downloadTarball(final String ref) {
-    return downloadRepository(REPOSITORY_DOWNLOAD_TARBALL, ref);
+    return downloadRepository(REPOSITORY_DOWNLOAD_TARBALL, Optional.of(ref));
   }
 
   /**
@@ -269,7 +269,7 @@ public class RepositoryClient {
    * @return a CompletableFuture that resolves to an Optional InputStream
    */
   public CompletableFuture<Optional<InputStream>> downloadZipball() {
-    return downloadZipball(null);
+    return downloadRepository(REPOSITORY_DOWNLOAD_ZIPBALL, Optional.empty());
   }
 
   /**
@@ -278,11 +278,11 @@ public class RepositoryClient {
    * @return a CompletableFuture that resolves to an Optional InputStream
    */
   public CompletableFuture<Optional<InputStream>> downloadZipball(final String ref) {
-    return downloadRepository(REPOSITORY_DOWNLOAD_ZIPBALL, ref);
+    return downloadRepository(REPOSITORY_DOWNLOAD_ZIPBALL, Optional.of(ref));
   }
 
-  private CompletableFuture<Optional<InputStream>> downloadRepository(final String path, final String ref) {
-    final var repoRef = Strings.nullToEmpty(ref);
+  private CompletableFuture<Optional<InputStream>> downloadRepository(final String path, final Optional<String> maybeRef) {
+    final var repoRef = maybeRef.orElse("");
     final var repoPath = String.format(path, owner, repo, repoRef);
     return github.request(repoPath).thenApply(response -> {
       var body = response.body();
