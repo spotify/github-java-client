@@ -144,4 +144,20 @@ public class GithubAppClientTest {
     RecordedRequest recordedRequest = mockServer.takeRequest(1, TimeUnit.MILLISECONDS);
     assertThat(recordedRequest.getRequestUrl().encodedPath(), is("/repos/owner/repo/installation"));
   }
+
+  @Test
+  public void getInstallationByInstallationId() throws Exception {
+    mockServer.enqueue(
+        new MockResponse()
+            .setResponseCode(200)
+            .setBody(FixtureHelper.loadFixture("githubapp/installation.json")));
+
+    Installation installation = client.getInstallation(1234).join();
+
+    assertThat(installation.id(), is(1));
+    assertThat(installation.account().login(), is("github"));
+
+    RecordedRequest recordedRequest = mockServer.takeRequest(1, TimeUnit.MILLISECONDS);
+    assertThat(recordedRequest.getRequestUrl().encodedPath(), is("/app/installations/1234"));
+  }
 }
