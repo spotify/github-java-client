@@ -50,6 +50,7 @@ import com.spotify.github.v3.repos.RepositoryInvitation;
 import com.spotify.github.v3.repos.Status;
 import com.spotify.github.v3.repos.requests.AuthenticatedUserRepositoriesFilter;
 import com.spotify.github.v3.repos.requests.RepositoryCreateStatus;
+import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
 import java.util.Iterator;
 import java.util.List;
@@ -91,6 +92,8 @@ public class RepositoryClient {
   private static final String REPOSITORY_COLLABORATOR = "/repos/%s/%s/collaborators/%s";
   private static final String REPOSITORY_INVITATION = "/repos/%s/%s/invitations/%s";
   private static final String REPOSITORY_INVITATIONS = "/repos/%s/%s/invitations";
+  private static final String REPOSITORY_DOWNLOAD_TARBALL = "/repos/%s/%s/tarball/%s";
+  private static final String REPOSITORY_DOWNLOAD_ZIPBALL = "/repos/%s/%s/zipball/%s";
   private final String owner;
   private final String repo;
   private final GitHubClient github;
@@ -240,6 +243,56 @@ public class RepositoryClient {
   public CompletableFuture<List<RepositoryInvitation>> listInvitations() {
     final String path = String.format(REPOSITORY_INVITATIONS, owner, repo);
     return github.request(path, LIST_REPOSITORY_INVITATION);
+  }
+
+  /**
+   * Downloads a tar archive of the repository’s default branch (usually main).
+   *
+   * @return a CompletableFuture that resolves to an Optional InputStream
+   */
+  public CompletableFuture<Optional<InputStream>> downloadTarball() {
+    return downloadRepository(REPOSITORY_DOWNLOAD_TARBALL, Optional.empty());
+  }
+
+  /**
+   * Downloads a tar archive of the repository. Use :ref to specify a branch or tag to download.
+   *
+   * @return a CompletableFuture that resolves to an Optional InputStream
+   */
+  public CompletableFuture<Optional<InputStream>> downloadTarball(final String ref) {
+    return downloadRepository(REPOSITORY_DOWNLOAD_TARBALL, Optional.of(ref));
+  }
+
+  /**
+   * Downloads a zip archive of the repository’s default branch (usually main).
+   *
+   * @return a CompletableFuture that resolves to an Optional InputStream
+   */
+  public CompletableFuture<Optional<InputStream>> downloadZipball() {
+    return downloadRepository(REPOSITORY_DOWNLOAD_ZIPBALL, Optional.empty());
+  }
+
+  /**
+   * Downloads a zip archive of the repository. Use :ref to specify a branch or tag to download.
+   *
+   * @return a CompletableFuture that resolves to an Optional InputStream
+   */
+  public CompletableFuture<Optional<InputStream>> downloadZipball(final String ref) {
+    return downloadRepository(REPOSITORY_DOWNLOAD_ZIPBALL, Optional.of(ref));
+  }
+
+  private CompletableFuture<Optional<InputStream>> downloadRepository(final String path, final Optional<String> maybeRef) {
+    final var repoRef = maybeRef.orElse("");
+    final var repoPath = String.format(path, owner, repo, repoRef);
+    return github.request(repoPath).thenApply(response -> {
+      var body = response.body();
+
+      if (body == null) {
+        return Optional.empty();
+      }
+
+      return Optional.of(body.byteStream());
+    });
   }
 
   /**
