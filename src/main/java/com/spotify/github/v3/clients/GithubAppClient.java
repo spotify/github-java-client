@@ -34,7 +34,7 @@ import javax.ws.rs.core.HttpHeaders;
 /** Apps API client */
 public class GithubAppClient {
 
-  private static final String GET_INSTALLATION_URL = "/app/installations/%s";
+  private static final String GET_INSTALLATION_BY_ID_URL = "/app/installations/%s";
   private static final String GET_ACCESS_TOKEN_URL = "/app/installations/%s/access_tokens";
   private static final String GET_INSTALLATIONS_URL = "/app/installations?per_page=100";
   private static final String GET_INSTALLATION_REPO_URL = "/repos/%s/%s/installation";
@@ -93,7 +93,7 @@ public class GithubAppClient {
    */
   public CompletableFuture<Installation> getInstallation(final Integer installationId) {
     return github.request(
-        String.format(GET_INSTALLATION_URL, installationId), Installation.class);
+        String.format(GET_INSTALLATION_BY_ID_URL, installationId), Installation.class);
   }
 
   /**
