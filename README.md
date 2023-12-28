@@ -91,7 +91,7 @@ final TeamClient teamClient = organisationClient.createTeamClient();
 ## Supported Java versions
 
 This library is written and published with Java version 11. In our CI workflows, we execute
-automated tests with the Java LTS versions 11, 17 and 21. Due to Java's backwards compatability,
+automated tests with the Java LTS versions 11, 17 and 21. Due to Java's backward compatibility,
 this library can definitely be used in all the tested versions.
 
 ## Contributing
@@ -104,7 +104,7 @@ mvn clean verify
 
 If you are a maintainer, you can release a new version by doing the following:
 
-- Merge the changes the need to be released into the `master` branch
+- Merge the changes that need to be released into the `master` branch
 - Checkout on to master locally and pull the latest changes
 - Run `mvn release:prepare`, this will generate 2 commits that will bump the version of the github-java-client
 - Push these changes to master
@@ -116,7 +116,7 @@ If you are a maintainer, you can release a new version by doing the following:
 
 This module was created after existing libraries were evaluated and dismissed, and we found that we were writing similar
 code in multiple projects. As such, it at least initially only contains enough functionality for our internal requirements
-which reflect that we were working on build system integration with the GitHub pull requests. It has been widely used for 4+ 
+which reflects that we were working on build system integration with the GitHub pull requests. It has been widely used for 4+ 
 years. It's important to notice that it does not cover all GitHub v3 API. Adding missing endpoints should be very straightforward.
 Pull Requests are welcome.
 
