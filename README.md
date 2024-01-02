@@ -1,7 +1,7 @@
-![maven](https://github.com/spotify/github-client/workflows/maven/badge.svg)
+![release pipeline](https://github.com/spotify/github-java-client/actions/workflows/release.yml/badge.svg)
 [![codecov](https://codecov.io/gh/spotify/github-java-client/branch/master/graph/badge.svg?token=ADHNCIESSL)](https://codecov.io/gh/spotify/github-java-client)[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![lifecycle: beta](https://img.shields.io/badge/lifecycle-beta-509bf5.svg)
-![Maven Central](https://img.shields.io/maven-central/v/com.spotify/github-client)
+[![Maven Central](https://img.shields.io/maven-central/v/com.spotify/github-client)](https://mvnrepository.com/artifact/com.spotify/github-client)
 
 
 # github-java-client
@@ -16,6 +16,8 @@ This library is maintained by @spotify/gjc-maintainers. If you have any question
 review, please tag this team in the relevant PR/issue.
 
 ## Getting Started
+
+You can find this library in [maven central repository](https://mvnrepository.com/artifact/com.spotify/github-client).
 
 Include the latest version of github-client into your project:
 
