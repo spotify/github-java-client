@@ -182,19 +182,6 @@ public class GitDataClientTest {
 
   @Test
   public void createAnnotateTag() throws Exception {
-    final CompletableFuture<Reference> reference =
-        completedFuture(json.fromJson(getFixture("tag.json"), Reference.class));
-    when(github.post(
-            "/repos/someowner/somerepo/git/refs",
-            github
-                .json()
-                .toJsonUnchecked(
-                    of(
-                        "ref", "refs/tags/0.0.1",
-                        "sha", "5926dd300de5fee31d445c57be223f00e128a634")),
-            Reference.class))
-        .thenReturn(reference);
-
     final String now = Instant.now().toString();
     final ImmutableMap<String, Object> body =
         of(
@@ -211,6 +198,21 @@ public class GitDataClientTest {
         completedFuture(json.fromJson(getFixture("release-tag.json"), Tag.class));
     when(github.post(eq("/repos/someowner/somerepo/git/tags"), any(), eq(Tag.class)))
         .thenReturn(fixture);
+
+    // Ref to the annotate tag should reference the SHA of the tag, not the SHA of the commit.
+    final CompletableFuture<Reference> reference =
+        completedFuture(json.fromJson(getFixture("tag.json"), Reference.class));
+    when(github.post(
+        "/repos/someowner/somerepo/git/refs",
+        github
+            .json()
+            .toJsonUnchecked(
+                of(
+                    "ref", "refs/tags/0.0.1",
+                    "sha", "827210625b551200e7d3dc608935b1454523eaa8")),
+        Reference.class))
+        .thenReturn(reference);
+
     Tag tag =
         gitDataClient
             .createAnnotatedTag(
