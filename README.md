@@ -104,13 +104,20 @@ mvn clean verify
 
 If you are a maintainer, you can release a new version by doing the following:
 
-- Merge the changes that need to be released into the `master` branch
-- Checkout on to master locally and pull the latest changes
-- Run `mvn release:prepare`, this will generate 2 commits that will bump the version of the github-java-client
-- Push these changes to master
-- Once the [release pipeline](https://github.com/spotify/github-java-client/actions/workflows/release.yml) has completed, the changes will have been tagged
-- [Navigate to the tag](https://github.com/spotify/github-java-client/tags) associated with the changes and generate a manual release
-- Once the release is generated, select the "Set as the latest release" checkbox and publish the release
+- Trigger the workflow [prepare-release](./.github/workflows/prepare-release.yml) through the
+  [web UI](https://github.com/spotify/github-java-client/actions/workflows/prepare-release.yml)
+  - Select whether the new release should be a `major`, `minor` or `patch` release
+  - Trigger the release preparation on the `master` branch
+  - Pushes of this workflow will trigger runs of the workflow
+    [release](https://github.com/spotify/github-java-client/actions/workflows/release.yml)
+- Once the
+  [release pipeline](https://github.com/spotify/github-java-client/actions/workflows/release.yml)
+  has completed for the release tag, the new release will be available on Maven Central and the
+  changes can be released on GitHub
+- [Navigate to the tag](https://github.com/spotify/github-java-client/tags) associated with the
+  changes and generate a manual release
+- Once the release is generated, select the "Set as the latest release" checkbox and publish the
+  release
 
 ## Notes about maturity
 
