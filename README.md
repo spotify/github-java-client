@@ -12,12 +12,12 @@ It supports authentication via simple access tokens, JWT endpoints and GitHub Ap
 
 It is also very light on GitHub, doing as few requests as necessary.
 
-You can find this library in [maven central repository](https://mvnrepository.com/artifact/com.spotify/github-client).
-
 This library is maintained by @spotify/gjc-maintainers. If you have any questions, issues or need a
 review, please tag this team in the relevant PR/issue.
 
 ## Getting Started
+
+You can find this library in [maven central repository](https://mvnrepository.com/artifact/com.spotify/github-client).
 
 Include the latest version of github-client into your project:
 
