@@ -49,13 +49,26 @@ def determine_new_version(current_version, release_type):
 
 
 def dissect_version(current_version) -> (int, int, int):
-    version_regex = re.compile(
-        r'^(?P<major>[0-9]+)\.(?P<minor>[0-9+])\.(?P<patch>[0-9+])(-SNAPSHOT)*')
+    version_regex = get_regex()
     regex_match = version_regex.search(current_version)
     major: int = int(regex_match.groupdict().get("major"))
     minor: int = int(regex_match.groupdict().get("minor"))
     patch: int = int(regex_match.groupdict().get("patch"))
     return major, minor, patch
+
+
+def get_regex():
+    # Following REGEX is suggested on semver.org
+    # https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+    return re.compile(
+        r'^'
+        r'(?P<major>0|[1-9]\d*)'
+        r'\.'
+        r'(?P<minor>0|[1-9]\d*)'
+        r'\.'
+        r'(?P<patch>0|[1-9]\d*)'
+        r'(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?'
+        r'(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$')
 
 
 def get_major_release_version(major):
