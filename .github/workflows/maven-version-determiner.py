@@ -32,7 +32,7 @@ def get_version_tag(release_type: str, current_version: str) -> str:
 
 
 def determine_new_version(current_version, release_type):
-    major, minor, patch = dissect_version(current_version)
+    major, minor, patch, is_prerelease = dissect_version(current_version)
 
     match release_type:
         case "MAJOR":
@@ -40,7 +40,8 @@ def determine_new_version(current_version, release_type):
         case "MINOR":
             major, minor, patch = get_minor_release_version(major, minor)
         case "PATCH":
-            major, minor, patch = get_patch_release_version(major, minor, patch)
+            major, minor, patch = get_patch_release_version(major, minor, patch,
+                                                            is_prerelease)
         case _:
             print("Second arg has to be `MAJOR`, `MINOR` or `PATCH`")
             sys.exit()
@@ -54,7 +55,9 @@ def dissect_version(current_version) -> (int, int, int):
     major: int = int(regex_match.groupdict().get("major"))
     minor: int = int(regex_match.groupdict().get("minor"))
     patch: int = int(regex_match.groupdict().get("patch"))
-    return major, minor, patch
+    is_prerelease: bool = True if regex_match.groupdict().get(
+        "prerelease") else False
+    return major, minor, patch, is_prerelease
 
 
 def get_regex():
@@ -84,9 +87,11 @@ def get_minor_release_version(major, minor):
     return major, minor, patch
 
 
-def get_patch_release_version(major, minor, patch):
-    # Leave values as is because current version without `-SNAPSHOT` is new patch version
-    return major, minor, patch
+def get_patch_release_version(major, minor, patch, is_prerelease):
+    if is_prerelease:
+        # Leave values as is because current version without `prerelease` is new patch version
+        return major, minor, patch
+    return major, minor, patch + 1
 
 
 if __name__ == "__main__":
