@@ -20,6 +20,9 @@
 
 package com.spotify.github.v3.exceptions;
 
+import java.util.List;
+import java.util.Map;
+
 /** The Read only repository exception. */
 public class ReadOnlyRepositoryException extends RequestNotOkException {
   /**
@@ -31,7 +34,7 @@ public class ReadOnlyRepositoryException extends RequestNotOkException {
    * @param msg the msg
    */
   public ReadOnlyRepositoryException(
-      final String method, final String path, final int statusCode, final String msg) {
-    super(method, path, statusCode, msg);
+      final String method, final String path, final int statusCode, final String msg, final Map<String, List<String>> headers) {
+    super(method, path, statusCode, msg, headers);
   }
 }

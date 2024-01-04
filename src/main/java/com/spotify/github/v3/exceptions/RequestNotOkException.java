@@ -34,6 +34,9 @@
  */
 package com.spotify.github.v3.exceptions;
 
+import java.util.List;
+import java.util.Map;
+
 /** HTTP response with non-200 StatusCode. */
 public class RequestNotOkException extends GithubException {
 
@@ -41,6 +44,7 @@ public class RequestNotOkException extends GithubException {
   private final String method;
   private final String path;
   private final String msg;
+  private final Map<String, List<String>> headers;
 
   private static String decoratedMessage(
       final String method, final String path, final int statusCode, final String msg) {
@@ -56,12 +60,13 @@ public class RequestNotOkException extends GithubException {
    * @param msg response body
    */
   public RequestNotOkException(
-      final String method, final String path, final int statusCode, final String msg) {
+      final String method, final String path, final int statusCode, final String msg, final Map<String, List<String>> headers) {
     super(decoratedMessage(method, path, statusCode, msg));
     this.statusCode = statusCode;
     this.method = method;
     this.path = path;
     this.msg = msg;
+    this.headers = headers;
   }
 
   /**
@@ -98,5 +103,14 @@ public class RequestNotOkException extends GithubException {
    */
   public String path() {
     return path;
+  }
+
+  /**
+   * Get response headers
+   *
+   * @return headers
+   */
+  public Map<String, List<String>> headers() {
+    return headers;
   }
 }

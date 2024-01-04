@@ -24,6 +24,7 @@ import static com.google.common.io.Resources.getResource;
 import static java.nio.charset.Charset.defaultCharset;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -41,11 +42,13 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import okhttp3.Call;
 import okhttp3.Callback;
+import okhttp3.Headers;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Protocol;
@@ -134,6 +137,7 @@ public class GitHubClientTest {
 
     final Response response = new okhttp3.Response.Builder()
         .code(409) // Conflict
+        .headers(Headers.of("x-ratelimit-remaining", "0"))
         .body(
             ResponseBody.create(
                 MediaType.get("application/json"),
@@ -158,6 +162,7 @@ public class GitHubClientTest {
       assertThat(e1.statusCode(), is(409));
       assertThat(e1.method(), is("POST"));
       assertThat(e1.path(), is("/repos/testorg/testrepo/merges"));
+      assertThat(e1.headers(), hasEntry("x-ratelimit-remaining", List.of("0")));
       assertThat(e1.getMessage(), containsString("POST"));
       assertThat(e1.getMessage(), containsString("/repos/testorg/testrepo/merges"));
       assertThat(e1.getMessage(), containsString("Merge Conflict"));
