@@ -44,3 +44,12 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+
+
+  trigger-github-release:
+    needs: build
+    name: Trigger GitHub release workflow
+    if: github.ref_type == 'tag'
+    uses: ./.github/workflows/release-on-github.yml
+    with:
+      tag: ${{ github.ref_name }}
