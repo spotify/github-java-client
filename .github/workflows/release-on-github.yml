@@ -1,6 +1,12 @@
 name: github-release
 
 on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Create GitHub release of following tag
+        required: true
+        type: string
   workflow_call:
     inputs:
       tag:
