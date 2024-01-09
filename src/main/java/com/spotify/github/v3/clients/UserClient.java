@@ -44,12 +44,12 @@ public class UserClient {
    * @param username username of the user to suspend
    * @return a CompletableFuture that indicates success or failure
    */
-  public CompletableFuture<Integer> suspendUser(
+  public CompletableFuture<Boolean> suspendUser(
       final String username, final SuspensionReason reason) {
     final String path = String.format(SUSPEND_USER_TEMPLATE, username);
     return github
         .put(path, github.json().toJsonUnchecked(reason))
-        .thenApply(resp -> resp.code() == NO_CONTENT ? 1 : 0);
+        .thenApply(resp -> resp.code() == NO_CONTENT);
   }
 
   /**
@@ -58,11 +58,11 @@ public class UserClient {
    * @param username username of the user to unsuspend
    * @return a CompletableFuture that indicates success or failure
    */
-  public CompletableFuture<Integer> unSuspendUser(
+  public CompletableFuture<Boolean> unSuspendUser(
       final String username, final SuspensionReason reason) {
     final String path = String.format(SUSPEND_USER_TEMPLATE, username);
     return github
         .delete(path, github.json().toJsonUnchecked(reason))
-        .thenApply(resp -> resp.code() == NO_CONTENT ? 1 : 0);
+        .thenApply(resp -> resp.code() == NO_CONTENT);
   }
 }

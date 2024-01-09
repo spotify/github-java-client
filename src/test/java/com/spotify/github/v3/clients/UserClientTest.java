@@ -20,7 +20,7 @@
 package com.spotify.github.v3.clients;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -51,8 +51,8 @@ public class UserClientTest {
         Response response = mock(Response.class);
         when(response.code()).thenReturn(204);
         when(github.put(eq("/users/username/suspended"), any())).thenReturn(completedFuture(response));
-        final CompletableFuture<Integer> result = userClient.suspendUser("username", ImmutableSuspensionReason.builder().reason("That's why").build());
-        assertEquals(1, (int) result.get());
+        final CompletableFuture<Boolean> result = userClient.suspendUser("username", ImmutableSuspensionReason.builder().reason("That's why").build());
+        assertTrue(result.get());
     }
 
     @Test
@@ -60,8 +60,8 @@ public class UserClientTest {
         Response response = mock(Response.class);
         when(response.code()).thenReturn(403);
         when(github.put(eq("/users/username/suspended"), any())).thenReturn(completedFuture(response));
-        final CompletableFuture<Integer> result = userClient.suspendUser("username", ImmutableSuspensionReason.builder().reason("That's why").build());
-        assertEquals(0, (int) result.get());
+        final CompletableFuture<Boolean> result = userClient.suspendUser("username", ImmutableSuspensionReason.builder().reason("That's why").build());
+        assertFalse(result.get());
     }
 
     @Test
@@ -69,8 +69,8 @@ public class UserClientTest {
         Response response = mock(Response.class);
         when(response.code()).thenReturn(204);
         when(github.delete(eq("/users/username/suspended"), any())).thenReturn(completedFuture(response));
-        final CompletableFuture<Integer> result = userClient.unSuspendUser("username", ImmutableSuspensionReason.builder().reason("That's why").build());
-        assertEquals(1, (int) result.get());
+        final CompletableFuture<Boolean> result = userClient.unSuspendUser("username", ImmutableSuspensionReason.builder().reason("That's why").build());
+        assertTrue(result.get());
     }
 
     @Test
@@ -78,7 +78,7 @@ public class UserClientTest {
         Response response = mock(Response.class);
         when(response.code()).thenReturn(403);
         when(github.delete(eq("/users/username/suspended"), any())).thenReturn(completedFuture(response));
-        final CompletableFuture<Integer> result = userClient.unSuspendUser("username", ImmutableSuspensionReason.builder().reason("That's why").build());
-        assertEquals(0, (int) result.get());
+        final CompletableFuture<Boolean> result = userClient.unSuspendUser("username", ImmutableSuspensionReason.builder().reason("That's why").build());
+        assertFalse(result.get());
     }
 }
