@@ -396,6 +396,10 @@ public class GitHubClient {
     return OrganisationClient.create(this, org);
   }
 
+  public UserClient createUserClient() {
+    return UserClient.create(this);
+  }
+
   Json json() {
     return json;
   }
