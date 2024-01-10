@@ -46,10 +46,27 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
 
-  trigger-github-release:
+  get-tag-of-current-sha:
     needs: build
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag-retriever.outputs.tag }}
+      # Var is empty if command to retrieve tag fails (e.g. if current SHA has no tag associated)
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - name: Store tag of SHA if present
+        id: tag-retriever
+        run: |
+          echo "tag=$(git describe --exact-match ${{ github.sha }})" >> "$GITHUB_OUTPUT"
+
+
+  trigger-github-release:
+    needs: get-tag-of-current-sha
     name: Trigger GitHub release workflow
-    if: github.ref_type == 'tag'
+    if: needs.get-tag-of-current-sha.outputs.tag
+    # Runs job only if tag is present.
     uses: ./.github/workflows/release-on-github.yml
     with:
-      tag: ${{ github.ref_name }}
+      tag: ${{ needs.get-tag-of-current-sha.outputs.tag }}

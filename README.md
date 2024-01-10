@@ -104,22 +104,16 @@ This project uses Maven. To run the tests locally, just run:
 mvn clean verify
 ```
 
-If you are a maintainer, you can release a new version by doing the following:
-
-- Trigger the workflow [prepare-release](./.github/workflows/prepare-release.yml) through the
-  [web UI](https://github.com/spotify/github-java-client/actions/workflows/prepare-release.yml)
-  - Select whether the new release should be a `major`, `minor` or `patch` release
-  - Trigger the release preparation on the `master` branch
-  - Pushes of this workflow will trigger runs of the workflow
-    [release](https://github.com/spotify/github-java-client/actions/workflows/release.yml)
-- Once the
-  [release pipeline](https://github.com/spotify/github-java-client/actions/workflows/release.yml)
-  has completed for the release tag, the new release will be available on Maven Central and the
-  changes can be released on GitHub
-- [Navigate to the tag](https://github.com/spotify/github-java-client/tags) associated with the
-  changes and generate a manual release
-- Once the release is generated, select the "Set as the latest release" checkbox and publish the
-  release
+If you are a maintainer, you can release a new version by just triggering the workflow 
+[prepare-release](./.github/workflows/prepare-release.yml) through the 
+[web UI](https://github.com/spotify/github-java-client/actions/workflows/prepare-release.yml).
+- Select whether the new release should be a `major`, `minor` or `patch` release
+- Trigger the release preparation on the `master` branch
+- Pushes of this workflow will trigger runs of the
+  [maven-release](https://github.com/spotify/github-java-client/actions/workflows/release.yml)
+  workflow, which in turn will trigger the
+  [github-release](https://github.com/spotify/github-java-client/actions/workflows/release-on-github.yml)
+  workflow with the automatically created tag
 
 ## Notes about maturity
 
