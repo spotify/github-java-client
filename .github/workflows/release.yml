@@ -54,7 +54,10 @@ jobs:
       # Var is empty if command to retrieve tag fails (e.g. if current SHA has no tag associated)
     steps:
 
-      - uses: actions/checkout@v4
+      - name: Clone repo with complete history and tags
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Store tag of SHA if present
         id: tag-retriever
