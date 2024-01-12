@@ -40,6 +40,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -56,6 +57,7 @@ import com.spotify.github.v3.repos.Commit;
 import com.spotify.github.v3.repos.CommitComparison;
 import com.spotify.github.v3.repos.CommitItem;
 import com.spotify.github.v3.repos.CommitStatus;
+import com.spotify.github.v3.repos.CommitWithFolderContent;
 import com.spotify.github.v3.repos.Content;
 import com.spotify.github.v3.repos.FolderContent;
 import com.spotify.github.v3.repos.Repository;
@@ -63,7 +65,11 @@ import com.spotify.github.v3.repos.RepositoryInvitation;
 import com.spotify.github.v3.repos.RepositoryPermission;
 import com.spotify.github.v3.repos.RepositoryTest;
 import com.spotify.github.v3.repos.Status;
+import com.spotify.github.v3.repos.requests.FileCreate;
+import com.spotify.github.v3.repos.requests.FileUpdate;
 import com.spotify.github.v3.repos.requests.ImmutableAuthenticatedUserRepositoriesFilter;
+import com.spotify.github.v3.repos.requests.ImmutableFileCreate;
+import com.spotify.github.v3.repos.requests.ImmutableFileUpdate;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -79,6 +85,7 @@ import okhttp3.ResponseBody;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import uk.co.datumedge.hamcrest.json.SameJSONAs;
 
 public class RepositoryClientTest {
 
@@ -292,6 +299,58 @@ public class RepositoryClientTest {
     assertThat(fileContent.name(), is("README.md"));
     assertThat(fileContent.encoding(), is("base64"));
     assertThat(fileContent.content(), is("encoded content ..."));
+  }
+
+  @Test
+  public void createFileContent() throws Exception {
+    String rawFileCreateRequest = getFixture("create-content-request.json");
+    final CompletableFuture<CommitWithFolderContent> fixture = completedFuture(
+        json.fromJson(getFixture("create-content-repsonse.json"), CommitWithFolderContent.class)
+    );
+    when(github.put(
+        eq("/repos/someowner/somerepo/contents/test/README.md"),
+        argThat(body -> SameJSONAs.sameJSONAs(rawFileCreateRequest).matches(body)),
+        eq(CommitWithFolderContent.class)
+    )).thenReturn(fixture);
+
+    FileCreate fileCreateRequest = ImmutableFileCreate.builder()
+        .message("my commit message")
+        .content("encoded content ...")
+        .build();
+
+    final CommitWithFolderContent commitWithFolderContent =
+        repoClient.createFileContent("test/README.md", fileCreateRequest).get();
+    assertThat(commitWithFolderContent.commit().message(), is("my commit message"));
+    assertThat(commitWithFolderContent.content().type(), is("file"));
+    assertThat(commitWithFolderContent.content().name(), is("README.md"));
+    assertThat(commitWithFolderContent.content().path(), is("test/README.md"));
+  }
+
+  @Test
+  public void updateFileContent() throws Exception {
+    String rawFileUpdateRequest = getFixture("update-content-request.json");
+    final CompletableFuture<CommitWithFolderContent> fixture = completedFuture(
+        json.fromJson(getFixture("create-content-repsonse.json"), CommitWithFolderContent.class)
+    );
+    when(github.put(
+        eq("/repos/someowner/somerepo/contents/test/README.md"),
+        argThat(body -> SameJSONAs.sameJSONAs(rawFileUpdateRequest).matches(body)),
+        eq(CommitWithFolderContent.class)
+    )).thenReturn(fixture);
+
+    FileUpdate fileUpdateRequest = ImmutableFileUpdate.builder()
+        .message("my commit message")
+        .content("encoded content ...")
+        .branch("test-branch")
+        .sha("12345")
+        .build();
+
+    final CommitWithFolderContent commitWithFolderContent =
+        repoClient.updateFileContent("test/README.md", fileUpdateRequest).get();
+    assertThat(commitWithFolderContent.commit().message(), is("my commit message"));
+    assertThat(commitWithFolderContent.content().type(), is("file"));
+    assertThat(commitWithFolderContent.content().name(), is("README.md"));
+    assertThat(commitWithFolderContent.content().path(), is("test/README.md"));
   }
 
   @Test
