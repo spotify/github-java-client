@@ -1,0 +1,22 @@
+[
+  {
+    "login": "octocat2",
+    "id": 2,
+    "node_id": "MDQ2VXNlcjE=",
+    "avatar_url": "https://github.com/images/error/octocat2_happy.gif",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/octocat2",
+    "html_url": "https://github.com/octocat2",
+    "followers_url": "https://api.github.com/users/octocat2/followers",
+    "following_url": "https://api.github.com/users/octoca2t/following{/other_user}",
+    "gists_url": "https://api.github.com/users/octocat2/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/octocat2/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/octocat2/subscriptions",
+    "organizations_url": "https://api.github.com/users/octocat2/orgs",
+    "repos_url": "https://api.github.com/users/octocat2/repos",
+    "events_url": "https://api.github.com/users/octocat2/events{/privacy}",
+    "received_events_url": "https://api.github.com/users/octocat2/received_events",
+    "type": "User",
+    "site_admin": false
+  }
+]
