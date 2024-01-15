@@ -21,11 +21,9 @@
 
 package com.spotify.github.v3.clients;
 
-import static com.spotify.github.v3.clients.GitHubClient.IGNORE_RESPONSE_CONSUMER;
-import static com.spotify.github.v3.clients.GitHubClient.LIST_PENDING_TEAM_INVITATIONS;
-import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAMS;
-import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAM_MEMBERS;
+import static com.spotify.github.v3.clients.GitHubClient.*;
 
+import com.spotify.github.async.AsyncPage;
 import com.spotify.github.v3.Team;
 import com.spotify.github.v3.User;
 import com.spotify.github.v3.orgs.Membership;
@@ -34,6 +32,7 @@ import com.spotify.github.v3.orgs.requests.MembershipCreate;
 import com.spotify.github.v3.orgs.requests.TeamCreate;
 import com.spotify.github.v3.orgs.requests.TeamUpdate;
 import java.lang.invoke.MethodHandles;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
@@ -48,6 +47,8 @@ public class TeamClient {
   private static final String TEAM_SLUG_TEMPLATE = "/orgs/%s/teams/%s";
 
   private static final String MEMBERS_TEMPLATE = "/orgs/%s/teams/%s/members";
+
+  private static final String PAGED_MEMBERS_TEMPLATE = "/orgs/%s/teams/%s/members?per_page=%d";
 
   private static final String MEMBERSHIP_TEMPLATE = "/orgs/%s/teams/%s/memberships/%s";
 
@@ -161,6 +162,19 @@ public class TeamClient {
     final String path = String.format(MEMBERS_TEMPLATE, org, slug);
     log.debug("Fetching members for: " + path);
     return github.request(path, LIST_TEAM_MEMBERS);
+  }
+
+  /**
+   * List members of a specific team.
+   *
+   * @param slug the team slug
+   * @param pageSize the number of users to fetch per page
+   * @return list of all users in a team
+   */
+  public Iterator<AsyncPage<User>> listTeamMembers(final String slug, final int pageSize) {
+    final String path = String.format(PAGED_MEMBERS_TEMPLATE, org, slug, pageSize);
+    log.debug("Fetching members for: " + path);
+    return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_TEAM_MEMBERS));
   }
 
   /**
