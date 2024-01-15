@@ -24,8 +24,11 @@ import static com.google.common.io.Resources.getResource;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_PENDING_TEAM_INVITATIONS;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAMS;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAM_MEMBERS;
+import static com.spotify.github.v3.clients.MockHelper.createMockResponse;
 import static java.nio.charset.Charset.defaultCharset;
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.StreamSupport.stream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.ArgumentMatchers.any;
@@ -33,15 +36,18 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import com.google.common.io.Resources;
+import com.spotify.github.async.AsyncPage;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.Team;
 import com.spotify.github.v3.User;
+import com.spotify.github.v3.comment.Comment;
 import com.spotify.github.v3.orgs.Membership;
 import com.spotify.github.v3.orgs.TeamInvitation;
 import com.spotify.github.v3.orgs.requests.MembershipCreate;
 import com.spotify.github.v3.orgs.requests.TeamCreate;
 import com.spotify.github.v3.orgs.requests.TeamUpdate;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import okhttp3.Response;
@@ -67,6 +73,7 @@ public class TeamClientTest {
     teamClient = new TeamClient(github, "github");
     json = Json.create();
     when(github.json()).thenReturn(json);
+    when(github.urlFor("")).thenReturn("https://github.com/api/v3");
   }
 
   @Test
@@ -154,6 +161,37 @@ public class TeamClientTest {
     assertThat(teamMembers.get(0).login(), is("octocat"));
     assertThat(teamMembers.get(1).id(), is(2));
     assertThat(teamMembers.size(), is(2));
+  }
+
+  @Test
+  public void listTeamMembersPaged() throws Exception {
+    final String firstPageLink =
+            "<https://github.com/api/v3/orgs/github/teams/1/members?page=2>; rel=\"next\", <https://github.com/api/v3/orgs/github/teams/1/members?page=2>; rel=\"last\"";
+    final String firstPageBody =
+            Resources.toString(getResource(this.getClass(), "list_members_page1.json"), defaultCharset());
+    final Response firstPageResponse = createMockResponse(firstPageLink, firstPageBody);
+
+    final String lastPageLink =
+            "<https://github.com/api/v3/orgs/github/teams/1/members>; rel=\"first\", <https://github.com/api/v3/orgs/github/teams/1/members>; rel=\"prev\"";
+    final String lastPageBody =
+            Resources.toString(getResource(this.getClass(), "list_members_page2.json"), defaultCharset());
+
+    final Response lastPageResponse = createMockResponse(lastPageLink, lastPageBody);
+
+    when(github.request(endsWith("/orgs/github/teams/1/members?per_page=1")))
+            .thenReturn(completedFuture(firstPageResponse));
+    when(github.request(endsWith("/orgs/github/teams/1/members?page=2")))
+                .thenReturn(completedFuture(lastPageResponse));
+
+    final Iterable<AsyncPage<User>> pageIterator = () -> teamClient.listTeamMembers("1", 1);
+    final List<User> users =
+            stream(pageIterator.spliterator(), false)
+                    .flatMap(page -> stream(page.spliterator(), false))
+                    .collect(toList());
+
+    assertThat(users.size(), is(2));
+    assertThat(users.get(0).login(), is("octocat"));
+    assertThat(users.get(1).id(), is(2));
   }
 
   @Test
