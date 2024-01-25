@@ -34,7 +34,6 @@ import static com.spotify.github.v3.clients.RepositoryClient.STATUS_URI_TEMPLATE
 import static java.lang.String.format;
 import static java.nio.charset.Charset.defaultCharset;
 import static java.util.concurrent.CompletableFuture.completedFuture;
-import static java.util.stream.StreamSupport.stream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -48,6 +47,7 @@ import static org.mockito.Mockito.when;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
+import com.spotify.github.async.Async;
 import com.spotify.github.async.AsyncPage;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.comment.Comment;
@@ -139,10 +139,7 @@ public class RepositoryClientTest {
     when(github.request("/user/repos")).thenReturn(completedFuture(pageResponse));
 
     final Iterable<AsyncPage<Repository>> pageIterator = () -> repoClient.listAuthenticatedUserRepositories(ImmutableAuthenticatedUserRepositoriesFilter.builder().build());
-    final List<Repository> repositories =
-        stream(pageIterator.spliterator(), false)
-            .flatMap(page -> stream(page.spliterator(), false))
-            .collect(Collectors.toList());
+    final List<Repository> repositories = Async.streamFromPaginatingIterable(pageIterator).collect(Collectors.toList());
 
     assertThat(repositories.get(0).id(), is(1296269));
     assertThat(repositories.size(), is(1));
@@ -473,6 +470,17 @@ public class RepositoryClientTest {
     assertThat(branches.size(), is(1));
   }
 
+  @Test
+  void listAllBranches() throws Exception {
+    final String link = "<https://github.com/api/v3/repos/someowner/somerepo/branches>; rel=\"last\"";
+    final Response response = createMockResponse(link, getFixture( "list_branches.json"));
+
+    when(github.request("/repos/someowner/somerepo/branches"))
+        .thenReturn(completedFuture(response));
+    final List<Branch> branches = Async.streamFromPaginatingIterable(repoClient::listAllBranches).collect(Collectors.toList());
+    assertThat(branches.get(0).commit().sha(), is("c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc"));
+    assertThat(branches.size(), is(1));
+  }
 
   @Test
   public void testCommentCreated() throws IOException {
