@@ -28,7 +28,6 @@ import static java.lang.String.format;
 import static java.nio.charset.Charset.defaultCharset;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.StreamSupport.stream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -38,6 +37,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
+import com.spotify.github.async.Async;
 import com.spotify.github.async.AsyncPage;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.comment.Comment;
@@ -81,10 +81,7 @@ public class IssueClientTest {
         .thenReturn(completedFuture(lastPageResponse));
 
     final Iterable<AsyncPage<Comment>> pageIterator = () -> issueClient.listComments(123);
-    final List<Comment> listComments =
-        stream(pageIterator.spliterator(), false)
-            .flatMap(page -> stream(page.spliterator(), false))
-            .collect(toList());
+    final List<Comment> listComments = Async.streamFromPaginatingIterable(pageIterator).collect(toList());
 
     assertThat(listComments.size(), is(30));
     assertThat(listComments.get(0).id(), is(1345268));

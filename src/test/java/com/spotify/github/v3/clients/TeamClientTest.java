@@ -28,7 +28,6 @@ import static com.spotify.github.v3.clients.MockHelper.createMockResponse;
 import static java.nio.charset.Charset.defaultCharset;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.StreamSupport.stream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.ArgumentMatchers.any;
@@ -36,18 +35,17 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import com.google.common.io.Resources;
+import com.spotify.github.async.Async;
 import com.spotify.github.async.AsyncPage;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.Team;
 import com.spotify.github.v3.User;
-import com.spotify.github.v3.comment.Comment;
 import com.spotify.github.v3.orgs.Membership;
 import com.spotify.github.v3.orgs.TeamInvitation;
 import com.spotify.github.v3.orgs.requests.MembershipCreate;
 import com.spotify.github.v3.orgs.requests.TeamCreate;
 import com.spotify.github.v3.orgs.requests.TeamUpdate;
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import okhttp3.Response;
@@ -184,10 +182,7 @@ public class TeamClientTest {
                 .thenReturn(completedFuture(lastPageResponse));
 
     final Iterable<AsyncPage<User>> pageIterator = () -> teamClient.listTeamMembers("1", 1);
-    final List<User> users =
-            stream(pageIterator.spliterator(), false)
-                    .flatMap(page -> stream(page.spliterator(), false))
-                    .collect(toList());
+    final List<User> users = Async.streamFromPaginatingIterable(pageIterator).collect(toList());
 
     assertThat(users.size(), is(2));
     assertThat(users.get(0).login(), is("octocat"));

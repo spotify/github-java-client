@@ -546,14 +546,27 @@ public class RepositoryClient {
   }
 
   /**
-   * Get a specific branch.
+   * List some branches in repository.
+   * Doesn't return more than 30 branches.
+   * Use {@link RepositoryClient#listAllBranches} instead to get all branches.
    *
-   * @return list of all branches in repository
+   * @return list of 30 branches in repository
    */
   public CompletableFuture<List<Branch>> listBranches() {
     final String path = String.format(LIST_BRANCHES_TEMPLATE, owner, repo);
     return github.request(path, LIST_BRANCHES);
   }
+
+    /**
+   * List all branches in repository
+   *
+   * @return list of all branches in repository
+   */
+  public Iterator<AsyncPage<Branch>> listAllBranches() {
+    final String path = String.format(LIST_BRANCHES_TEMPLATE, owner, repo);
+    return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_BRANCHES));
+  }
+
 
   /**
    * Delete a comment for a given id.
