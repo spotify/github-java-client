@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -42,6 +42,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import javax.ws.rs.core.HttpHeaders;
+
+import okhttp3.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,6 +56,8 @@ public class PullRequestClient {
   private static final String PR_COMMITS_TEMPLATE = "/repos/%s/%s/pulls/%s/commits";
   private static final String PR_REVIEWS_TEMPLATE = "/repos/%s/%s/pulls/%s/reviews";
   private static final String PR_REVIEW_REQUESTS_TEMPLATE = "/repos/%s/%s/pulls/%s/requested_reviewers";
+
+  public static final String MUTATION_ENABLE_PULL_REQUEST_AUTO_MERGE = "mutation { enablePullRequestAutoMerge(input: {pullRequestId: \"%s\", mergeMethod: %s}) { actor { login } } }";
 
   private final GitHubClient github;
   private final String owner;
@@ -232,6 +236,18 @@ public class PullRequestClient {
     return github.put(path, jsonPayload).thenAccept(IGNORE_RESPONSE_CONSUMER);
   }
 
+  public CompletableFuture<Response> autoMerge(
+      final int number, final MergeMethod mergeMethod) {
+    return get(number)
+        .thenCompose(
+            pr -> {
+              String query = String.format(MUTATION_ENABLE_PULL_REQUEST_AUTO_MERGE, pr.nodeId(), mergeMethod.toString().toUpperCase());
+              Map<String, String> payload = ImmutableMap.of("query", query);
+              String jsonPayload = github.json().toJsonUnchecked(payload);
+              return github.postGraphql(jsonPayload);
+            });
+  }
+
   public CompletableFuture<Reader> patch(final int number) {
     final String path = String.format(PR_NUMBER_TEMPLATE, owner, repo, number);
     final Map<String, String> extraHeaders = ImmutableMap.of(
@@ -269,5 +285,4 @@ public class PullRequestClient {
     log.debug("Fetching pull requests from " + path);
     return github.request(path, LIST_PR_TYPE_REFERENCE);
   }
-
 }
