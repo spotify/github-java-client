@@ -44,15 +44,13 @@ import com.spotify.github.v3.repos.CommitItem;
 import com.spotify.github.v3.repos.CommitStatus;
 import com.spotify.github.v3.repos.CommitWithFolderContent;
 import com.spotify.github.v3.repos.Content;
-import com.spotify.github.v3.repos.requests.FileCreate;
-import com.spotify.github.v3.repos.requests.FileUpdate;
+import com.spotify.github.v3.repos.requests.*;
 import com.spotify.github.v3.repos.FolderContent;
 import com.spotify.github.v3.repos.Languages;
 import com.spotify.github.v3.repos.Repository;
 import com.spotify.github.v3.repos.RepositoryInvitation;
 import com.spotify.github.v3.repos.Status;
-import com.spotify.github.v3.repos.requests.AuthenticatedUserRepositoriesFilter;
-import com.spotify.github.v3.repos.requests.RepositoryCreateStatus;
+
 import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
 import java.util.Iterator;
@@ -79,7 +77,8 @@ public class RepositoryClient {
   public static final String STATUS_URI_TEMPLATE = "/repos/%s/%s/statuses/%s";
   private static final String COMMITS_URI_TEMPLATE = "/repos/%s/%s/commits";
   private static final String COMMIT_SHA_URI_TEMPLATE = "/repos/%s/%s/commits/%s";
-  private static final String COMMIT_PULL_REQUESTS_SHA_URI_TEMPLATE = "/repos/%s/%s/commits/%s/pulls";
+  private static final String COMMIT_PULL_REQUESTS_SHA_URI_TEMPLATE =
+      "/repos/%s/%s/commits/%s/pulls";
   private static final String COMMIT_STATUS_URI_TEMPLATE = "/repos/%s/%s/commits/%s/status";
   private static final String TREE_SHA_URI_TEMPLATE = "/repos/%s/%s/git/trees/%s";
   private static final String COMPARE_COMMIT_TEMPLATE = "/repos/%s/%s/compare/%s...%s";
@@ -161,6 +160,18 @@ public class RepositoryClient {
   }
 
   /**
+   * Update Repository properties
+   * https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#update-a-repository
+   *
+   * @return repository information
+   */
+  public CompletableFuture<Repository> updateRepository(final RepositoryUpdate repoUpdate) {
+    final String path = String.format(REPOSITORY_URI_TEMPLATE, owner, repo);
+    final String data = github.json().toJsonUnchecked(repoUpdate);
+    return github.patch(path, data, Repository.class);
+  }
+
+  /**
    * List all repositories in this organization.
    *
    * @return list of all repositories under organization
@@ -199,13 +210,13 @@ public class RepositoryClient {
   /**
    * Add a collaborator to the repo.
    *
-   * @param user       the GitHub username to add
+   * @param user the GitHub username to add
    * @param permission the permission level for the user; one of RepositoryPermission, or a custom
-   *                   role
+   *     role
    * @return
    */
-  public CompletableFuture<Optional<RepositoryInvitation>> addCollaborator(final String user,
-      final String permission) {
+  public CompletableFuture<Optional<RepositoryInvitation>> addCollaborator(
+      final String user, final String permission) {
     final String path = String.format(REPOSITORY_COLLABORATOR, owner, repo, user);
     final String data = github.json().toJsonUnchecked(Map.of("permission", permission));
     return github
@@ -216,12 +227,12 @@ public class RepositoryClient {
               // not called.
               if (response.code() == NO_CONTENT) {
                 /*
-                  GitHub returns a 204 when:
-                  - an existing collaborator is added as a collaborator
-                  - an organization member is added as an individual collaborator
-                  - an existing team member (whose team is also a repository collaborator) is
-                      added as a collaborator
-                 */
+                 GitHub returns a 204 when:
+                 - an existing collaborator is added as a collaborator
+                 - an organization member is added as an individual collaborator
+                 - an existing team member (whose team is also a repository collaborator) is
+                     added as a collaborator
+                */
                 return Optional.empty();
               }
               final RepositoryInvitation invitation =
@@ -284,18 +295,22 @@ public class RepositoryClient {
     return downloadRepository(REPOSITORY_DOWNLOAD_ZIPBALL, Optional.of(ref));
   }
 
-  private CompletableFuture<Optional<InputStream>> downloadRepository(final String path, final Optional<String> maybeRef) {
+  private CompletableFuture<Optional<InputStream>> downloadRepository(
+      final String path, final Optional<String> maybeRef) {
     final var repoRef = maybeRef.orElse("");
     final var repoPath = String.format(path, owner, repo, repoRef);
-    return github.request(repoPath).thenApply(response -> {
-      var body = response.body();
+    return github
+        .request(repoPath)
+        .thenApply(
+            response -> {
+              var body = response.body();
 
-      if (body == null) {
-        return Optional.empty();
-      }
+              if (body == null) {
+                return Optional.empty();
+              }
 
-      return Optional.of(body.byteStream());
-    });
+              return Optional.of(body.byteStream());
+            });
   }
 
   /**
@@ -457,7 +472,8 @@ public class RepositoryClient {
    * @param request file creation request
    * @return commit with content
    */
-  public CompletableFuture<CommitWithFolderContent> createFileContent(final String path, final FileCreate request) {
+  public CompletableFuture<CommitWithFolderContent> createFileContent(
+      final String path, final FileCreate request) {
     final String contentPath = getContentPath(path, "");
     final String requestBody = github.json().toJsonUnchecked(request);
     return github.put(contentPath, requestBody, CommitWithFolderContent.class);
@@ -470,7 +486,8 @@ public class RepositoryClient {
    * @param request file update request
    * @return commit with content
    */
-  public CompletableFuture<CommitWithFolderContent> updateFileContent(final String path, final FileUpdate request) {
+  public CompletableFuture<CommitWithFolderContent> updateFileContent(
+      final String path, final FileUpdate request) {
     final String contentPath = getContentPath(path, "");
     final String requestBody = github.json().toJsonUnchecked(request);
     return github.put(contentPath, requestBody, CommitWithFolderContent.class);
@@ -546,9 +563,8 @@ public class RepositoryClient {
   }
 
   /**
-   * List some branches in repository.
-   * Doesn't return more than 30 branches.
-   * Use {@link RepositoryClient#listAllBranches} instead to get all branches.
+   * List some branches in repository. Doesn't return more than 30 branches. Use {@link
+   * RepositoryClient#listAllBranches} instead to get all branches.
    *
    * @return list of 30 branches in repository
    */
@@ -557,7 +573,7 @@ public class RepositoryClient {
     return github.request(path, LIST_BRANCHES);
   }
 
-    /**
+  /**
    * List all branches in repository
    *
    * @return list of all branches in repository
@@ -566,7 +582,6 @@ public class RepositoryClient {
     final String path = String.format(LIST_BRANCHES_TEMPLATE, owner, repo);
     return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_BRANCHES));
   }
-
 
   /**
    * Delete a comment for a given id.

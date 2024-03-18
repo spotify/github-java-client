@@ -79,6 +79,10 @@ public interface RepositoryBase extends UpdateTracking {
   @Nullable
   URI htmlUrl();
 
+  /** Allow auto merges */
+  @Nullable
+  Boolean allowAutoMerge();
+
   /** Allow squash merges */
   @Nullable
   Boolean allowSquashMerge();
