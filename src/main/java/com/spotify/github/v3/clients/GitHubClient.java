@@ -602,7 +602,7 @@ public class GitHubClient {
 
   public CompletableFuture<Response> postGraphql(final String data) {
     final Request request =
-        graphqRequestBuilder()
+        graphqlRequestBuilder()
             .method("POST", RequestBody.create(parse(MediaType.APPLICATION_JSON), data))
             .build();
     log.info("Making POST request to {}", request.url());
@@ -742,7 +742,7 @@ public class GitHubClient {
     return builder;
   }
 
-  private Request.Builder graphqRequestBuilder() {
+  private Request.Builder graphqlRequestBuilder() {
     URI url = graphqlUrl.orElseThrow(() -> new IllegalStateException("No graphql url set"));
     final Request.Builder builder =
             new Request.Builder()
