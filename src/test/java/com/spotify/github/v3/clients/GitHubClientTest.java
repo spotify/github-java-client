@@ -30,11 +30,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import com.spotify.github.Tracer;
 import com.spotify.github.graphql.models.*;
+import com.spotify.github.http.ImmutableGitHubClientConfig;
 import com.spotify.github.v3.checks.CheckSuiteResponseList;
 import com.spotify.github.v3.exceptions.ReadOnlyRepositoryException;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
@@ -56,7 +55,6 @@ import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
-import okio.Buffer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -77,7 +75,11 @@ public class GitHubClientTest {
     client = mock(OkHttpClient.class);
     github =
         GitHubClient.create(
-            client, URI.create("http://bogus"), URI.create("http://bogus/graphql"), "token");
+            ImmutableGitHubClientConfig.builder()
+                .client(client)
+                .baseUrl(URI.create("http://bogus"))
+                .accessToken("token")
+                .build());
   }
 
   @Test
@@ -232,111 +234,5 @@ public class GitHubClientTest {
 
     assertThat(result.totalCount(), is(1));
     assertThat(result.checkSuites().get(0).app().get().slug().get(), is("octoapp"));
-  }
-
-  @Test
-  public void testMutationGraphQL() throws ExecutionException, InterruptedException, IOException {
-    final Call call = mock(Call.class);
-    final ArgumentCaptor<Callback> callbackCapture = ArgumentCaptor.forClass(Callback.class);
-    final ArgumentCaptor<Request> requestCapture = ArgumentCaptor.forClass(Request.class);
-    doNothing().when(call).enqueue(callbackCapture.capture());
-
-    EnablePullRequestAutoMergeMutationRequest request =
-        EnablePullRequestAutoMergeMutationRequest.builder()
-            .setInput(
-                EnablePullRequestAutoMergeInput.builder()
-                    .setPullRequestId("TEST_PR_ID")
-                    .setMergeMethod(PullRequestMergeMethod.SQUASH)
-                    .build())
-            .build();
-
-    EnablePullRequestAutoMergePayloadResponseProjection projection =
-        new EnablePullRequestAutoMergePayloadResponseProjection()
-            .clientMutationId()
-            .pullRequest(new PullRequestResponseProjection().id().title());
-
-    when(client.newCall(requestCapture.capture())).thenReturn(call);
-
-    String fixture = getFixture("../clients/graphql_enable_pr_auto_merge_response.json");
-
-    final Response response =
-        new okhttp3.Response.Builder()
-            .code(200)
-            .body(ResponseBody.create(MediaType.get("application/json"), fixture))
-            .message("")
-            .protocol(Protocol.HTTP_1_1)
-            .request(new Request.Builder().url("http://localhost/").build())
-            .build();
-    CompletableFuture<Response> future = github.queryGraphQL(request, projection);
-    callbackCapture.getValue().onResponse(call, response);
-    var result = future.get();
-
-    assertThat(result.code(), is(200));
-    ObjectMapper mapper = new ObjectMapper();
-
-    JsonNode expectedTree = mapper.readTree(result.body().string());
-    JsonNode actualTree = mapper.readTree(fixture);
-
-    assertThat(actualTree, is(expectedTree));
-
-    Request capturedRequest = requestCapture.getValue();
-    final Buffer buffer = new Buffer();
-    capturedRequest.body().writeTo(buffer);
-    String requestBody = buffer.readUtf8();
-
-    assertThat(capturedRequest.url().toString(), is("http://bogus/graphql"));
-    assertThat(capturedRequest.method(), is("POST"));
-    assertThat(
-        requestBody,
-        is(
-            "mutation enablePullRequestAutoMerge { enablePullRequestAutoMerge: enablePullRequestAutoMerge(input: { mergeMethod: SQUASH, pullRequestId: \"TEST_PR_ID\" }){ clientMutationId pullRequest { id title } } }"));
-  }
-
-  @Test
-  public void testQueryGraphQL() throws ExecutionException, InterruptedException, IOException {
-    final Call call = mock(Call.class);
-    final ArgumentCaptor<Callback> callbackCapture = ArgumentCaptor.forClass(Callback.class);
-    final ArgumentCaptor<Request> requestCapture = ArgumentCaptor.forClass(Request.class);
-    doNothing().when(call).enqueue(callbackCapture.capture());
-
-    RepositoryResponseProjection projection =
-        new RepositoryResponseProjection().id().nameWithOwner();
-
-    RepositoryQueryRequest request =
-        RepositoryQueryRequest.builder().setOwner("test-org").setName("test-repo").build();
-
-    when(client.newCall(requestCapture.capture())).thenReturn(call);
-    String fixture = getFixture("../clients/graphql_enable_pr_auto_merge_response.json");
-    final Response response =
-        new okhttp3.Response.Builder()
-            .code(200)
-            .body(ResponseBody.create(MediaType.get("application/json"), fixture))
-            .message("")
-            .protocol(Protocol.HTTP_1_1)
-            .request(new Request.Builder().url("http://localhost/").build())
-            .build();
-    CompletableFuture<Response> future = github.queryGraphQL(request, projection);
-    callbackCapture.getValue().onResponse(call, response);
-    var result = future.get();
-
-    assertThat(result.code(), is(200));
-    ObjectMapper mapper = new ObjectMapper();
-
-    JsonNode expectedResponseTree = mapper.readTree(result.body().string());
-    JsonNode actualResponseTree = mapper.readTree(fixture);
-
-    assertThat(expectedResponseTree, is(actualResponseTree));
-
-    Request capturedRequest = requestCapture.getValue();
-    final Buffer buffer = new Buffer();
-    capturedRequest.body().writeTo(buffer);
-    String requestBody = buffer.readUtf8();
-
-    assertThat(capturedRequest.url().toString(), is("http://bogus/graphql"));
-    assertThat(capturedRequest.method(), is("POST"));
-    assertThat(
-        requestBody,
-        is(
-            "query repository { repository: repository(followRenames: true, name: \"test-repo\", owner: \"test-org\"){ id nameWithOwner } }"));
   }
 }

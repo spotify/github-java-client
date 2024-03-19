@@ -24,10 +24,10 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 import static okhttp3.MediaType.parse;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.kobylynskyi.graphql.codegen.model.graphql.GraphQLOperationRequest;
-import com.kobylynskyi.graphql.codegen.model.graphql.GraphQLRequest;
-import com.kobylynskyi.graphql.codegen.model.graphql.GraphQLResponseProjection;
 import com.spotify.github.Tracer;
+import com.spotify.github.http.AbstractGitHubApiClient;
+import com.spotify.github.http.GitHubClientConfig;
+import com.spotify.github.http.ImmutableGitHubClientConfig;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.Team;
 import com.spotify.github.v3.User;
@@ -53,7 +53,6 @@ import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -66,46 +65,40 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Github client is a main communication entry point. Provides lower level communication
- * functionality as well as acts as a factory for the higher level API clients.
+ * GitHub client is a main communication entry point for the REST APIs. Provides lower level
+ * communication functionality as well as acts as a factory for the higher level API clients.
  */
-public class GitHubClient {
+public class GitHubClient extends AbstractGitHubApiClient {
 
   private static final int EXPIRY_MARGIN_IN_MINUTES = 5;
+  private final GitHubClientConfig clientConfig;
 
-  private Tracer tracer = NoopTracer.INSTANCE;
-
-  static final Consumer<Response> IGNORE_RESPONSE_CONSUMER = (response) -> {
-    if (response.body() != null) {
-      response.body().close();
-    }
-  };
-  static final TypeReference<List<Comment>> LIST_COMMENT_TYPE_REFERENCE =
-      new TypeReference<>() {};
-  static final TypeReference<List<Repository>> LIST_REPOSITORY =
-      new TypeReference<>() {};
+  static final Consumer<Response> IGNORE_RESPONSE_CONSUMER =
+      (response) -> {
+        if (response.body() != null) {
+          response.body().close();
+        }
+      };
+  static final TypeReference<List<Comment>> LIST_COMMENT_TYPE_REFERENCE = new TypeReference<>() {};
+  static final TypeReference<List<Repository>> LIST_REPOSITORY = new TypeReference<>() {};
   static final TypeReference<List<CommitItem>> LIST_COMMIT_TYPE_REFERENCE =
       new TypeReference<>() {};
   static final TypeReference<List<Review>> LIST_REVIEW_TYPE_REFERENCE = new TypeReference<>() {};
   static final TypeReference<ReviewRequests> LIST_REVIEW_REQUEST_TYPE_REFERENCE =
       new TypeReference<>() {};
-  static final TypeReference<List<Status>> LIST_STATUS_TYPE_REFERENCE =
-      new TypeReference<>() {};
+  static final TypeReference<List<Status>> LIST_STATUS_TYPE_REFERENCE = new TypeReference<>() {};
   static final TypeReference<List<FolderContent>> LIST_FOLDERCONTENT_TYPE_REFERENCE =
       new TypeReference<>() {};
   static final TypeReference<List<PullRequestItem>> LIST_PR_TYPE_REFERENCE =
       new TypeReference<>() {};
-  static final TypeReference<List<Branch>> LIST_BRANCHES =
-      new TypeReference<>() {};
-  static final TypeReference<List<Reference>> LIST_REFERENCES =
-      new TypeReference<>() {};
-  static final TypeReference<List<RepositoryInvitation>> LIST_REPOSITORY_INVITATION =  new TypeReference<>() {};
-
-  static final TypeReference<List<Team>> LIST_TEAMS =
+  static final TypeReference<List<Branch>> LIST_BRANCHES = new TypeReference<>() {};
+  static final TypeReference<List<Reference>> LIST_REFERENCES = new TypeReference<>() {};
+  static final TypeReference<List<RepositoryInvitation>> LIST_REPOSITORY_INVITATION =
       new TypeReference<>() {};
 
-  static final TypeReference<List<User>> LIST_TEAM_MEMBERS =
-      new TypeReference<>() {};
+  static final TypeReference<List<Team>> LIST_TEAMS = new TypeReference<>() {};
+
+  static final TypeReference<List<User>> LIST_TEAM_MEMBERS = new TypeReference<>() {};
 
   static final TypeReference<List<TeamInvitation>> LIST_PENDING_TEAM_INVITATIONS =
       new TypeReference<>() {};
@@ -120,7 +113,6 @@ public class GitHubClient {
 
   private final URI baseUrl;
 
-  private final Optional<URI> graphqlUrl;
   private final Json json = Json.create();
   private final OkHttpClient client;
   private final String token;
@@ -134,63 +126,93 @@ public class GitHubClient {
   private GitHubClient(
       final OkHttpClient client,
       final URI baseUrl,
-      final URI graphqlUrl,
       final String accessToken,
       final byte[] privateKey,
       final Integer appId,
       final Integer installationId) {
-    this.baseUrl = baseUrl;
-    this.graphqlUrl = Optional.ofNullable(graphqlUrl);
-    this.token = accessToken;
-    this.client = client;
-    this.privateKey = privateKey;
-    this.appId = appId;
-    this.installationId = installationId;
+
+    this.clientConfig =
+        ImmutableGitHubClientConfig.builder()
+            .client(client)
+            .baseUrl(Optional.ofNullable(baseUrl))
+            .accessToken(Optional.ofNullable(accessToken))
+            .privateKey(Optional.ofNullable(privateKey))
+            .appId(Optional.ofNullable(appId))
+            .installationId(Optional.ofNullable(installationId))
+            .build();
+    this.baseUrl = clientConfig.baseUrl().orElse(null);
+    this.token = clientConfig.accessToken().orElse(null);
+    this.client = clientConfig.client();
+    this.privateKey = clientConfig.privateKey().orElse(null);
+    this.appId = clientConfig.appId().orElse(null);
+    this.installationId = clientConfig.installationId().orElse(null);
     this.installationTokens = new HashMap<>();
+  }
+
+  private GitHubClient(final GitHubClientConfig config) {
+    this.baseUrl = config.baseUrl().orElse(null);
+    this.token = config.accessToken().orElse(null);
+    this.client = config.client();
+    this.privateKey = config.privateKey().orElse(null);
+    this.appId = config.appId().orElse(null);
+    this.installationId = config.installationId().orElse(null);
+    this.installationTokens = new HashMap<>();
+    this.clientConfig = config;
   }
 
   /**
    * Create a github api client with a given base URL and authorization token.
    *
+   * @param config GitHubClientConfig object
+   * @return github api client
+   */
+  public static GitHubClient create(final GitHubClientConfig config) {
+    return new GitHubClient(config);
+  }
+
+  /**
+   * Create a github api client with a given base URL and authorization token.
+   *
+   * @deprecated use {@link #create(GitHubClientConfig)} instead
    * @param baseUrl base URL
    * @param token authorization token
    * @return github api client
    */
   public static GitHubClient create(final URI baseUrl, final String token) {
-    return new GitHubClient(new OkHttpClient(), baseUrl, null, token, null, null, null);
-  }
-
-  public static GitHubClient create(final URI baseUrl, final URI graphqlUri, final String token) {
-    return new GitHubClient(new OkHttpClient(), baseUrl, graphqlUri, token, null, null, null);
+    return new GitHubClient(new OkHttpClient(), baseUrl, token, null, null, null);
   }
 
   /**
    * Create a github api client with a given base URL and a path to a key.
    *
+   * @deprecated use {@link #create(GitHubClientConfig)} instead
    * @param baseUrl base URL
    * @param privateKey the private key PEM file
    * @param appId the github app ID
    * @return github api client
    */
   public static GitHubClient create(final URI baseUrl, final File privateKey, final Integer appId) {
-    return createOrThrow(new OkHttpClient(), baseUrl, null, privateKey, appId, null);
+    return createOrThrow(new OkHttpClient(), baseUrl, privateKey, appId, null);
   }
 
   /**
    * Create a github api client with a given base URL and a path to a key.
    *
+   * @deprecated use {@link #create(GitHubClientConfig)} instead
    * @param baseUrl base URL
    * @param privateKey the private key as byte array
    * @param appId the github app ID
    * @return github api client
    */
-  public static GitHubClient create(final URI baseUrl, final byte[] privateKey, final Integer appId) {
-    return new GitHubClient(new OkHttpClient(), baseUrl, null, null, privateKey, appId, null);
+  public static GitHubClient create(
+      final URI baseUrl, final byte[] privateKey, final Integer appId) {
+    return new GitHubClient(new OkHttpClient(), baseUrl, null, privateKey, appId, null);
   }
 
   /**
    * Create a github api client with a given base URL and a path to a key.
    *
+   * @deprecated use {@link #create(GitHubClientConfig)} instead
    * @param baseUrl base URL
    * @param privateKey the private key PEM file
    * @param appId the github app ID
@@ -199,12 +221,13 @@ public class GitHubClient {
    */
   public static GitHubClient create(
       final URI baseUrl, final File privateKey, final Integer appId, final Integer installationId) {
-    return createOrThrow(new OkHttpClient(), baseUrl, null, privateKey, appId, installationId);
+    return createOrThrow(new OkHttpClient(), baseUrl, privateKey, appId, installationId);
   }
 
   /**
    * Create a github api client with a given base URL and a path to a key.
    *
+   * @deprecated use {@link #create(GitHubClientConfig)} instead
    * @param baseUrl base URL
    * @param privateKey the private key as byte array
    * @param appId the github app ID
@@ -212,13 +235,17 @@ public class GitHubClient {
    * @return github api client
    */
   public static GitHubClient create(
-          final URI baseUrl, final byte[] privateKey, final Integer appId, final Integer installationId) {
-    return new GitHubClient(new OkHttpClient(), baseUrl, null, null, privateKey, appId, installationId);
+      final URI baseUrl,
+      final byte[] privateKey,
+      final Integer appId,
+      final Integer installationId) {
+    return new GitHubClient(new OkHttpClient(), baseUrl, null, privateKey, appId, installationId);
   }
 
   /**
    * Create a github api client with a given base URL and a path to a key.
    *
+   * @deprecated use {@link #create(GitHubClientConfig)} instead
    * @param httpClient an instance of OkHttpClient
    * @param baseUrl base URL
    * @param privateKey the private key PEM file
@@ -230,30 +257,13 @@ public class GitHubClient {
       final URI baseUrl,
       final File privateKey,
       final Integer appId) {
-    return createOrThrow(httpClient, baseUrl, null, privateKey, appId, null);
+    return createOrThrow(httpClient, baseUrl, privateKey, appId, null);
   }
 
   /**
    * Create a github api client with a given base URL and a path to a key.
    *
-   * @param httpClient an instance of OkHttpClient
-   * @param baseUrl base URL
-   * @param privateKey the private key PEM file
-   * @param appId the github app ID
-   * @return github api client
-   */
-  public static GitHubClient create(
-          final OkHttpClient httpClient,
-          final URI baseUrl,
-          final URI graphqlUrl,
-          final File privateKey,
-          final Integer appId) {
-    return createOrThrow(httpClient, baseUrl, graphqlUrl, privateKey, appId, null);
-  }
-
-  /**
-   * Create a github api client with a given base URL and a path to a key.
-   *
+   * @deprecated use {@link #create(GitHubClientConfig)} instead
    * @param httpClient an instance of OkHttpClient
    * @param baseUrl base URL
    * @param privateKey the private key as byte array
@@ -261,14 +271,12 @@ public class GitHubClient {
    * @return github api client
    */
   public static GitHubClient create(
-          final OkHttpClient httpClient,
-          final URI baseUrl,
-          final byte[] privateKey,
-          final Integer appId) {
-    return new GitHubClient(httpClient, baseUrl, null, null, privateKey, appId, null);
+      final OkHttpClient httpClient,
+      final URI baseUrl,
+      final byte[] privateKey,
+      final Integer appId) {
+    return new GitHubClient(httpClient, baseUrl, null, privateKey, appId, null);
   }
-
-
 
   /**
    * Create a github api client with a given base URL and a path to a key.
@@ -285,7 +293,7 @@ public class GitHubClient {
       final File privateKey,
       final Integer appId,
       final Integer installationId) {
-    return createOrThrow(httpClient, baseUrl, null, privateKey, appId, installationId);
+    return createOrThrow(httpClient, baseUrl, privateKey, appId, installationId);
   }
 
   /**
@@ -298,17 +306,18 @@ public class GitHubClient {
    * @return github api client
    */
   public static GitHubClient create(
-          final OkHttpClient httpClient,
-          final URI baseUrl,
-          final byte[] privateKey,
-          final Integer appId,
-          final Integer installationId) {
-    return new GitHubClient(httpClient, baseUrl, null, null, privateKey, appId, installationId);
+      final OkHttpClient httpClient,
+      final URI baseUrl,
+      final byte[] privateKey,
+      final Integer appId,
+      final Integer installationId) {
+    return new GitHubClient(httpClient, baseUrl, null, privateKey, appId, installationId);
   }
 
   /**
    * Create a github api client with a given base URL and authorization token.
    *
+   * @deprecated use {@link #create(GitHubClientConfig)} instead
    * @param httpClient an instance of OkHttpClient
    * @param baseUrl base URL
    * @param token authorization token
@@ -316,12 +325,7 @@ public class GitHubClient {
    */
   public static GitHubClient create(
       final OkHttpClient httpClient, final URI baseUrl, final String token) {
-    return new GitHubClient(httpClient, baseUrl, null, token, null, null, null);
-  }
-
-  public static GitHubClient create(
-          final OkHttpClient httpClient, final URI baseUrl, final URI graphqlUrl, final String token) {
-    return new GitHubClient(httpClient, baseUrl, graphqlUrl, token, null, null, null);
+    return new GitHubClient(httpClient, baseUrl, token, null, null, null);
   }
 
   /**
@@ -340,7 +344,6 @@ public class GitHubClient {
         client.client,
         client.baseUrl,
         null,
-        null,
         client.getPrivateKey().get(),
         client.appId,
         installationId);
@@ -358,14 +361,7 @@ public class GitHubClient {
     if (Optional.ofNullable(privateKey).isEmpty()) {
       throw new RuntimeException("Installation ID scoped client needs a private key");
     }
-    return new GitHubClient(
-        client,
-        baseUrl,
-        null,
-        null,
-        privateKey,
-        appId,
-        installationId);
+    return new GitHubClient(client, baseUrl, null, privateKey, appId, installationId);
   }
 
   public GitHubClient withTracer(final Tracer tracer) {
@@ -602,26 +598,6 @@ public class GitHubClient {
   }
 
   /**
-   * Make a POST request to the graphql endpoint of Github
-   *
-   * @param queryRequest GraphQLOperationRequest object with query or mutation request
-   * @param responseProjection Select what fields are required in the response
-   * @return response
-   *
-   * @see "https://docs.github.com/en/enterprise-server@3.9/graphql/guides/forming-calls-with-graphql#communicating-with-graphql"
-   */
-  public CompletableFuture<Response> queryGraphQL(final GraphQLOperationRequest queryRequest, final GraphQLResponseProjection responseProjection) {
-    GraphQLRequest graphqlRequest = new GraphQLRequest(queryRequest, responseProjection);
-    String body = graphqlRequest.toQueryString();
-    final Request request =
-            graphqlRequestBuilder()
-                    .method("POST", RequestBody.create(parse(MediaType.APPLICATION_JSON), body))
-                    .build();
-    log.info("Making GraphQL Query POST request to {}, with body {}", request.url(), body);
-    return this.call(request);
-  }
-
-  /**
    * Make an http PUT request for the given path with provided JSON body.
    *
    * @param path relative to the Github base url
@@ -754,56 +730,19 @@ public class GitHubClient {
     return builder;
   }
 
-  private Request.Builder graphqlRequestBuilder() {
-    URI url = graphqlUrl.orElseThrow(() -> new IllegalStateException("No graphql url set"));
-    final Request.Builder builder =
-            new Request.Builder()
-                    .url(url.toString())
-                    .addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
-                    .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-    builder.addHeader(HttpHeaders.AUTHORIZATION, getAuthorizationHeader("/graphql"));
-    return builder;
+  @Override
+  protected Map<Integer, AccessToken> installationTokens() {
+    return this.installationTokens;
   }
 
-  public boolean isGraphqlEnabled() {
-    return graphqlUrl.isPresent();
+  @Override
+  protected GitHubClientConfig clientConfig() {
+    return this.clientConfig;
   }
 
-
-  /*
-   Generates the Authentication header, given the API endpoint and the credentials provided.
-
-   <p>Github Requests can be authenticated in 3 different ways.
-   (1) Regular, static access token;
-   (2) JWT Token, generated from a private key. Used in Github Apps;
-   (3) Installation Token, generated from the JWT token. Also used in Github Apps.
-  */
-  private String getAuthorizationHeader(final String path) {
-    if (isJwtRequest(path) && getPrivateKey().isEmpty()) {
-      throw new IllegalStateException("This endpoint needs a client with a private key for an App");
-    }
-    if (getAccessToken().isPresent()) {
-      return String.format("token %s", token);
-    } else if (getPrivateKey().isPresent()) {
-      final String jwtToken;
-      try {
-        jwtToken = JwtTokenIssuer.fromPrivateKey(privateKey).getToken(appId);
-      } catch (Exception e) {
-        throw new RuntimeException("There was an error generating JWT token", e);
-      }
-      if (isJwtRequest(path)) {
-        return String.format("Bearer %s", jwtToken);
-      }
-      if (installationId == null) {
-        throw new RuntimeException("This endpoint needs a client with an installation ID");
-      }
-      try {
-        return String.format("token %s", getInstallationToken(jwtToken, installationId));
-      } catch (Exception e) {
-        throw new RuntimeException("Could not generate access token for github app", e);
-      }
-    }
-    throw new RuntimeException("Not possible to authenticate. ");
+  @Override
+  protected OkHttpClient client() {
+    return client;
   }
 
   private boolean isJwtRequest(final String path) {
@@ -862,64 +801,25 @@ public class GitHubClient {
     return Json.create().fromJson(text, AccessToken.class);
   }
 
-  private CompletableFuture<Response> call(final Request request) {
-    final Call call = client.newCall(request);
-
-    final CompletableFuture<Response> future = new CompletableFuture<>();
-
-    // avoid multiple redirects
-    final AtomicBoolean redirected = new AtomicBoolean(false);
-
-    call.enqueue(
-        new Callback() {
-          @Override
-          public void onFailure(final Call call, final IOException e) {
-            future.completeExceptionally(e);
-          }
-
-          @Override
-          public void onResponse(final Call call, final Response response) {
-            processPossibleRedirects(response, redirected)
-                .handle(
-                    (res, ex) -> {
-                      if (Objects.nonNull(ex)) {
-                        future.completeExceptionally(ex);
-                      } else if (!res.isSuccessful()) {
-                        try {
-                          future.completeExceptionally(mapException(res, request));
-                        } catch (final Throwable e) {
-                          future.completeExceptionally(e);
-                        } finally {
-                          if (res.body() != null) {
-                            res.body().close();
-                          }
-                        }
-                      } else {
-                        future.complete(res);
-                      }
-                      return res;
-                    });
-          }
-        });
-    tracer.span(request.url().toString(), request.method(), future);
-    return future;
-  }
-
-  private RequestNotOkException mapException(final Response res, final Request request)
+  @Override
+  protected RequestNotOkException mapException(final Response res, final Request request)
       throws IOException {
     String bodyString = res.body() != null ? res.body().string() : "";
     Map<String, List<String>> headersMap = res.headers().toMultimap();
 
     if (res.code() == FORBIDDEN) {
       if (bodyString.contains("Repository was archived so is read-only")) {
-        return new ReadOnlyRepositoryException(request.method(), request.url().encodedPath(), res.code(), bodyString, headersMap);
+        return new ReadOnlyRepositoryException(
+            request.method(), request.url().encodedPath(), res.code(), bodyString, headersMap);
       }
     }
 
-    return new RequestNotOkException(request.method(), request.url().encodedPath(), res.code(), bodyString, headersMap);
+    return new RequestNotOkException(
+        request.method(), request.url().encodedPath(), res.code(), bodyString, headersMap);
   }
 
-  CompletableFuture<Response> processPossibleRedirects(
+  @Override
+  protected CompletableFuture<Response> processPossibleRedirects(
       final Response response, final AtomicBoolean redirected) {
     if (response.code() >= PERMANENT_REDIRECT
         && response.code() <= TEMPORARY_REDIRECT
@@ -939,12 +839,23 @@ public class GitHubClient {
     return completedFuture(response);
   }
 
-  /**
-   * Wrapper to Constructors that expose File object for the privateKey argument
-   * */
-  private static GitHubClient createOrThrow(final OkHttpClient httpClient, final URI baseUrl, final URI graphqlUrl, final File privateKey, final Integer appId, final Integer installationId) {
+  /** Wrapper to Constructors that expose File object for the privateKey argument */
+  private static GitHubClient createOrThrow(
+      final OkHttpClient httpClient,
+      final URI baseUrl,
+      final File privateKey,
+      final Integer appId,
+      final Integer installationId) {
+
     try {
-      return new GitHubClient(httpClient, baseUrl, graphqlUrl, null, FileUtils.readFileToByteArray(privateKey), appId, installationId);
+      return new GitHubClient(
+          ImmutableGitHubClientConfig.builder()
+              .baseUrl(Optional.ofNullable(baseUrl))
+              .privateKey(FileUtils.readFileToByteArray(privateKey))
+              .appId(Optional.ofNullable(appId))
+              .installationId(Optional.ofNullable(installationId))
+              .client(httpClient)
+              .build());
     } catch (IOException e) {
       throw new RuntimeException("There was an error generating JWT token", e);
     }
