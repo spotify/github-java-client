@@ -600,6 +600,14 @@ public class GitHubClient {
             response -> json().fromJsonUncheckedNotNull(responseBodyUnchecked(response), clazz));
   }
 
+  /**
+   * Make a POST request to the graphql endpoint of Github
+   *
+   * @param data request body as stringified JSON
+   * @return response
+   *
+   * @see "https://docs.github.com/en/enterprise-server@3.9/graphql/guides/forming-calls-with-graphql#communicating-with-graphql"
+   */
   public CompletableFuture<Response> postGraphql(final String data) {
     final Request request =
         graphqlRequestBuilder()
