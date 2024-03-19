@@ -38,6 +38,8 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutablePullRequest.class)
 public interface PullRequest extends PullRequestItem {
 
+  String nodeId();
+
   /** Is it merged. */
   @Nullable
   Boolean merged();

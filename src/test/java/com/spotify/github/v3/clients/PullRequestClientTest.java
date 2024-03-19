@@ -24,17 +24,15 @@ import static com.google.common.io.Resources.getResource;
 import static java.nio.charset.Charset.defaultCharset;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.prs.ImmutableRequestReviewParameters;
+import com.spotify.github.v3.prs.MergeMethod;
 import com.spotify.github.v3.prs.PullRequest;
 import com.spotify.github.v3.prs.ReviewRequests;
 import com.spotify.github.v3.prs.requests.ImmutablePullRequestCreate;
@@ -46,14 +44,9 @@ import java.io.Reader;
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Protocol;
-import okhttp3.Request;
-import okhttp3.Response;
-import okhttp3.ResponseBody;
+
+import okhttp3.*;
+import okio.Buffer;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -71,7 +64,7 @@ public class PullRequestClientTest {
   @BeforeEach
   public void setUp() {
     client = mock(OkHttpClient.class);
-    github = GitHubClient.create(client, URI.create("http://bogus"), "token");
+    github = GitHubClient.create(client, URI.create("http://bogus"), URI.create("https://bogus/graphql"), "token");
   }
 
   @Test

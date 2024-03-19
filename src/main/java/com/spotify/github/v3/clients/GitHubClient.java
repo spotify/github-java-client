@@ -118,6 +118,8 @@ public class GitHubClient {
   private static final int FORBIDDEN = 403;
 
   private final URI baseUrl;
+
+  private final Optional<URI> graphqlUrl;
   private final Json json = Json.create();
   private final OkHttpClient client;
   private final String token;
@@ -131,11 +133,13 @@ public class GitHubClient {
   private GitHubClient(
       final OkHttpClient client,
       final URI baseUrl,
+      final URI graphqlUrl,
       final String accessToken,
       final byte[] privateKey,
       final Integer appId,
       final Integer installationId) {
     this.baseUrl = baseUrl;
+    this.graphqlUrl = Optional.ofNullable(graphqlUrl);
     this.token = accessToken;
     this.client = client;
     this.privateKey = privateKey;
@@ -152,7 +156,11 @@ public class GitHubClient {
    * @return github api client
    */
   public static GitHubClient create(final URI baseUrl, final String token) {
-    return new GitHubClient(new OkHttpClient(), baseUrl, token, null, null, null);
+    return new GitHubClient(new OkHttpClient(), baseUrl, null, token, null, null, null);
+  }
+
+  public static GitHubClient create(final URI baseUrl, final URI graphqlUri, final String token) {
+    return new GitHubClient(new OkHttpClient(), baseUrl, graphqlUri, token, null, null, null);
   }
 
   /**
@@ -164,7 +172,7 @@ public class GitHubClient {
    * @return github api client
    */
   public static GitHubClient create(final URI baseUrl, final File privateKey, final Integer appId) {
-    return createOrThrow(new OkHttpClient(), baseUrl, privateKey, appId, null);
+    return createOrThrow(new OkHttpClient(), baseUrl, null, privateKey, appId, null);
   }
 
   /**
@@ -176,7 +184,7 @@ public class GitHubClient {
    * @return github api client
    */
   public static GitHubClient create(final URI baseUrl, final byte[] privateKey, final Integer appId) {
-    return new GitHubClient(new OkHttpClient(), baseUrl, null, privateKey, appId, null);
+    return new GitHubClient(new OkHttpClient(), baseUrl, null, null, privateKey, appId, null);
   }
 
   /**
@@ -190,7 +198,7 @@ public class GitHubClient {
    */
   public static GitHubClient create(
       final URI baseUrl, final File privateKey, final Integer appId, final Integer installationId) {
-    return createOrThrow(new OkHttpClient(), baseUrl, privateKey, appId, installationId);
+    return createOrThrow(new OkHttpClient(), baseUrl, null, privateKey, appId, installationId);
   }
 
   /**
@@ -204,7 +212,7 @@ public class GitHubClient {
    */
   public static GitHubClient create(
           final URI baseUrl, final byte[] privateKey, final Integer appId, final Integer installationId) {
-    return new GitHubClient(new OkHttpClient(), baseUrl, null, privateKey, appId, installationId);
+    return new GitHubClient(new OkHttpClient(), baseUrl, null, null, privateKey, appId, installationId);
   }
 
   /**
@@ -221,7 +229,25 @@ public class GitHubClient {
       final URI baseUrl,
       final File privateKey,
       final Integer appId) {
-    return createOrThrow(httpClient, baseUrl, privateKey, appId, null);
+    return createOrThrow(httpClient, baseUrl, null, privateKey, appId, null);
+  }
+
+  /**
+   * Create a github api client with a given base URL and a path to a key.
+   *
+   * @param httpClient an instance of OkHttpClient
+   * @param baseUrl base URL
+   * @param privateKey the private key PEM file
+   * @param appId the github app ID
+   * @return github api client
+   */
+  public static GitHubClient create(
+          final OkHttpClient httpClient,
+          final URI baseUrl,
+          final URI graphqlUrl,
+          final File privateKey,
+          final Integer appId) {
+    return createOrThrow(httpClient, baseUrl, graphqlUrl, privateKey, appId, null);
   }
 
   /**
@@ -238,8 +264,10 @@ public class GitHubClient {
           final URI baseUrl,
           final byte[] privateKey,
           final Integer appId) {
-    return new GitHubClient(httpClient, baseUrl, null, privateKey, appId, null);
+    return new GitHubClient(httpClient, baseUrl, null, null, privateKey, appId, null);
   }
+
+
 
   /**
    * Create a github api client with a given base URL and a path to a key.
@@ -256,7 +284,7 @@ public class GitHubClient {
       final File privateKey,
       final Integer appId,
       final Integer installationId) {
-    return createOrThrow(httpClient, baseUrl, privateKey, appId, installationId);
+    return createOrThrow(httpClient, baseUrl, null, privateKey, appId, installationId);
   }
 
   /**
@@ -274,7 +302,7 @@ public class GitHubClient {
           final byte[] privateKey,
           final Integer appId,
           final Integer installationId) {
-    return new GitHubClient(httpClient, baseUrl, null, privateKey, appId, installationId);
+    return new GitHubClient(httpClient, baseUrl, null, null, privateKey, appId, installationId);
   }
 
   /**
@@ -287,7 +315,12 @@ public class GitHubClient {
    */
   public static GitHubClient create(
       final OkHttpClient httpClient, final URI baseUrl, final String token) {
-    return new GitHubClient(httpClient, baseUrl, token, null, null, null);
+    return new GitHubClient(httpClient, baseUrl, null, token, null, null, null);
+  }
+
+  public static GitHubClient create(
+          final OkHttpClient httpClient, final URI baseUrl, final URI graphqlUrl, final String token) {
+    return new GitHubClient(httpClient, baseUrl, graphqlUrl, token, null, null, null);
   }
 
   /**
@@ -305,6 +338,7 @@ public class GitHubClient {
     return new GitHubClient(
         client.client,
         client.baseUrl,
+        null,
         null,
         client.getPrivateKey().get(),
         client.appId,
@@ -326,6 +360,7 @@ public class GitHubClient {
     return new GitHubClient(
         client,
         baseUrl,
+        null,
         null,
         privateKey,
         appId,
@@ -566,6 +601,23 @@ public class GitHubClient {
   }
 
   /**
+   * Make a POST request to the graphql endpoint of Github
+   *
+   * @param data request body as stringified JSON
+   * @return response
+   *
+   * @see "https://docs.github.com/en/enterprise-server@3.9/graphql/guides/forming-calls-with-graphql#communicating-with-graphql"
+   */
+  public CompletableFuture<Response> postGraphql(final String data) {
+    final Request request =
+        graphqlRequestBuilder()
+            .method("POST", RequestBody.create(parse(MediaType.APPLICATION_JSON), data))
+            .build();
+    log.info("Making POST request to {}", request.url());
+    return call(request);
+  }
+
+  /**
    * Make an http PUT request for the given path with provided JSON body.
    *
    * @param path relative to the Github base url
@@ -697,6 +749,22 @@ public class GitHubClient {
 
     return builder;
   }
+
+  private Request.Builder graphqlRequestBuilder() {
+    URI url = graphqlUrl.orElseThrow(() -> new IllegalStateException("No graphql url set"));
+    final Request.Builder builder =
+            new Request.Builder()
+                    .url(url.toString())
+                    .addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
+                    .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+    builder.addHeader(HttpHeaders.AUTHORIZATION, getAuthorizationHeader("/graphql"));
+    return builder;
+  }
+
+  public boolean isGraphqlEnabled() {
+    return graphqlUrl.isPresent();
+  }
+
 
   /*
    Generates the Authentication header, given the API endpoint and the credentials provided.
@@ -870,9 +938,9 @@ public class GitHubClient {
   /**
    * Wrapper to Constructors that expose File object for the privateKey argument
    * */
-  private static GitHubClient createOrThrow(final OkHttpClient httpClient, final URI baseUrl, final File privateKey, final Integer appId, final Integer installationId) {
+  private static GitHubClient createOrThrow(final OkHttpClient httpClient, final URI baseUrl, final URI graphqlUrl, final File privateKey, final Integer appId, final Integer installationId) {
     try {
-      return new GitHubClient(httpClient, baseUrl, null, FileUtils.readFileToByteArray(privateKey), appId, installationId);
+      return new GitHubClient(httpClient, baseUrl, graphqlUrl, null, FileUtils.readFileToByteArray(privateKey), appId, installationId);
     } catch (IOException e) {
       throw new RuntimeException("There was an error generating JWT token", e);
     }
