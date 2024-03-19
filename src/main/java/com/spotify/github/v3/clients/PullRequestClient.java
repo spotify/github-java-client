@@ -55,8 +55,6 @@ public class PullRequestClient {
   private static final String PR_REVIEWS_TEMPLATE = "/repos/%s/%s/pulls/%s/reviews";
   private static final String PR_REVIEW_REQUESTS_TEMPLATE = "/repos/%s/%s/pulls/%s/requested_reviewers";
 
-  public static final String MUTATION_ENABLE_PULL_REQUEST_AUTO_MERGE = "mutation { enablePullRequestAutoMerge(input: {pullRequestId: \"%s\", mergeMethod: %s}) { actor { login } } }";
-
   private final GitHubClient github;
   private final String owner;
   private final String repo;
@@ -232,31 +230,6 @@ public class PullRequestClient {
     final String jsonPayload = github.json().toJsonUnchecked(properties);
     log.debug("Merging pr, running: {}", path);
     return github.put(path, jsonPayload).thenAccept(IGNORE_RESPONSE_CONSUMER);
-  }
-  /**
-   * Enable auto merge for a pull request.
-   *
-   * This method is experimental and may be removed/changed in the future.
-   *
-   * @param number pull request number
-   * @param mergeMethod (merge, squash, rebase) to use
-   * @see "https://docs.github.com/en/graphql/reference/mutations#enablepullrequestautomerge"
-   */
-  public CompletableFuture<Void> enableAutoMerge(
-      final int number, final MergeMethod mergeMethod) {
-
-    if (!github.isGraphqlEnabled()) {
-      throw new IllegalStateException("GitHub GraphQL API is not enabled. Enable it by supplying a valid graphql uri.");
-    }
-
-    return get(number)
-        .thenAccept(
-            pr -> {
-              String query = String.format(MUTATION_ENABLE_PULL_REQUEST_AUTO_MERGE, pr.nodeId(), mergeMethod.toString().toUpperCase());
-              Map<String, String> payload = ImmutableMap.of("query", query);
-              String jsonPayload = github.json().toJsonUnchecked(payload);
-              github.postGraphql(jsonPayload);
-            });
   }
 
   public CompletableFuture<Reader> patch(final int number) {

@@ -600,7 +600,7 @@ public class GitHubClient {
             response -> json().fromJsonUncheckedNotNull(responseBodyUnchecked(response), clazz));
   }
 
-  CompletableFuture<Response> postGraphql(final String data) {
+  public CompletableFuture<Response> postGraphql(final String data) {
     final Request request =
         graphqRequestBuilder()
             .method("POST", RequestBody.create(parse(MediaType.APPLICATION_JSON), data))
