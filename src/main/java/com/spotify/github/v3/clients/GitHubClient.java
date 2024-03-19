@@ -298,6 +298,11 @@ public class GitHubClient {
     return new GitHubClient(httpClient, baseUrl, null, token, null, null, null);
   }
 
+  public static GitHubClient create(
+          final OkHttpClient httpClient, final URI baseUrl, final URI graphqlUrl, final String token) {
+    return new GitHubClient(httpClient, baseUrl, graphqlUrl, token, null, null, null);
+  }
+
   /**
    * Receives a github client and scopes it to a certain installation ID.
    *

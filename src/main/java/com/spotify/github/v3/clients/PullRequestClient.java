@@ -42,8 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import javax.ws.rs.core.HttpHeaders;
-
-import okhttp3.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -236,15 +234,15 @@ public class PullRequestClient {
     return github.put(path, jsonPayload).thenAccept(IGNORE_RESPONSE_CONSUMER);
   }
 
-  public CompletableFuture<Response> autoMerge(
+  public CompletableFuture<Void> enableAutoMerge(
       final int number, final MergeMethod mergeMethod) {
     return get(number)
-        .thenCompose(
+        .thenAccept(
             pr -> {
               String query = String.format(MUTATION_ENABLE_PULL_REQUEST_AUTO_MERGE, pr.nodeId(), mergeMethod.toString().toUpperCase());
               Map<String, String> payload = ImmutableMap.of("query", query);
               String jsonPayload = github.json().toJsonUnchecked(payload);
-              return github.postGraphql(jsonPayload);
+              github.postGraphql(jsonPayload);
             });
   }
 
