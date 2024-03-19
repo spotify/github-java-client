@@ -1,0 +1,10 @@
+{
+  "data": {
+    "enablePullRequestAutoMerge": {
+      "clientMutationId": null,
+      "pullRequest": {
+        "id": "TEST_PR_ID"
+      }
+    }
+  }
+}

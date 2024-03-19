@@ -27,3 +27,6 @@ dependency-reduced-pom.xml
 # mvn release
 pom.xml.releaseBackup
 release.properties
+
+## macOS
+.DS_Store

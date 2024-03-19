@@ -24,6 +24,9 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 import static okhttp3.MediaType.parse;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.kobylynskyi.graphql.codegen.model.graphql.GraphQLOperationRequest;
+import com.kobylynskyi.graphql.codegen.model.graphql.GraphQLRequest;
+import com.kobylynskyi.graphql.codegen.model.graphql.GraphQLResponseProjection;
 import com.spotify.github.Tracer;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.Team;
@@ -41,9 +44,8 @@ import com.spotify.github.v3.repos.Branch;
 import com.spotify.github.v3.repos.CommitItem;
 import com.spotify.github.v3.repos.FolderContent;
 import com.spotify.github.v3.repos.Repository;
-import com.spotify.github.v3.repos.Status;
 import com.spotify.github.v3.repos.RepositoryInvitation;
-
+import com.spotify.github.v3.repos.Status;
 import java.io.*;
 import java.lang.invoke.MethodHandles;
 import java.net.URI;
@@ -58,7 +60,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-
 import okhttp3.*;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -447,7 +448,7 @@ public class GitHubClient {
    */
   CompletableFuture<Response> request(final String path) {
     final Request request = requestBuilder(path).build();
-    log.debug("Making request to {}", request.url().toString());
+    log.debug("Making request to {}", request.url());
     return call(request);
   }
 
@@ -462,7 +463,7 @@ public class GitHubClient {
     final Request.Builder builder = requestBuilder(path);
     extraHeaders.forEach(builder::addHeader);
     final Request request = builder.build();
-    log.debug("Making request to {}", request.url().toString());
+    log.debug("Making request to {}", request.url());
     return call(request);
   }
 
@@ -474,7 +475,7 @@ public class GitHubClient {
    */
   <T> CompletableFuture<T> request(final String path, final Class<T> clazz) {
     final Request request = requestBuilder(path).build();
-    log.debug("Making request to {}", request.url().toString());
+    log.debug("Making request to {}", request.url());
     return call(request)
         .thenApply(body -> json().fromJsonUncheckedNotNull(responseBodyUnchecked(body), clazz));
   }
@@ -491,7 +492,7 @@ public class GitHubClient {
     final Request.Builder builder = requestBuilder(path);
     extraHeaders.forEach(builder::addHeader);
     final Request request = builder.build();
-    log.debug("Making request to {}", request.url().toString());
+    log.debug("Making request to {}", request.url());
     return call(request)
         .thenApply(body -> json().fromJsonUncheckedNotNull(responseBodyUnchecked(body), clazz));
   }
@@ -510,7 +511,7 @@ public class GitHubClient {
     final Request.Builder builder = requestBuilder(path);
     extraHeaders.forEach(builder::addHeader);
     final Request request = builder.build();
-    log.debug("Making request to {}", request.url().toString());
+    log.debug("Making request to {}", request.url());
     return call(request)
         .thenApply(
             response ->
@@ -525,7 +526,7 @@ public class GitHubClient {
    */
   <T> CompletableFuture<T> request(final String path, final TypeReference<T> typeReference) {
     final Request request = requestBuilder(path).build();
-    log.debug("Making request to {}", request.url().toString());
+    log.debug("Making request to {}", request.url());
     return call(request)
         .thenApply(
             response ->
@@ -544,7 +545,7 @@ public class GitHubClient {
         requestBuilder(path)
             .method("POST", RequestBody.create(parse(MediaType.APPLICATION_JSON), data))
             .build();
-    log.debug("Making POST request to {}", request.url().toString());
+    log.debug("Making POST request to {}", request.url());
     return call(request);
   }
 
@@ -563,7 +564,7 @@ public class GitHubClient {
             .method("POST", RequestBody.create(parse(MediaType.APPLICATION_JSON), data));
     extraHeaders.forEach(builder::addHeader);
     final Request request = builder.build();
-    log.debug("Making POST request to {}", request.url().toString());
+    log.debug("Making POST request to {}", request.url());
     return call(request);
   }
 
@@ -603,18 +604,21 @@ public class GitHubClient {
   /**
    * Make a POST request to the graphql endpoint of Github
    *
-   * @param data request body as stringified JSON
+   * @param queryRequest GraphQLOperationRequest object with query or mutation request
+   * @param responseProjection Select what fields are required in the response
    * @return response
    *
    * @see "https://docs.github.com/en/enterprise-server@3.9/graphql/guides/forming-calls-with-graphql#communicating-with-graphql"
    */
-  public CompletableFuture<Response> postGraphql(final String data) {
+  public CompletableFuture<Response> queryGraphQL(final GraphQLOperationRequest queryRequest, final GraphQLResponseProjection responseProjection) {
+    GraphQLRequest graphqlRequest = new GraphQLRequest(queryRequest, responseProjection);
+    String body = graphqlRequest.toQueryString();
     final Request request =
-        graphqlRequestBuilder()
-            .method("POST", RequestBody.create(parse(MediaType.APPLICATION_JSON), data))
-            .build();
-    log.info("Making POST request to {}", request.url());
-    return call(request);
+            graphqlRequestBuilder()
+                    .method("POST", RequestBody.create(parse(MediaType.APPLICATION_JSON), body))
+                    .build();
+    log.info("Making GraphQL Query POST request to {}, with body {}", request.url(), body);
+    return this.call(request);
   }
 
   /**
@@ -629,7 +633,7 @@ public class GitHubClient {
         requestBuilder(path)
             .method("PUT", RequestBody.create(parse(MediaType.APPLICATION_JSON), data))
             .build();
-    log.debug("Making POST request to {}", request.url().toString());
+    log.debug("Making POST request to {}", request.url());
     return call(request);
   }
 
@@ -659,7 +663,7 @@ public class GitHubClient {
         requestBuilder(path)
             .method("PATCH", RequestBody.create(parse(MediaType.APPLICATION_JSON), data))
             .build();
-    log.debug("Making PATCH request to {}", request.url().toString());
+    log.debug("Making PATCH request to {}", request.url());
     return call(request);
   }
 
@@ -695,7 +699,7 @@ public class GitHubClient {
             .method("PATCH", RequestBody.create(parse(MediaType.APPLICATION_JSON), data));
     extraHeaders.forEach(builder::addHeader);
     final Request request = builder.build();
-    log.debug("Making PATCH request to {}", request.url().toString());
+    log.debug("Making PATCH request to {}", request.url());
     return call(request)
         .thenApply(
             response -> json().fromJsonUncheckedNotNull(responseBodyUnchecked(response), clazz));
@@ -709,7 +713,7 @@ public class GitHubClient {
    */
   CompletableFuture<Response> delete(final String path) {
     final Request request = requestBuilder(path).delete().build();
-    log.debug("Making DELETE request to {}", request.url().toString());
+    log.debug("Making DELETE request to {}", request.url());
     return call(request);
   }
 
@@ -725,7 +729,7 @@ public class GitHubClient {
         requestBuilder(path)
             .method("DELETE", RequestBody.create(parse(MediaType.APPLICATION_JSON), data))
             .build();
-    log.debug("Making DELETE request to {}", request.url().toString());
+    log.debug("Making DELETE request to {}", request.url());
     return call(request);
   }
 
