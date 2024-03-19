@@ -172,7 +172,7 @@ public class GitHubClient {
    * @return github api client
    */
   public static GitHubClient create(final URI baseUrl, final File privateKey, final Integer appId) {
-    return createOrThrow(new OkHttpClient(), baseUrl, privateKey, appId, null);
+    return createOrThrow(new OkHttpClient(), baseUrl, null, privateKey, appId, null);
   }
 
   /**
@@ -198,7 +198,7 @@ public class GitHubClient {
    */
   public static GitHubClient create(
       final URI baseUrl, final File privateKey, final Integer appId, final Integer installationId) {
-    return createOrThrow(new OkHttpClient(), baseUrl, privateKey, appId, installationId);
+    return createOrThrow(new OkHttpClient(), baseUrl, null, privateKey, appId, installationId);
   }
 
   /**
@@ -229,7 +229,25 @@ public class GitHubClient {
       final URI baseUrl,
       final File privateKey,
       final Integer appId) {
-    return createOrThrow(httpClient, baseUrl, privateKey, appId, null);
+    return createOrThrow(httpClient, baseUrl, null, privateKey, appId, null);
+  }
+
+  /**
+   * Create a github api client with a given base URL and a path to a key.
+   *
+   * @param httpClient an instance of OkHttpClient
+   * @param baseUrl base URL
+   * @param privateKey the private key PEM file
+   * @param appId the github app ID
+   * @return github api client
+   */
+  public static GitHubClient create(
+          final OkHttpClient httpClient,
+          final URI baseUrl,
+          final URI graphqlUrl,
+          final File privateKey,
+          final Integer appId) {
+    return createOrThrow(httpClient, baseUrl, graphqlUrl, privateKey, appId, null);
   }
 
   /**
@@ -249,6 +267,8 @@ public class GitHubClient {
     return new GitHubClient(httpClient, baseUrl, null, null, privateKey, appId, null);
   }
 
+
+
   /**
    * Create a github api client with a given base URL and a path to a key.
    *
@@ -264,7 +284,7 @@ public class GitHubClient {
       final File privateKey,
       final Integer appId,
       final Integer installationId) {
-    return createOrThrow(httpClient, baseUrl, privateKey, appId, installationId);
+    return createOrThrow(httpClient, baseUrl, null, privateKey, appId, installationId);
   }
 
   /**
@@ -907,9 +927,9 @@ public class GitHubClient {
   /**
    * Wrapper to Constructors that expose File object for the privateKey argument
    * */
-  private static GitHubClient createOrThrow(final OkHttpClient httpClient, final URI baseUrl, final File privateKey, final Integer appId, final Integer installationId) {
+  private static GitHubClient createOrThrow(final OkHttpClient httpClient, final URI baseUrl, final URI graphqlUrl, final File privateKey, final Integer appId, final Integer installationId) {
     try {
-      return new GitHubClient(httpClient, baseUrl, null, null, FileUtils.readFileToByteArray(privateKey), appId, installationId);
+      return new GitHubClient(httpClient, baseUrl, graphqlUrl, null, FileUtils.readFileToByteArray(privateKey), appId, installationId);
     } catch (IOException e) {
       throw new RuntimeException("There was an error generating JWT token", e);
     }
