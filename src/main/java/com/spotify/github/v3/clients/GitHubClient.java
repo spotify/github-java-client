@@ -119,7 +119,7 @@ public class GitHubClient {
 
   private final URI baseUrl;
 
-  private Optional<URI> graphqlUrl;
+  private final Optional<URI> graphqlUrl;
   private final Json json = Json.create();
   private final OkHttpClient client;
   private final String token;
@@ -753,6 +753,9 @@ public class GitHubClient {
     return builder;
   }
 
+  public boolean isGraphqlEnabled() {
+    return graphqlUrl.isPresent();
+  }
 
 
   /*

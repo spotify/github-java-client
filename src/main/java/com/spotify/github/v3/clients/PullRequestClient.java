@@ -244,6 +244,11 @@ public class PullRequestClient {
    */
   public CompletableFuture<Void> enableAutoMerge(
       final int number, final MergeMethod mergeMethod) {
+
+    if (!github.isGraphqlEnabled()) {
+      throw new IllegalStateException("GitHub GraphQL API is not enabled. Enable it by supplying a valid graphql uri.");
+    }
+
     return get(number)
         .thenAccept(
             pr -> {

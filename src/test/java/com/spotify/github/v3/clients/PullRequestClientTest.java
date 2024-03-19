@@ -320,7 +320,6 @@ public class PullRequestClientTest {
     doNothing().when(call).enqueue(capture.capture());
     when(client.newCall(any())).thenReturn(call);
 
-
     final Response response =
             new Response.Builder()
                     .code(200)
@@ -336,23 +335,28 @@ public class PullRequestClientTest {
     final PullRequestClient pullRequestClient =
             PullRequestClient.create(github, "owner", "repo");
 
-
     CompletableFuture<Void> result = pullRequestClient.enableAutoMerge(1, MergeMethod.merge);
     capture.getValue().onResponse(call, response);
     ArgumentCaptor<Request> argument = ArgumentCaptor.forClass(Request.class);
-
-    final Buffer buffer = new Buffer();
-
 
     verify(client, times(2)).newCall(argument.capture());
     assertEquals("http://bogus/repos/owner/repo/pulls/1", argument.getAllValues().get(0).url().toString());
     assertEquals("GET", argument.getAllValues().get(0).method());
     assertEquals("POST", argument.getAllValues().get(1).method());
     assertEquals("https://bogus/graphql", argument.getAllValues().get(1).url().toString());
+    final Buffer buffer = new Buffer();
     argument.getAllValues().get(1).body().writeTo(buffer);
     String requestBody = buffer.readUtf8();
     assertTrue(requestBody.contains("MDExOlB1bGxSZXF1ZXN0MQ=="));
     assertTrue(requestBody.contains("mergeMethod: MERGE"));
     result.get();
+  }
+
+  @Test
+  public void enableAutoMergeThrowsExceptionWhenGraphqlUrlIsAbsent() {
+    GitHubClient gitHubClient = GitHubClient.create(client, URI.create("http://bogus"), "token");
+    final PullRequestClient pullRequestClient = PullRequestClient.create(gitHubClient, "owner", "repo");
+
+    assertThrows(IllegalStateException.class, () -> pullRequestClient.enableAutoMerge(1, MergeMethod.merge));
   }
 }
