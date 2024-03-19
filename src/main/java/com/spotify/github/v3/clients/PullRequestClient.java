@@ -233,7 +233,15 @@ public class PullRequestClient {
     log.debug("Merging pr, running: {}", path);
     return github.put(path, jsonPayload).thenAccept(IGNORE_RESPONSE_CONSUMER);
   }
-
+  /**
+   * Enable auto merge for a pull request.
+   *
+   * This method is experimental and may be removed/changed in the future.
+   *
+   * @param number pull request number
+   * @param mergeMethod (merge, squash, rebase) to use
+   * @see "https://docs.github.com/en/graphql/reference/mutations#enablepullrequestautomerge"
+   */
   public CompletableFuture<Void> enableAutoMerge(
       final int number, final MergeMethod mergeMethod) {
     return get(number)
