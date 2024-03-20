@@ -360,7 +360,7 @@ public class GitHubClient {
     return new GitHubClient(
         client,
         baseUrl,
-        null,
+        graphqlUrl.orElse(null),
         null,
         privateKey,
         appId,
