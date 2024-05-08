@@ -707,7 +707,7 @@ public class RepositoryClient {
    */
 
   private CompletableFuture<Void> createRepositoryDispatchEvent(RepositoryDispatch request) {
-    final String path = String.format(CREATE_REPOSITORY_DISPATCH_EVENT_TEMPLATE, repo, owner);
+    final String path = String.format(CREATE_REPOSITORY_DISPATCH_EVENT_TEMPLATE, owner, repo);
 
     return github
         .post(path, github.json().toJsonUnchecked(request))
