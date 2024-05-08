@@ -706,7 +706,7 @@ public class RepositoryClient {
    * @param request The repository dispatch request.
    */
 
-  private CompletableFuture<Void> createRepositoryDispatchEvent(final RepositoryDispatch request) {
+  public CompletableFuture<Void> createRepositoryDispatchEvent(final RepositoryDispatch request) {
     final String path = String.format(CREATE_REPOSITORY_DISPATCH_EVENT_TEMPLATE, owner, repo);
 
     return github
