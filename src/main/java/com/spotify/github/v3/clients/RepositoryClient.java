@@ -711,6 +711,6 @@ public class RepositoryClient {
 
     return github
         .post(path, github.json().toJsonUnchecked(request))
-        .thenAccept(IGNORE_RESPONSE_CONSUMER); //Should return a 204 for happy flow. 
+        .thenAccept(IGNORE_RESPONSE_CONSUMER); //Should return a 204 for happy flow.
   }
 }
