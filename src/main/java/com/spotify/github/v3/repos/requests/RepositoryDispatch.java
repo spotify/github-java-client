@@ -39,7 +39,6 @@ public interface RepositoryDispatch {
 
   /** JSON payload with extra information about the webhook event
   * that your action or workflow may use. */
-  @Nullable
   Optional<JsonNode> clientPayload();
 
 }
