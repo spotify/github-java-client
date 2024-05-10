@@ -34,6 +34,7 @@ import org.immutables.value.Value;
 public interface RepositoryDispatch {
 
   /** The custom webhook event name */
+
   String eventType();
 
   /** JSON payload with extra information about the webhook event

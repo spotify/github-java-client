@@ -60,6 +60,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import javax.ws.rs.core.HttpHeaders;
+import okhttp3.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -706,11 +707,10 @@ public class RepositoryClient {
    * @param request The repository dispatch request.
    */
 
-  public CompletableFuture<Void> createRepositoryDispatchEvent(final RepositoryDispatch request) {
+  public CompletableFuture<Boolean> createRepositoryDispatchEvent(final RepositoryDispatch request) {
     final String path = String.format(CREATE_REPOSITORY_DISPATCH_EVENT_TEMPLATE, owner, repo);
-
     return github
         .post(path, github.json().toJsonUnchecked(request))
-        .thenAccept(IGNORE_RESPONSE_CONSUMER); //Should return a 204 with an empty response body.
+        .thenApply(response -> response.code() == NO_CONTENT); //should always return a 204
   }
 }
