@@ -5,7 +5,7 @@ alternative to the GitHub API.
 
 ## Getting Started
 
-The Github Java Clients's [open issues are here](https://github.com/github-java-client/github-java-client/issues). 
+The GitHub Java Clients's [open issues are here](https://github.com/github-java-client/github-java-client/issues). 
 In time, we'll tag issues that would make a good first pull request for new contributors. An easy 
 way to get started helping the project is to *file an issue*. Issues can include bugs to fix, 
 features to add, or documentation that looks outdated.
@@ -40,3 +40,12 @@ feedback for changes that would be required.
 - We operate a monkey see, monkey do approach to this library. We understand that there are some inconsistencies in the library 
   in terms of how the tests and/or endpoints are written but we, with your help, are working on creating a more consistent codebase.
 - All bug fixes and new features need to be fully tested.
+
+
+This is a test of syntax highlighting on github.com. 
+
+Contributions to github-java-client should be made in the form of GitHub pull requests. Each pull 
+request will be reviewed by a maintainer of the library and either merged and released or given 
+feedback for changes that would be required.
+
+Enable with `testword = True`
