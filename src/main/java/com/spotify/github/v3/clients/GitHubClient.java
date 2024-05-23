@@ -49,7 +49,6 @@ import com.spotify.github.v3.repos.Status;
 import java.io.*;
 import java.lang.invoke.MethodHandles;
 import java.net.URI;
-import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -709,20 +708,11 @@ public class GitHubClient extends AbstractGitHubApiClient {
     return call(request);
   }
 
-  /**
-   * Create a URL for a given path to this Github server.
-   *
-   * @param path relative URI
-   * @return URL to path on this server
-   */
-  String urlFor(final String path) {
-    return baseUrl.toString().replaceAll("/+$", "") + "/" + path.replaceAll("^/+", "");
-  }
-
   private Request.Builder requestBuilder(final String path) {
+    String url = urlFor(path).orElseThrow(() -> new IllegalStateException("No baseUrl defined"));
     final Request.Builder builder =
         new Request.Builder()
-            .url(urlFor(path))
+            .url(url)
             .addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
             .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
     builder.addHeader(HttpHeaders.AUTHORIZATION, getAuthorizationHeader(path));
@@ -743,62 +733,6 @@ public class GitHubClient extends AbstractGitHubApiClient {
   @Override
   protected OkHttpClient client() {
     return client;
-  }
-
-  private boolean isJwtRequest(final String path) {
-    return path.startsWith("/app/installation") || path.endsWith("installation");
-  }
-
-  private String getInstallationToken(final String jwtToken, final int installationId)
-      throws Exception {
-
-    AccessToken installationToken = installationTokens.get(installationId);
-
-    if (installationToken == null || isExpired(installationToken)) {
-      log.info(
-          "Github token for installation {} is either expired or null. Trying to get a new one.",
-          installationId);
-      installationToken = generateInstallationToken(jwtToken, installationId);
-      installationTokens.put(installationId, installationToken);
-    }
-    return installationToken.token();
-  }
-
-  private boolean isExpired(final AccessToken token) {
-    // Adds a few minutes to avoid making calls with an expired token due to clock differences
-    return token.expiresAt().isBefore(ZonedDateTime.now().plusMinutes(EXPIRY_MARGIN_IN_MINUTES));
-  }
-
-  private AccessToken generateInstallationToken(final String jwtToken, final int installationId)
-      throws Exception {
-    log.info("Got JWT Token. Now getting Github access_token for installation {}", installationId);
-    final String url = String.format(urlFor(GET_ACCESS_TOKEN_URL), installationId);
-    final Request request =
-        new Request.Builder()
-            .addHeader("Accept", "application/vnd.github.machine-man-preview+json")
-            .addHeader("Authorization", "Bearer " + jwtToken)
-            .url(url)
-            .method("POST", RequestBody.create(parse(MediaType.APPLICATION_JSON), ""))
-            .build();
-
-    final Response response = client.newCall(request).execute();
-
-    if (!response.isSuccessful()) {
-      throw new Exception(
-          String.format(
-              "Got non-2xx status %s when getting an access token from GitHub: %s",
-              response.code(), response.message()));
-    }
-
-    if (response.body() == null) {
-      throw new Exception(
-          String.format(
-              "Got empty response body when getting an access token from GitHub, HTTP status was: %s",
-              response.message()));
-    }
-    final String text = response.body().string();
-    response.body().close();
-    return Json.create().fromJson(text, AccessToken.class);
   }
 
   @Override

@@ -47,6 +47,8 @@ import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import com.spotify.github.async.Async;
 import com.spotify.github.async.AsyncPage;
+import com.spotify.github.http.GitHubClientConfig;
+import com.spotify.github.http.ImmutableGitHubClientConfig;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.comment.Comment;
 import com.spotify.github.v3.prs.PullRequestItem;
@@ -64,19 +66,18 @@ import com.spotify.github.v3.repos.RepositoryPermission;
 import com.spotify.github.v3.repos.RepositoryTest;
 import com.spotify.github.v3.repos.Status;
 import com.spotify.github.v3.repos.requests.*;
-
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
-import okhttp3.MediaType;
-import okhttp3.Protocol;
-import okhttp3.Request;
-import okhttp3.Response;
-import okhttp3.ResponseBody;
+
+import com.spotify.github.v3.repos.requests.ImmutableAuthenticatedUserRepositoriesFilter;
+import com.spotify.github.v3.repos.requests.ImmutableRepositoryUpdate;
+import okhttp3.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -94,7 +95,14 @@ public class RepositoryClientTest {
 
   @BeforeEach
   public void setUp() {
+    GitHubClientConfig config =
+            ImmutableGitHubClientConfig.builder()
+                    .baseUrl(URI.create("https://github.com/api/v3"))
+                    .client(mock(OkHttpClient.class))
+                    .build();
     github = mock(GitHubClient.class);
+    when(github.clientConfig()).thenReturn(config);
+    when(github.urlFor(anyString())).thenCallRealMethod();
     repoClient = new RepositoryClient(github, "someowner", "somerepo");
     json = Json.create();
     when(github.json()).thenReturn(json);
@@ -565,7 +573,7 @@ public class RepositoryClientTest {
     final String lastPageBody = loadFixture("clients/statuses_page2.json");
     final Response lastPageResponse = createMockResponse(lastPageLink, lastPageBody);
 
-    when(github.urlFor("")).thenReturn("https://github.com/api/v3");
+    when(github.urlFor("")).thenReturn(Optional.of("https://github.com/api/v3"));
 
     when(github.request(
             format(

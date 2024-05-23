@@ -32,6 +32,7 @@ import java.lang.invoke.MethodHandles;
 import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.ws.rs.core.MediaType;
@@ -119,21 +120,25 @@ public abstract class AbstractGitHubApiClient {
   }
 
   /**
-   * Create a URL for a given path to this Github server.
+   * Create a URL for a given path to this GitHub server.
    *
    * @param path relative URI
    * @return URL to path on this server
    */
-  String urlFor(final String path) {
-    return clientConfig().baseUrl().toString().replaceAll("/+$", "")
-        + "/"
-        + path.replaceAll("^/+", "");
+  public Optional<String> urlFor(final String path) {
+    return clientConfig()
+        .baseUrl()
+        .map(
+            baseUrl -> baseUrl.toString().replaceAll("/+$", "") + "/" + path.replaceAll("^/+", ""));
   }
 
   private AccessToken generateInstallationToken(final String jwtToken, final int installationId)
       throws Exception {
     log.info("Got JWT Token. Now getting Github access_token for installation {}", installationId);
-    final String url = String.format(urlFor(GET_ACCESS_TOKEN_URL), installationId);
+    final String accessTokenUrl =
+        urlFor(GET_ACCESS_TOKEN_URL)
+            .orElseThrow(() -> new IllegalStateException("No baseUrl defined"));
+    final String url = String.format(accessTokenUrl, installationId);
     final Request request =
         new Request.Builder()
             .addHeader("Accept", "application/vnd.github.machine-man-preview+json")

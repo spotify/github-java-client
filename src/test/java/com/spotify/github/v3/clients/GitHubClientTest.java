@@ -77,7 +77,7 @@ public class GitHubClientTest {
         GitHubClient.create(
             ImmutableGitHubClientConfig.builder()
                 .client(client)
-                .baseUrl(URI.create("http://bogus"))
+                .baseUrl(URI.create("https://bogus"))
                 .accessToken("token")
                 .build());
   }
@@ -91,7 +91,7 @@ public class GitHubClientTest {
   public void testWithScopedInstallationId() throws URISyntaxException {
     GitHubClient org =
         GitHubClient.create(
-            new URI("http://apa.bepa.cepa"), "some_key_content".getBytes(), null, null);
+            new URI("https://apa.bepa.cepa"), "some_key_content".getBytes(), null, null);
     GitHubClient scoped = org.withScopeForInstallationId(1);
     Assertions.assertTrue(scoped.getPrivateKey().isPresent());
     Assertions.assertEquals(org.getPrivateKey().get(), scoped.getPrivateKey().get());
@@ -202,7 +202,7 @@ public class GitHubClientTest {
 
     RepositoryInvitation invitation = future.get();
     assertThat(requestCapture.getValue().method(), is("PUT"));
-    assertThat(requestCapture.getValue().url().toString(), is("http://bogus/collaborators/"));
+    assertThat(requestCapture.getValue().url().toString(), is("https://bogus/collaborators/"));
     assertThat(invitation.id(), is(1));
   }
 

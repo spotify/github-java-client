@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -37,7 +37,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
 import okhttp3.ResponseBody;
 
 /**
@@ -117,12 +116,14 @@ public class GithubPage<T> implements AsyncPage<T> {
   /** {@inheritDoc} */
   @Override
   public CompletableFuture<AsyncPage<T>> nextPage() {
+    String url =
+        github.urlFor("").orElseThrow(() -> new IllegalStateException("No baseUrl defined"));
     return linkMapAsync()
         .thenApply(
             linkMap -> {
               final String nextPath =
                   Optional.ofNullable(linkMap.get("next"))
-                      .map(nextLink -> nextLink.url().toString().replaceAll(github.urlFor(""), ""))
+                      .map(nextLink -> nextLink.url().toString().replaceAll(url, ""))
                       .orElseThrow(() -> new NoSuchElementException("Page iteration exhausted"));
               return new GithubPage<>(github, nextPath, typeReference);
             });
@@ -155,18 +156,19 @@ public class GithubPage<T> implements AsyncPage<T> {
   }
 
   private CompletableFuture<Map<String, Link>> linkMapAsync() {
-    return github
-        .request(path)
-        .thenApply(
-            response -> {
-                Optional.ofNullable(response.body()).ifPresent(ResponseBody::close);
-                return Optional.ofNullable(response.headers().get("Link"))
-                    .map(linkHeader -> stream(linkHeader.split(",")))
-                    .orElseGet(Stream::empty)
-                    .map(linkString -> Link.from(linkString.split(";")))
-                    .filter(link -> link.rel().isPresent())
-                    .collect(toMap(link -> link.rel().get(), identity()));
-            });
+    return Optional.ofNullable(github.request(path))
+        .map(
+            responseFuture ->
+                responseFuture.thenApply(
+                    response -> {
+                      Optional.ofNullable(response.body()).ifPresent(ResponseBody::close);
+                      return Optional.ofNullable(response.headers().get("Link")).stream()
+                          .flatMap(linkHeader -> stream(linkHeader.split(",")))
+                          .map(linkString -> Link.from(linkString.split(";")))
+                          .filter(link -> link.rel().isPresent())
+                          .collect(toMap(link -> link.rel().get(), identity()));
+                    }))
+        .orElse(CompletableFuture.completedFuture(Map.of()));
   }
 
   private Optional<Integer> pageNumberFromUri(final String uri) {

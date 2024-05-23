@@ -47,6 +47,7 @@ import com.spotify.github.v3.orgs.requests.TeamCreate;
 import com.spotify.github.v3.orgs.requests.TeamUpdate;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
@@ -71,7 +72,7 @@ public class TeamClientTest {
     teamClient = new TeamClient(github, "github");
     json = Json.create();
     when(github.json()).thenReturn(json);
-    when(github.urlFor("")).thenReturn("https://github.com/api/v3");
+    when(github.urlFor("")).thenReturn(Optional.of("https://github.com/api/v3"));
   }
 
   @Test
@@ -134,7 +135,10 @@ public class TeamClientTest {
 
     assertThat(actualResponse.get().name(), is("Justice League2"));
     verify(github, times(1))
-            .patch(eq("/orgs/github/teams/justice-league"), eq("{\"name\":\"Justice League2\"}"), eq(Team.class));
+        .patch(
+            eq("/orgs/github/teams/justice-league"),
+            eq("{\"name\":\"Justice League2\"}"),
+            eq(Team.class));
   }
 
   @Test
@@ -164,22 +168,24 @@ public class TeamClientTest {
   @Test
   public void listTeamMembersPaged() throws Exception {
     final String firstPageLink =
-            "<https://github.com/api/v3/orgs/github/teams/1/members?page=2>; rel=\"next\", <https://github.com/api/v3/orgs/github/teams/1/members?page=2>; rel=\"last\"";
+        "<https://github.com/api/v3/orgs/github/teams/1/members?page=2>; rel=\"next\", <https://github.com/api/v3/orgs/github/teams/1/members?page=2>; rel=\"last\"";
     final String firstPageBody =
-            Resources.toString(getResource(this.getClass(), "list_members_page1.json"), defaultCharset());
+        Resources.toString(
+            getResource(this.getClass(), "list_members_page1.json"), defaultCharset());
     final Response firstPageResponse = createMockResponse(firstPageLink, firstPageBody);
 
     final String lastPageLink =
-            "<https://github.com/api/v3/orgs/github/teams/1/members>; rel=\"first\", <https://github.com/api/v3/orgs/github/teams/1/members>; rel=\"prev\"";
+        "<https://github.com/api/v3/orgs/github/teams/1/members>; rel=\"first\", <https://github.com/api/v3/orgs/github/teams/1/members>; rel=\"prev\"";
     final String lastPageBody =
-            Resources.toString(getResource(this.getClass(), "list_members_page2.json"), defaultCharset());
+        Resources.toString(
+            getResource(this.getClass(), "list_members_page2.json"), defaultCharset());
 
     final Response lastPageResponse = createMockResponse(lastPageLink, lastPageBody);
 
     when(github.request(endsWith("/orgs/github/teams/1/members?per_page=1")))
-            .thenReturn(completedFuture(firstPageResponse));
+        .thenReturn(completedFuture(firstPageResponse));
     when(github.request(endsWith("/orgs/github/teams/1/members?page=2")))
-                .thenReturn(completedFuture(lastPageResponse));
+        .thenReturn(completedFuture(lastPageResponse));
 
     final Iterable<AsyncPage<User>> pageIterator = () -> teamClient.listTeamMembers("1", 1);
     final List<User> users = Async.streamFromPaginatingIterable(pageIterator).collect(toList());
