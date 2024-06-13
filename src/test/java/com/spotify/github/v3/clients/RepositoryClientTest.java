@@ -42,6 +42,8 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
@@ -71,6 +73,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import okhttp3.MediaType;
 import okhttp3.Protocol;
@@ -714,4 +717,26 @@ public class RepositoryClientTest {
     Optional<InputStream> response = repoClient.downloadZipball("master").get();
     assertThat(response, is(Optional.empty()));
   }
+
+  @Test
+  public void shouldReturnEmptyResponseWhenRepositoryDispatchEndpointTriggered() throws Exception {
+    final Response response = mock(Response.class);
+    when(response.code()).thenReturn(204);
+
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode clientPayload = mapper.createObjectNode();
+    clientPayload.put("my-custom-true-property","true");
+    clientPayload.put("my-custom-false-property", "false");
+
+    RepositoryDispatch repositoryDispatchRequest = ImmutableRepositoryDispatch.builder()
+        .eventType("my-custom-event")
+        .clientPayload(clientPayload)
+        .build();
+
+    when(github.post("/repos/someowner/somerepo/dispatches", json.toJsonUnchecked(repositoryDispatchRequest))).thenReturn(completedFuture(response));
+
+    boolean repoDispatchResult = repoClient.createRepositoryDispatchEvent(repositoryDispatchRequest).get();
+    assertTrue(repoDispatchResult);
+  }
+
 }

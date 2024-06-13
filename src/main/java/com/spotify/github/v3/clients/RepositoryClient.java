@@ -85,6 +85,7 @@ public class RepositoryClient {
   private static final String BRANCH_TEMPLATE = "/repos/%s/%s/branches/%s";
   private static final String LIST_BRANCHES_TEMPLATE = "/repos/%s/%s/branches";
   private static final String CREATE_COMMENT_TEMPLATE = "/repos/%s/%s/commits/%s/comments";
+  private static final String CREATE_REPOSITORY_DISPATCH_EVENT_TEMPLATE = "/repos/%s/%s/dispatches";
   private static final String COMMENT_TEMPLATE = "/repos/%s/%s/comments/%s";
   private static final String LANGUAGES_TEMPLATE = "/repos/%s/%s/languages";
   private static final String MERGE_TEMPLATE = "/repos/%s/%s/merges";
@@ -697,5 +698,18 @@ public class RepositoryClient {
       throw new IllegalArgumentException(path + " starts or ends with '/'");
     }
     return String.format(CONTENTS_URI_TEMPLATE, owner, repo, path, query);
+  }
+
+  /**
+   * Create a repository_dispatch event.
+   *
+   * @param request The repository dispatch request.
+   */
+
+  public CompletableFuture<Boolean> createRepositoryDispatchEvent(final RepositoryDispatch request) {
+    final String path = String.format(CREATE_REPOSITORY_DISPATCH_EVENT_TEMPLATE, owner, repo);
+    return github
+        .post(path, github.json().toJsonUnchecked(request))
+        .thenApply(response -> response.code() == NO_CONTENT); //should always return a 204
   }
 }
