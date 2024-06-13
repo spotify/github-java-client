@@ -9,7 +9,7 @@ jobs:
 
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v3
+      - uses: actions/setup-java@v4
         with:
           java-version: 11
           distribution: corretto
@@ -23,3 +23,6 @@ jobs:
 
       - name: Check settings.xml file
         run: cat ${{ github.workspace }}/settings.xml
+
+      - name: Check gpg keys
+        run: gpg --list-keys
