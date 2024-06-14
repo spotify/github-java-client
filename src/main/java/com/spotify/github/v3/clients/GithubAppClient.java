@@ -45,6 +45,7 @@ public class GithubAppClient {
     refer to the organisation in the installation endpoint
   */
   private static final String GET_INSTALLATION_ORG_URL = "/orgs/%s/installation";
+  private static final String GET_INSTALLATION_USER_URL = "/users/%s/installation";
 
   private final GitHubClient github;
   private final String owner;
@@ -112,6 +113,15 @@ public class GithubAppClient {
   private CompletableFuture<Installation> getOrgInstallation() {
     return github.request(
         String.format(GET_INSTALLATION_ORG_URL, owner), Installation.class);
+  }
+
+    /**
+   * Get an installation of a user
+   * @return an Installation
+   */
+  private CompletableFuture<Installation> getUserInstallation() {
+    return github.request(
+        String.format(GET_INSTALLATION_USER_URL, owner), Installation.class);
   }
 
   /**
