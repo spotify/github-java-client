@@ -119,7 +119,7 @@ public class GithubAppClient {
    * Get an installation of a user
    * @return an Installation
    */
-  private CompletableFuture<Installation> getUserInstallation() {
+  public CompletableFuture<Installation> getUserInstallation() {
     return github.request(
         String.format(GET_INSTALLATION_USER_URL, owner), Installation.class);
   }
