@@ -103,6 +103,10 @@
         <opencensus.version>0.31.1</opencensus.version>
         <okhttp.version>4.11.0</okhttp.version>
 
+        <!-- BEGIN: plugin versions -->
+        <graphql.codegen.plugin.version>5.8.0</graphql.codegen.plugin.version>
+        <!-- END: plugin versions -->
+
         <shade.id>${project.groupId}.githubclient.shade</shade.id>
     </properties>
 
@@ -251,6 +255,16 @@
             <artifactId>commons-io</artifactId>
             <version>2.7</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.validation</groupId>
+            <artifactId>validation-api</artifactId>
+            <version>1.1.0.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.kobylynskyi</groupId>
+            <artifactId>graphql-java-codegen</artifactId>
+            <version>${graphql.codegen.plugin.version}</version>
         </dependency>
     </dependencies>
 
@@ -498,6 +512,38 @@
                     <release>11</release>
                     <doclint>none</doclint>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>io.github.kobylynskyi</groupId>
+                <artifactId>graphql-codegen-maven-plugin</artifactId>
+                <version>5.10.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <!-- all config options:
+                            https://github.com/kobylynskyi/graphql-java-codegen/blob/main/docs/codegen-options.md
+                            -->
+                            <graphqlSchemas>
+                                <rootDir>${project.basedir}/src/main/resources/schema</rootDir>
+                                <includePattern>.*\.graphqls?</includePattern>
+                            </graphqlSchemas>
+                            <outputDir>${project.build.directory}/generated-sources</outputDir>
+                            <packageName>com.spotify.github.graphql</packageName>
+                            <modelPackageName>com.spotify.github.graphql.models</modelPackageName>
+                            <generateModelsForRootTypes>true</generateModelsForRootTypes>
+                            <generateClient>true</generateClient>
+                            <generateApis>false</generateApis>
+                            <modelValidationAnnotation>@javax.annotation.Nonnull</modelValidationAnnotation>
+                            <customTypesMapping>
+                                <DateTime>java.util.Date</DateTime>
+                                <Price.amount>java.math.BigDecimal</Price.amount>
+                            </customTypesMapping>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
         <pluginManagement>
