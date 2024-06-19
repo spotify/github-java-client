@@ -79,7 +79,7 @@ public class GithubAppClient {
   }
 
   /**
-   * Get Installation
+   * Get Installation of repo or org
    *
    * @return an Installation
    */
