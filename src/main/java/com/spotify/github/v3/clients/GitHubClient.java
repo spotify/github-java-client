@@ -48,12 +48,12 @@ import java.io.*;
 import java.lang.invoke.MethodHandles;
 import java.net.URI;
 import java.time.ZonedDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import javax.ws.rs.core.HttpHeaders;
@@ -145,7 +145,7 @@ public class GitHubClient {
     this.privateKey = privateKey;
     this.appId = appId;
     this.installationId = installationId;
-    this.installationTokens = new HashMap<>();
+    this.installationTokens = new ConcurrentHashMap<>();
   }
 
   /**
