@@ -63,6 +63,6 @@ public class SearchClientTest {
     when(github.request(ISSUES_URI + "?q=bogus-q", SearchIssues.class)).thenReturn(fixture);
     final SearchIssues search =
         searchClient.issues(ImmutableSearchParameters.builder().q("bogus-q").build()).get();
-    assertSearchIssues(search);
+    assertSearchIssues(search, 35802);
   }
 }
