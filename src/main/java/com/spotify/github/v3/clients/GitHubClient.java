@@ -25,10 +25,12 @@ import static okhttp3.MediaType.parse;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.spotify.github.Tracer;
+import com.spotify.github.async.Async;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.Team;
 import com.spotify.github.v3.User;
 import com.spotify.github.v3.checks.AccessToken;
+import com.spotify.github.v3.checks.Installation;
 import com.spotify.github.v3.comment.Comment;
 import com.spotify.github.v3.exceptions.ReadOnlyRepositoryException;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
@@ -53,6 +55,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -71,6 +74,7 @@ import org.slf4j.LoggerFactory;
 public class GitHubClient {
 
   private static final int EXPIRY_MARGIN_IN_MINUTES = 5;
+  private static final int HTTP_NOT_FOUND = 404;
 
   private Tracer tracer = NoopTracer.INSTANCE;
 
@@ -366,6 +370,37 @@ public class GitHubClient {
         appId,
         installationId);
   }
+
+    /**
+     * This is for clients authenticated as a GitHub App: when performing operations,
+     * the "installation" of the App must be specified.
+     * This returns a {@code GitHubClient} that has been scoped to the
+     * user's/organization's installation of the app, if any.
+     */
+    public CompletionStage<Optional<GitHubClient>> asAppScopedClient(final String owner) {
+        return Async.exceptionallyCompose(this
+                        .createOrganisationClient(owner)
+                        .createGithubAppClient()
+                        .getInstallation()
+                        .thenApply(Installation::id), e -> {
+                    if (e.getCause() instanceof RequestNotOkException && ((RequestNotOkException) e).statusCode() == HTTP_NOT_FOUND) {
+                        return this
+                                .createUserClient(owner)
+                                .createGithubAppClient()
+                                .getUserInstallation()
+                                .thenApply(Installation::id);
+                    }
+                    return CompletableFuture.failedFuture(e);
+                })
+                .thenApply(id -> Optional.of(this.withScopeForInstallationId(id)))
+                .exceptionally(
+                        e -> {
+                            if (e.getCause() instanceof RequestNotOkException && ((RequestNotOkException) e).statusCode() == HTTP_NOT_FOUND) {
+                                return Optional.empty();
+                            }
+                            throw new RuntimeException(e);
+                        });
+    }
 
   public GitHubClient withTracer(final Tracer tracer) {
     this.tracer = tracer;
