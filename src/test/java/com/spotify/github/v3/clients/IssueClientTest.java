@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -32,17 +32,21 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import com.spotify.github.async.Async;
 import com.spotify.github.async.AsyncPage;
+import com.spotify.github.http.GitHubClientConfig;
+import com.spotify.github.http.ImmutableGitHubClientConfig;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.comment.Comment;
 import java.io.IOException;
+import java.net.URI;
 import java.util.List;
+import okhttp3.OkHttpClient;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,9 +58,15 @@ public class IssueClientTest {
 
   @BeforeEach
   public void setUp() {
+    GitHubClientConfig config =
+        ImmutableGitHubClientConfig.builder()
+            .baseUrl(URI.create("https://github.com/api/v3"))
+            .client(mock(OkHttpClient.class))
+            .build();
     github = mock(GitHubClient.class);
+    when(github.clientConfig()).thenReturn(config);
+    when(github.urlFor(anyString())).thenCallRealMethod();
     when(github.json()).thenReturn(Json.create());
-    when(github.urlFor("")).thenReturn("https://github.com/api/v3");
     issueClient = new IssueClient(github, "someowner", "somerepo");
   }
 
@@ -81,7 +91,8 @@ public class IssueClientTest {
         .thenReturn(completedFuture(lastPageResponse));
 
     final Iterable<AsyncPage<Comment>> pageIterator = () -> issueClient.listComments(123);
-    final List<Comment> listComments = Async.streamFromPaginatingIterable(pageIterator).collect(toList());
+    final List<Comment> listComments =
+        Async.streamFromPaginatingIterable(pageIterator).collect(toList());
 
     assertThat(listComments.size(), is(30));
     assertThat(listComments.get(0).id(), is(1345268));
