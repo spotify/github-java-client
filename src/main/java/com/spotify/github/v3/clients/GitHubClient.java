@@ -427,8 +427,8 @@ public class GitHubClient extends AbstractGitHubApiClient {
     return OrganisationClient.create(this, org);
   }
 
-  public UserClient createUserClient() {
-    return UserClient.create(this);
+  public UserClient createUserClient(final String owner) {
+    return UserClient.create(this, owner);
   }
 
   Json json() {
