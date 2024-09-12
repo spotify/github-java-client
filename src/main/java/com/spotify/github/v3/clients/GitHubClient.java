@@ -383,7 +383,7 @@ public class GitHubClient {
                         .createGithubAppClient()
                         .getInstallation()
                         .thenApply(Installation::id), e -> {
-                    if (e.getCause() instanceof RequestNotOkException && ((RequestNotOkException) e).statusCode() == HTTP_NOT_FOUND) {
+                    if (e.getCause() instanceof RequestNotOkException && ((RequestNotOkException) e.getCause()).statusCode() == HTTP_NOT_FOUND) {
                         return this
                                 .createUserClient(owner)
                                 .createGithubAppClient()
@@ -395,7 +395,7 @@ public class GitHubClient {
                 .thenApply(id -> Optional.of(this.withScopeForInstallationId(id)))
                 .exceptionally(
                         e -> {
-                            if (e.getCause() instanceof RequestNotOkException && ((RequestNotOkException) e).statusCode() == HTTP_NOT_FOUND) {
+                            if (e.getCause() instanceof RequestNotOkException && ((RequestNotOkException) e.getCause()).statusCode() == HTTP_NOT_FOUND) {
                                 return Optional.empty();
                             }
                             throw new RuntimeException(e);
