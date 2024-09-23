@@ -18,15 +18,20 @@
  * -/-/-
  */
 
-package com.spotify.github;
+package com.spotify.github.tracing;
 
-import java.util.concurrent.CompletionStage;
+import okhttp3.Request;
 
-public interface Tracer {
+public interface Span extends AutoCloseable {
 
-    /** Create scoped span. Span will be closed when future completes. */
-    Span span(
-            String path, String method, CompletionStage<?> future);
+    Span success();
 
+    Span failure(Throwable t);
+
+    /** Close span. Must be called for any opened span. */
+    @Override
+    void close();
+
+    Request decorateRequest(Request request);
 }
 

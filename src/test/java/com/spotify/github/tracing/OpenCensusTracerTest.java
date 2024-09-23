@@ -18,11 +18,13 @@
  * -/-/-
  */
 
-package com.spotify.github.opencensus;
+package com.spotify.github.tracing;
 
 
+import com.spotify.github.tracing.opencensus.OpenCensusTracer;
 import io.grpc.Context;
 import io.opencensus.trace.*;
+import io.opencensus.trace.Span;
 import io.opencensus.trace.config.TraceConfig;
 import io.opencensus.trace.config.TraceParams;
 import io.opencensus.trace.export.SpanData;
@@ -43,7 +45,7 @@ public class OpenCensusTracerTest {
 
 
     private final String rootSpanName = "root span";
-    private TestExportHandler spanExporterHandler;
+    private OcTestExportHandler spanExporterHandler;
 
     /**
      * Test that trace() a) returns a future that completes when the input future completes and b)
@@ -52,7 +54,7 @@ public class OpenCensusTracerTest {
      */
     @Test
     public void testTrace_CompletionStage_Simple() throws Exception {
-        Span rootSpan = startRootSpan();
+        io.opencensus.trace.Span rootSpan = startRootSpan();
         final CompletableFuture<String> future = new CompletableFuture<>();
         OpenCensusTracer tracer = new OpenCensusTracer();
 
@@ -78,7 +80,7 @@ public class OpenCensusTracerTest {
 
     @Test
     public void testTrace_CompletionStage_Fails() throws Exception {
-        Span rootSpan = startRootSpan();
+        io.opencensus.trace.Span rootSpan = startRootSpan();
         final CompletableFuture<String> future = new CompletableFuture<>();
         OpenCensusTracer tracer = new OpenCensusTracer();
 
@@ -102,7 +104,7 @@ public class OpenCensusTracerTest {
         assertEquals(Status.UNKNOWN, inner.getStatus());
     }
 
-    private Span startRootSpan() {
+    private io.opencensus.trace.Span startRootSpan() {
         Span rootSpan = Tracing.getTracer().spanBuilder(rootSpanName).startSpan();
         Context context = ContextUtils.withValue(Context.current(), rootSpan);
         context.attach();
@@ -115,7 +117,7 @@ public class OpenCensusTracerTest {
 
     @BeforeEach
     public void setUpExporter() {
-        spanExporterHandler = new TestExportHandler();
+        spanExporterHandler = new OcTestExportHandler();
         Tracing.getExportComponent().getSpanExporter().registerHandler("test", spanExporterHandler);
     }
 
