@@ -40,6 +40,8 @@ import com.spotify.github.v3.exceptions.ReadOnlyRepositoryException;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.repos.CommitItem;
 import com.spotify.github.v3.repos.RepositoryInvitation;
+import com.spotify.github.v3.workflows.WorkflowsResponse;
+import com.spotify.github.v3.workflows.WorkflowsState;
 
 import java.io.File;
 import java.io.IOException;
