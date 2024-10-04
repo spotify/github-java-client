@@ -475,15 +475,6 @@ public class GitHubClient {
     return UserClient.create(this, owner);
   }
 
-  /**
-   * Workflows API client
-   *
-   * @return Workflows API client
-   */
-  public WorkflowsClient createWorkflowsClient(final String owner, final String repo) {
-    return WorkflowsClient.create(this, owner, repo);
-  }
-
   Json json() {
     return json;
   }

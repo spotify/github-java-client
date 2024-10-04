@@ -66,7 +66,7 @@ public interface WorkflowsResponse {
     /**
      * Deleted At
      *
-     * @return The time when the workflow was updated
+     * @return The time when the workflow was deleted
      */
     ZonedDateTime deletedAt();
 
