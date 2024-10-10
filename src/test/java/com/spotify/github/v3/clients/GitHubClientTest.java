@@ -40,6 +40,8 @@ import com.spotify.github.v3.exceptions.ReadOnlyRepositoryException;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.repos.CommitItem;
 import com.spotify.github.v3.repos.RepositoryInvitation;
+import com.spotify.github.v3.workflows.WorkflowsResponse;
+import com.spotify.github.v3.workflows.WorkflowsState;
 
 import java.io.File;
 import java.io.IOException;
@@ -231,6 +233,35 @@ public class GitHubClientTest {
     assertThat(result.totalCount(), is(1));
     assertThat(result.checkSuites().get(0).app().get().slug().get(), is("octoapp"));
 
+  }
+
+  @Test
+  public void testGetWorkflow() throws Throwable {
+    final Call call = mock(Call.class);
+    final ArgumentCaptor<Callback> callbackCapture = ArgumentCaptor.forClass(Callback.class);
+    doNothing().when(call).enqueue(callbackCapture.capture());
+
+    final Response response = new okhttp3.Response.Builder()
+        .code(200)
+        .body(
+            ResponseBody.create(
+                MediaType.get("application/json"),
+                getFixture("../workflows/workflows-get-workflow-response.json")))
+        .message("")
+        .protocol(Protocol.HTTP_1_1)
+        .request(new Request.Builder().url("http://localhost/").build())
+        .build();
+
+    when(client.newCall(any())).thenReturn(call);
+    WorkflowsClient client = github.withTracer(tracer).createRepositoryClient("testorg", "testrepo")
+        .createActionsClient().createWorkflowsClient();
+
+    CompletableFuture<WorkflowsResponse> future = client.getWorkflow(161335);
+    callbackCapture.getValue().onResponse(call, response);
+    var result = future.get();
+
+    assertThat(result.id(), is(161335));
+    assertThat(result.state(), is(WorkflowsState.active));
   }
 
   @Test
