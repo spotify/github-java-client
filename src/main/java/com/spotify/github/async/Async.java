@@ -20,6 +20,8 @@
 
 package com.spotify.github.async;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.util.stream.StreamSupport.stream;
@@ -33,5 +35,20 @@ public class Async {
     public static <T> Stream<T> streamFromPaginatingIterable(final Iterable<AsyncPage<T>> iterable) {
         return stream(iterable.spliterator(), false)
                    .flatMap(page -> stream(page.spliterator(), false));
+    }
+
+    public static <T> CompletableFuture<T> exceptionallyCompose(
+            final CompletableFuture<T> future, final Function<Throwable, CompletableFuture<T>> handler) {
+
+        return future
+                .handle(
+                        (result, throwable) -> {
+                            if (throwable != null) {
+                                return handler.apply(throwable);
+                            } else {
+                                return CompletableFuture.completedFuture(result);
+                            }
+                        })
+                .thenCompose(Function.identity());
     }
 }

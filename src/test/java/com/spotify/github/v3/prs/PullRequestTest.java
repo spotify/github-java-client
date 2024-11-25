@@ -40,6 +40,7 @@ public class PullRequestTest {
     final PullRequest pr = Json.create().fromJson(fixture, PullRequest.class);
 
     assertThat(pr.id(), is(1L));
+    assertThat(pr.nodeId(), is("MDExOlB1bGxSZXF1ZXN0NDI3NDI0Nw=="));
     assertThat(pr.mergeCommitSha().get(), is("e5bd3914e2e596debea16f433f57875b5b90bcd6"));
     assertThat(pr.merged(), is(false));
     assertThat(pr.mergeable().get(), is(true));

@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>github-client</artifactId>
-    <version>0.2.15-SNAPSHOT</version>
+    <version>0.3.3-SNAPSHOT</version>
 
     <parent>
         <groupId>com.spotify</groupId>
@@ -84,7 +84,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <project.build.outputTimestamp>1706783295</project.build.outputTimestamp>
+        <project.build.outputTimestamp>1726146382</project.build.outputTimestamp>
         <spotbugs.excludeFilterFile>spotbugsexclude.xml</spotbugs.excludeFilterFile>
         <checkstyle.violationSeverity>error</checkstyle.violationSeverity>
         <checkstyle.config.location>checkstyle.xml</checkstyle.config.location>
@@ -249,7 +249,7 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.7</version>
+            <version>2.14.0</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
