@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Test;
 
 public class SearchTest {
 
-  public static final void assertSearchIssues(final SearchIssues search, long id) {
+  public static final void assertSearchIssues(final SearchIssues search) {
     final Issue issues = search.items().get(0);
     assertThat(search.totalCount(), is(280));
     assertThat(search.incompleteResults(), is(false));
@@ -42,7 +42,7 @@ public class SearchTest {
         issues.url(),
         is(URI.create("https://api.github.com/repos/batterseapower/pinyin-toolkit/issues/132")));
     assertThat(issues.number(), is(132));
-    assertThat(issues.id(), is(id));
+    assertThat(issues.id(), is(35802L));
     assertThat(issues.title(), is("Line Number Indexes Beyond 20 Not Displayed"));
   }
 
@@ -52,15 +52,19 @@ public class SearchTest {
         Resources.toString(getResource(this.getClass(), "issues.json"), defaultCharset());
 
     final SearchIssues search = Json.create().fromJson(fixture, SearchIssues.class);
-    assertSearchIssues(search, 35802);
+    assertSearchIssues(search);
   }
 
   @Test
   public void testDeserializationWithLargeIssueId() throws IOException {
     final String fixture =
-        Resources.toString(getResource(this.getClass(), "issues-with-large-id.json"), defaultCharset());
+        Resources.toString(getResource(this.getClass(), "issues-long-id.json"), defaultCharset());
 
     final SearchIssues search = Json.create().fromJson(fixture, SearchIssues.class);
-    assertSearchIssues(search, 2147534768L);
+    assertThat(search.items().size(), is(1));
+
+    final Issue issue = search.items().get(0);
+    assertThat(issue.id(), is(2592843837L));
+    assertThat(issue.number(), is(5514));
   }
 }
