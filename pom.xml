@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>github-client</artifactId>
-    <version>0.3.3-SNAPSHOT</version>
+    <version>0.3.3-idfix-SNAPSHOT</version>
 
     <parent>
         <groupId>com.spotify</groupId>
@@ -32,14 +32,16 @@
     </organization>
 
     <distributionManagement>
-        <snapshotRepository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
         <repository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+            <id>releases</id>
+            <name>Releases</name>
+            <url>https://nexus.service.consul/nexus/content/repositories/releases</url>
         </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <name>Snapshots</name>
+            <url>https://nexus.service.consul/nexus/content/repositories/snapshots</url>
+        </snapshotRepository>
     </distributionManagement>
 
     <developers>
