@@ -37,12 +37,21 @@ public abstract class BaseTracer implements Tracer {
 
     @Override
     public Span span(final Request request) {
-        return internalSpan(request.url().toString(), request.method(), null);
+        return internalSpan(request, null);
+    }
+
+    @Override
+    public Span span(final Request request, final CompletionStage<?> future) {
+        return internalSpan(request, future);
     }
 
     protected abstract Span internalSpan(
             String path,
             String method,
+            CompletionStage<?> future);
+
+    protected abstract Span internalSpan(
+            Request request,
             CompletionStage<?> future);
 
     @Override

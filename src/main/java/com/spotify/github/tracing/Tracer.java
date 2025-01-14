@@ -20,6 +20,8 @@
 
 package com.spotify.github.tracing;
 
+import okhttp3.Call;
+import okhttp3.OkHttpClient;
 import okhttp3.Request;
 
 import java.util.concurrent.CompletionStage;
@@ -38,6 +40,11 @@ public interface Tracer {
     Span span(
             Request request);
 
+    Span span(
+            Request request, CompletionStage<?> future);
+
     void attachSpanToFuture(Span span, CompletionStage<?> future);
+
+    Call.Factory createTracedClient(OkHttpClient client);
 }
 

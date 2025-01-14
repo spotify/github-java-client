@@ -21,10 +21,10 @@
 package com.spotify.github.v3.clients;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.spotify.github.tracing.Span;
-import com.spotify.github.tracing.Tracer;
 import com.spotify.github.async.Async;
 import com.spotify.github.jackson.Json;
+import com.spotify.github.tracing.Span;
+import com.spotify.github.tracing.Tracer;
 import com.spotify.github.v3.Team;
 import com.spotify.github.v3.User;
 import com.spotify.github.v3.checks.AccessToken;
@@ -40,6 +40,7 @@ import com.spotify.github.v3.prs.ReviewRequests;
 import com.spotify.github.v3.repos.*;
 import okhttp3.*;
 import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -137,6 +138,7 @@ public class GitHubClient {
     private final Optional<URI> graphqlUrl;
     private final Json json = Json.create();
     private final OkHttpClient client;
+    private Call.Factory callFactory;
     private final String token;
 
     private final byte[] privateKey;
@@ -909,8 +911,10 @@ public class GitHubClient {
 
     private CompletableFuture<Response> call(final Request request) {
         try (Span span = tracer.span(request)) {
-            Request tracedRequest = span.decorateRequest(request);
-            final Call call = client.newCall(tracedRequest);
+            if (this.callFactory == null) {
+                this.callFactory = this.tracer.createTracedClient(this.client);
+            }
+            final Call call = this.callFactory.newCall(request);
 
             final CompletableFuture<Response> future = new CompletableFuture<>();
 
@@ -920,12 +924,12 @@ public class GitHubClient {
             call.enqueue(
                     new Callback() {
                         @Override
-                        public void onFailure(final Call call, final IOException e) {
+                        public void onFailure(@NotNull final Call call, final IOException e) {
                             future.completeExceptionally(e);
                         }
 
                         @Override
-                        public void onResponse(final Call call, final Response response) {
+                        public void onResponse(@NotNull final Call call, final Response response) {
                             processPossibleRedirects(response, redirected)
                                     .handle(
                                             (res, ex) -> {

@@ -20,8 +20,6 @@
 
 package com.spotify.github.tracing;
 
-import okhttp3.Request;
-
 public interface Span extends AutoCloseable {
 
     Span success();
@@ -31,7 +29,5 @@ public interface Span extends AutoCloseable {
     /** Close span. Must be called for any opened span. */
     @Override
     void close();
-
-    Request decorateRequest(Request request);
 }
 

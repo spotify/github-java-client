@@ -22,7 +22,10 @@ package com.spotify.github.v3.clients;
 
 import com.spotify.github.tracing.Span;
 import com.spotify.github.tracing.Tracer;
+import okhttp3.Call;
+import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.CompletionStage;
 
@@ -45,11 +48,6 @@ public class NoopTracer implements Tracer {
 
                 @Override
                 public void close() {
-                }
-
-                @Override
-                public Request decorateRequest(final Request request) {
-                    return request;
                 }
             };
 
@@ -75,6 +73,11 @@ public class NoopTracer implements Tracer {
     }
 
     @Override
+    public Span span(final Request request, final CompletionStage<?> future) {
+        return SPAN;
+    }
+
+    @Override
     public void attachSpanToFuture(final Span span, final CompletionStage<?> future) {
         requireNonNull(span);
         requireNonNull(future);
@@ -87,6 +90,17 @@ public class NoopTracer implements Tracer {
                     }
                     span.close();
                 });
+    }
+
+    @Override
+    public Call.Factory createTracedClient(final OkHttpClient client) {
+        return new Call.Factory() {
+            @NotNull
+            @Override
+            public Call newCall(@NotNull final Request request) {
+                return client.newCall(request);
+            }
+        };
     }
 
 }

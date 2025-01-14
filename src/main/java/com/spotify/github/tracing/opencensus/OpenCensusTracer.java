@@ -23,6 +23,10 @@ package com.spotify.github.tracing.opencensus;
 import com.spotify.github.tracing.BaseTracer;
 import com.spotify.github.tracing.Span;
 import io.opencensus.trace.Tracing;
+import okhttp3.Call;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.CompletionStage;
 
@@ -55,5 +59,22 @@ public class OpenCensusTracer extends BaseTracer {
         }
 
         return span;
+    }
+
+    @Override
+    protected Span internalSpan(final Request request, final CompletionStage<?> future) {
+        requireNonNull(request);
+        return internalSpan(request.url().toString(), request.method(), future);
+    }
+
+    @Override
+    public Call.Factory createTracedClient(final OkHttpClient client) {
+        return new Call.Factory() {
+            @NotNull
+            @Override
+            public Call newCall(@NotNull final Request request) {
+                return client.newCall(request);
+            }
+        };
     }
 }

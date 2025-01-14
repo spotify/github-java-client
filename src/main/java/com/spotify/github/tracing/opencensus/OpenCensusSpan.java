@@ -20,14 +20,12 @@
 
 package com.spotify.github.tracing.opencensus;
 
-import static java.util.Objects.requireNonNull;
-
 import com.spotify.github.tracing.Span;
-import com.spotify.github.tracing.TraceHelper;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import io.opencensus.trace.AttributeValue;
 import io.opencensus.trace.Status;
-import okhttp3.Request;
+
+import static java.util.Objects.requireNonNull;
 
 public class OpenCensusSpan implements Span {
 
@@ -62,15 +60,6 @@ public class OpenCensusSpan implements Span {
     @Override
     public void close() {
         span.end();
-    }
-
-    @Override
-    public Request decorateRequest(final Request request) {
-        return request.newBuilder()
-                .header(TraceHelper.HEADER_CLOUD_TRACE_CONTEXT, span.getContext().getTraceId().toString())
-                .header(TraceHelper.HEADER_TRACE_PARENT, span.getContext().getTraceId().toString())
-                .header(TraceHelper.HEADER_TRACE_STATE, span.getContext().getTracestate().toString())
-                .build();
     }
 }
 

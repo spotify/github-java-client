@@ -60,6 +60,7 @@ import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -81,7 +82,6 @@ public class GitHubClientTest {
         client = mock(OkHttpClient.class);
         github = GitHubClient.create(client, URI.create("http://bogus"), "token");
         when(tracer.span(any())).thenReturn(mockSpan);
-        when(mockSpan.decorateRequest(any())).thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     @Test
@@ -125,6 +125,13 @@ public class GitHubClientTest {
                         .build();
 
         when(client.newCall(any())).thenReturn(call);
+        when(tracer.createTracedClient(client)).thenReturn(new Call.Factory() {
+            @NotNull
+            @Override
+            public Call newCall(@NotNull final Request request) {
+                return call;
+            }
+        });
         IssueClient issueClient =
                 github.withTracer(tracer).createRepositoryClient("testorg", "testrepo").createIssueClient();
 

@@ -20,11 +20,9 @@
 
 package com.spotify.github.tracing.opentelemetry;
 
-import com.spotify.github.tracing.TraceHelper;
-import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.tracing.Span;
+import com.spotify.github.v3.exceptions.RequestNotOkException;
 import io.opentelemetry.api.trace.StatusCode;
-import okhttp3.Request;
 
 import static java.util.Objects.requireNonNull;
 
@@ -61,14 +59,5 @@ public class OpenTelemetrySpan implements Span {
     @Override
     public void close() {
         span.end();
-    }
-
-    @Override
-    public Request decorateRequest(final Request request) {
-        return request.newBuilder()
-                .header(TraceHelper.HEADER_CLOUD_TRACE_CONTEXT, span.getSpanContext().getTraceId())
-                .header(TraceHelper.HEADER_TRACE_PARENT, span.getSpanContext().getTraceId())
-                .header(TraceHelper.HEADER_TRACE_STATE, span.getSpanContext().getTraceState().toString())
-                .build();
     }
 }
