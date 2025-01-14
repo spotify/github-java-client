@@ -151,6 +151,15 @@ public class RepositoryClient {
   }
 
   /**
+   * Actions API client
+   *
+   * @return Actions API client
+   */
+  public ActionsClient createActionsClient() {
+    return ActionsClient.create(github, owner, repo);
+  }
+
+  /**
    * Get information about this repository.
    *
    * @return repository information
