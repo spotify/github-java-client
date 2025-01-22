@@ -212,7 +212,7 @@ public class WorkflowRunsClientTest {
     final CompletableFuture<WorkflowRunsResponseList> actualResponse =
         workflowRunsClient.listWorkflowRuns(159038, params);
 
-    assertThat(pathCaptor.getValue(), is("/repos/someowner/somerepo/actions/workflow/159038/runs?status=completed"));
+    assertThat(pathCaptor.getValue(), is("/repos/someowner/somerepo/actions/workflows/159038/runs?status=completed"));
 
     assertThat(actualResponse.get().totalCount(), is(1));
     assertThat(actualResponse.get().workflowRuns().size(), is(1));

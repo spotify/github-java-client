@@ -37,7 +37,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public class WorkflowRunsClient {
   private static final String LIST_REPOSITORY_WORKFLOW_RUNS_URI = "/repos/%s/%s/actions/runs";
-  private static final String LIST_WORKFLOW_RUNS_URI = "/repos/%s/%s/actions/workflow/%s/runs";
+  private static final String LIST_WORKFLOW_RUNS_URI = "/repos/%s/%s/actions/workflows/%s/runs";
   private static final String GET_WORKFLOW_RUN_URI = "/repos/%s/%s/actions/runs/%s";
 
   private final GitHubClient github;
