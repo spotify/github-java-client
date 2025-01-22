@@ -137,8 +137,8 @@ public interface WorkflowJobResponse {
 
   /**
    * The name of the runner to which this job has been assigned. (If a runner hasn't yet been assigned, this will be null.)
-   * (Required)
    */
+  @Nullable
   String runnerName();
 
   /**
@@ -148,9 +148,9 @@ public interface WorkflowJobResponse {
   Integer runnerGroupId();
 
   /**
-   * The name of the runner group to which this job has been assigned. (If a runner hasn't yet been assigned, this will be null.)
-   * (Required)
+   * The name of the runner group to which this job has been assigned. (If a runner hasn't yet been assigned, this will be null.)* (Required)
    */
+  @Nullable
   String runnerGroupName();
 
   /**
