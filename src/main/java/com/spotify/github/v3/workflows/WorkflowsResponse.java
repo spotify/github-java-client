@@ -31,64 +31,73 @@ import java.time.ZonedDateTime;
 @GithubStyle
 @JsonDeserialize(as = ImmutableWorkflowsResponse.class)
 public interface WorkflowsResponse {
-    /**
-     * The Workflow ID.
-     *
-     * @return the int
-     */
-    int id();
+  /**
+   * The Workflow ID.
+   *
+   * @return the int
+   */
+  int id();
 
-    /** Node ID */
-    String nodeId();
+  /**
+   * Node ID
+   */
+  String nodeId();
 
-    /** Name. */
-    String name();
+  /**
+   * Name.
+   */
+  String name();
 
-    /** The workflow path. */
-    String path();
+  /**
+   * The workflow path.
+   */
+  String path();
 
-    /** Indicates the state of the workflow. */
-    WorkflowsState state();
+  /**
+   * Indicates the state of the workflow.
+   */
+  WorkflowsState state();
 
-    /**
-     * Created At
-     *
-     * @return The time when the workflow was created
-     */
-    ZonedDateTime createdAt();
+  /**
+   * Created At
+   *
+   * @return The time when the workflow was created
+   */
+  ZonedDateTime createdAt();
 
-    /**
-     * Updated At
-     *
-     * @return The time when the workflow was updated
-     */
-    ZonedDateTime updatedAt();
+  /**
+   * Updated At
+   *
+   * @return The time when the workflow was updated
+   */
+  ZonedDateTime updatedAt();
 
-    /**
-     * Deleted At
-     *
-     * @return The time when the workflow was deleted
-     */
-    @Nullable ZonedDateTime deletedAt();
+  /**
+   * Deleted At
+   *
+   * @return The time when the workflow was deleted
+   */
+  @Nullable
+  ZonedDateTime deletedAt();
 
-    /**
-     * Url string.
-     *
-     * @return the string
-     */
-    String url();
+  /**
+   * Url string.
+   *
+   * @return the string
+   */
+  String url();
 
-    /**
-     * Html url string.
-     *
-     * @return the string
-     */
-    String htmlUrl();
+  /**
+   * Html url string.
+   *
+   * @return the string
+   */
+  String htmlUrl();
 
-    /**
-     * Badge Url string.
-     *
-     * @return the string
-     */
-    String badgeUrl();
+  /**
+   * Badge Url string.
+   *
+   * @return the string
+   */
+  String badgeUrl();
 }

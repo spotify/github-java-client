@@ -30,9 +30,9 @@ import java.util.Optional;
 
 @Value.Immutable
 @GithubStyle
-@JsonSerialize(as = ImmutableQueryParams.class)
-@JsonDeserialize(as = ImmutableQueryParams.class)
-public interface QueryParams extends Parameters {
+@JsonSerialize(as = ImmutableListWorkflowRunsQueryParams.class)
+@JsonDeserialize(as = ImmutableListWorkflowRunsQueryParams.class)
+public interface ListWorkflowRunsQueryParams extends Parameters {
   /**
    * Returns someone's workflow runs. Use the login for the user who created the push associated with the check suite or workflow run.
    */
