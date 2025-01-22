@@ -50,7 +50,7 @@ public interface WorkflowRunResponse {
   String name();
 
   /**
-   * Github api node id. See <a href="https://docs.github.com/en/graphql/guides/using-global-node-ids">Using Global Node ids</a>
+   * GitHub api node id. See <a href="https://docs.github.com/en/graphql/guides/using-global-node-ids">Using Global Node ids</a>
    * (Required)
    */
   String nodeId();

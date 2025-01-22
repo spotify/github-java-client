@@ -27,7 +27,7 @@ import org.immutables.value.Value;
 import java.util.List;
 
 /**
- * The RunsResponse list resource
+ * The WorkflowRunsResponse list resource
  *
  * @see "https://docs.github.com/en/rest/actions/workflow-runs?apiVersion=2022-11-28#list-workflow-runs-for-a-repository"
  */
