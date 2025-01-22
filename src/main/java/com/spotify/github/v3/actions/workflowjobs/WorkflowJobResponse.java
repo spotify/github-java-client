@@ -131,9 +131,9 @@ public interface WorkflowJobResponse {
 
   /**
    * The ID of the runner to which this job has been assigned. (If a runner hasn't yet been assigned, this will be null.)
-   * (Required)
    */
-  int runnerId();
+  @Nullable
+  Integer runnerId();
 
   /**
    * The name of the runner to which this job has been assigned. (If a runner hasn't yet been assigned, this will be null.)
