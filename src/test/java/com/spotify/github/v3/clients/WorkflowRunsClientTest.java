@@ -98,9 +98,9 @@ public class WorkflowRunsClientTest {
         .build();
 
     final CompletableFuture<WorkflowRunResponse> actualResponse =
-        workflowRunsClient.getWorkflowRun(30433642L, null);
+        workflowRunsClient.getWorkflowRun(30433642L, queryParams);
 
-    assertThat(pathCaptor.getValue(), is("/repos/someowner/somerepo/actions/runs/30433642"));
+    assertThat(pathCaptor.getValue(), is("/repos/someowner/somerepo/actions/runs/30433642?excludePullRequests=true"));
 
     assertThat(actualResponse.get().id(), is(30433642L));
     assertThat(actualResponse.get().status(), is(WorkflowRunStatus.queued));
@@ -224,5 +224,4 @@ public class WorkflowRunsClientTest {
     assertThat(actualResponse.get().workflowRuns().get(0).createdAt(), is(ZonedDateTime.parse("2020-01-22T19:33:08Z")));
     assertThat(actualResponse.get().workflowRuns().get(0).displayTitle(), is("Update README.md"));
   }
-
 }
