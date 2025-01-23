@@ -22,6 +22,8 @@ package com.spotify.github.v3.exceptions;
 
 /** Common github exception */
 public class GithubException extends RuntimeException {
+  private static final long serialVersionUID = 1L;
+
 
   /**
    * C'tor for setting a message
