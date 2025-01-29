@@ -24,8 +24,12 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.spotify.github.GithubStyle;
 import com.spotify.github.v3.User;
+
+import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
+
+import com.spotify.github.v3.issues.Label;
 import org.immutables.value.Value;
 
 /**
@@ -80,4 +84,7 @@ public interface PullRequest extends PullRequestItem {
 
   /** Is it a draft PR? */
   Optional<Boolean> draft();
+
+  @Nullable
+  List<Label> labels();
 }
