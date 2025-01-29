@@ -66,7 +66,6 @@ public interface StatusEvent extends BaseEvent, UpdateTracking {
   String context();
 
   /** The optional human-readable description added to the status. */
-  @Nullable
   Optional<String> description();
 
   /** The new state. Can be pending, success, failure, or error. */

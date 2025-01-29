@@ -25,6 +25,8 @@ import java.util.Map;
 
 /** The Read only repository exception. */
 public class ReadOnlyRepositoryException extends RequestNotOkException {
+  private static final long serialVersionUID = 1L;
+
   /**
    * Instantiates a new Read only repository exception.
    *

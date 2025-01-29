@@ -20,7 +20,7 @@
 
 package com.spotify.github.jackson;
 
-import static com.fasterxml.jackson.databind.PropertyNamingStrategy.SNAKE_CASE;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import static java.util.Objects.isNull;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -248,6 +248,6 @@ public class Json {
             .enable(SerializationFeature.WRITE_DATES_WITH_ZONE_ID)
             .enable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
-            .setPropertyNamingStrategy(SNAKE_CASE);
+            .setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
   }
 }
