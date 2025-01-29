@@ -48,11 +48,9 @@ public interface Issue extends CloseTracking {
   URI url();
 
   /** Events URL. */
-  @Nullable
   Optional<URI> eventsUrl();
 
   /** Repository URL. */
-  @Nullable
   Optional<URI> repositoryUrl();
 
   /** Labels URL template. */
@@ -80,7 +78,6 @@ public interface Issue extends CloseTracking {
   String title();
 
   /** The contents of the issue. */
-  @Nullable
   Optional<String> body();
 
   /** User. */

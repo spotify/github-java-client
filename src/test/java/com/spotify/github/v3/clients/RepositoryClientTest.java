@@ -38,12 +38,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
@@ -65,17 +65,15 @@ import com.spotify.github.v3.repos.RepositoryInvitation;
 import com.spotify.github.v3.repos.RepositoryPermission;
 import com.spotify.github.v3.repos.RepositoryTest;
 import com.spotify.github.v3.repos.Status;
-import com.spotify.github.v3.repos.requests.FileCreate;
-import com.spotify.github.v3.repos.requests.FileUpdate;
-import com.spotify.github.v3.repos.requests.ImmutableAuthenticatedUserRepositoriesFilter;
-import com.spotify.github.v3.repos.requests.ImmutableFileCreate;
-import com.spotify.github.v3.repos.requests.ImmutableFileUpdate;
+import com.spotify.github.v3.repos.requests.*;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import okhttp3.MediaType;
 import okhttp3.Protocol;
@@ -121,6 +119,24 @@ public class RepositoryClientTest {
   }
 
   @Test
+  public void updateRepository() throws Exception {
+    final CompletableFuture<Repository> fixture =
+        completedFuture(json.fromJson(getFixture("repository_get.json"), Repository.class));
+    when(github.patch(eq("/repos/someowner/somerepo"), eq("{\"allow_auto_merge\":true}"), eq(Repository.class)))
+        .thenReturn(fixture);
+    RepositoryUpdate request =
+        ImmutableRepositoryUpdate.builder().allowAutoMerge(Optional.of(true)).build();
+    final Repository repository = repoClient.updateRepository(request).get();
+    assertThat(repository.id(), is(1296269));
+    assertUser(repository.owner());
+    assertThat(repository.name(), is("Hello-World"));
+    assertThat(repository.fullName(), is(repository.owner().login() + "/Hello-World"));
+    assertThat(repository.isPrivate(), is(false));
+    assertThat(repository.isArchived(), is(false));
+    assertThat(repository.fork(), is(false));
+  }
+
+  @Test
   public void listOrganizationRepositories() throws Exception {
     final CompletableFuture<List<Repository>> fixture =
         completedFuture(json.fromJson(getFixture("list_of_repos_for_org.json"), LIST_REPOSITORY));
@@ -138,8 +154,12 @@ public class RepositoryClientTest {
 
     when(github.request("/user/repos")).thenReturn(completedFuture(pageResponse));
 
-    final Iterable<AsyncPage<Repository>> pageIterator = () -> repoClient.listAuthenticatedUserRepositories(ImmutableAuthenticatedUserRepositoriesFilter.builder().build());
-    final List<Repository> repositories = Async.streamFromPaginatingIterable(pageIterator).collect(Collectors.toList());
+    final Iterable<AsyncPage<Repository>> pageIterator =
+        () ->
+            repoClient.listAuthenticatedUserRepositories(
+                ImmutableAuthenticatedUserRepositoriesFilter.builder().build());
+    final List<Repository> repositories =
+        Async.streamFromPaginatingIterable(pageIterator).collect(Collectors.toList());
 
     assertThat(repositories.get(0).id(), is(1296269));
     assertThat(repositories.size(), is(1));
@@ -149,7 +169,8 @@ public class RepositoryClientTest {
   public void isCollaborator() throws Exception {
     final Response response = mock(Response.class);
     when(response.code()).thenReturn(204);
-    when(github.request("/repos/someowner/somerepo/collaborators/user")).thenReturn(completedFuture(response));
+    when(github.request("/repos/someowner/somerepo/collaborators/user"))
+        .thenReturn(completedFuture(response));
     boolean isCollaborator = repoClient.isCollaborator("user").get();
     assertTrue(isCollaborator);
   }
@@ -158,7 +179,8 @@ public class RepositoryClientTest {
   public void isNotCollaborator() throws Exception {
     final Response response = mock(Response.class);
     when(response.code()).thenReturn(404);
-    when(github.request("/repos/someowner/somerepo/collaborators/user")).thenReturn(completedFuture(response));
+    when(github.request("/repos/someowner/somerepo/collaborators/user"))
+        .thenReturn(completedFuture(response));
     boolean isCollaborator = repoClient.isCollaborator("user").get();
     assertFalse(isCollaborator);
   }
@@ -166,11 +188,11 @@ public class RepositoryClientTest {
   @Test
   public void addCollaborator() throws Exception {
     final Response response = createMockResponse("", getFixture("repository_invitation.json"));
-    when(github.put("/repos/someowner/somerepo/collaborators/user", "{\"permission\":\"pull\"}")).thenReturn(
-        completedFuture(response));
+    when(github.put("/repos/someowner/somerepo/collaborators/user", "{\"permission\":\"pull\"}"))
+        .thenReturn(completedFuture(response));
 
-    final Optional<RepositoryInvitation> maybeInvite = repoClient.addCollaborator("user",
-        RepositoryPermission.PULL).get();
+    final Optional<RepositoryInvitation> maybeInvite =
+        repoClient.addCollaborator("user", RepositoryPermission.PULL).get();
 
     assertTrue(maybeInvite.isPresent());
     final RepositoryInvitation repoInvite = maybeInvite.get();
@@ -187,11 +209,11 @@ public class RepositoryClientTest {
   public void addCollaboratorUserExists() throws Exception {
     final Response response = mock(Response.class);
     when(response.code()).thenReturn(204);
-    when(github.put("/repos/someowner/somerepo/collaborators/user", "{\"permission\":\"pull\"}")).thenReturn(
-        completedFuture(response));
+    when(github.put("/repos/someowner/somerepo/collaborators/user", "{\"permission\":\"pull\"}"))
+        .thenReturn(completedFuture(response));
 
-    final Optional<RepositoryInvitation> maybeInvite = repoClient.addCollaborator("user",
-        RepositoryPermission.PULL).get();
+    final Optional<RepositoryInvitation> maybeInvite =
+        repoClient.addCollaborator("user", RepositoryPermission.PULL).get();
 
     assertTrue(maybeInvite.isEmpty());
   }
@@ -223,16 +245,16 @@ public class RepositoryClientTest {
   @Test
   public void listInvites() throws Exception {
     final CompletableFuture<List<RepositoryInvitation>> fixture =
-            completedFuture(
-                    json.fromJson("[" + getFixture("repository_invitation.json") + "]", LIST_REPOSITORY_INVITATION));
+        completedFuture(
+            json.fromJson(
+                "[" + getFixture("repository_invitation.json") + "]", LIST_REPOSITORY_INVITATION));
     when(github.request("/repos/someowner/somerepo/invitations", LIST_REPOSITORY_INVITATION))
-            .thenReturn(fixture);
+        .thenReturn(fixture);
 
     final List<RepositoryInvitation> invitations = repoClient.listInvitations().get();
     assertThat(invitations.size(), is(1));
     assertThat(invitations.get(0).repository().name(), is("Hello-World"));
-    assertThat(
-            invitations.get(0).inviter().login(), is("octocat"));
+    assertThat(invitations.get(0).inviter().login(), is("octocat"));
   }
 
   @Test
@@ -254,8 +276,12 @@ public class RepositoryClientTest {
   public void listPullRequestsForCommit() throws Exception {
     final CompletableFuture<List<PullRequestItem>> fixture =
         completedFuture(
-            json.fromJson("[" + getFixture("../prs/pull_request_item.json") + "]", LIST_PR_TYPE_REFERENCE));
-    when(github.request(eq("/repos/someowner/somerepo/commits/thesha/pulls"), eq(LIST_PR_TYPE_REFERENCE), any()))
+            json.fromJson(
+                "[" + getFixture("../prs/pull_request_item.json") + "]", LIST_PR_TYPE_REFERENCE));
+    when(github.request(
+            eq("/repos/someowner/somerepo/commits/thesha/pulls"),
+            eq(LIST_PR_TYPE_REFERENCE),
+            any()))
         .thenReturn(fixture);
     final List<PullRequestItem> prs = repoClient.listPullRequestsForCommit("thesha").get();
     assertThat(prs.size(), is(1));
@@ -301,19 +327,21 @@ public class RepositoryClientTest {
   @Test
   public void createFileContent() throws Exception {
     String rawFileCreateRequest = getFixture("create-content-request.json");
-    final CompletableFuture<CommitWithFolderContent> fixture = completedFuture(
-        json.fromJson(getFixture("create-content-repsonse.json"), CommitWithFolderContent.class)
-    );
+    final CompletableFuture<CommitWithFolderContent> fixture =
+        completedFuture(
+            json.fromJson(
+                getFixture("create-content-repsonse.json"), CommitWithFolderContent.class));
     when(github.put(
-        eq("/repos/someowner/somerepo/contents/test/README.md"),
-        argThat(body -> SameJSONAs.sameJSONAs(rawFileCreateRequest).matches(body)),
-        eq(CommitWithFolderContent.class)
-    )).thenReturn(fixture);
+            eq("/repos/someowner/somerepo/contents/test/README.md"),
+            argThat(body -> SameJSONAs.sameJSONAs(rawFileCreateRequest).matches(body)),
+            eq(CommitWithFolderContent.class)))
+        .thenReturn(fixture);
 
-    FileCreate fileCreateRequest = ImmutableFileCreate.builder()
-        .message("my commit message")
-        .content("encoded content ...")
-        .build();
+    FileCreate fileCreateRequest =
+        ImmutableFileCreate.builder()
+            .message("my commit message")
+            .content("encoded content ...")
+            .build();
 
     final CommitWithFolderContent commitWithFolderContent =
         repoClient.createFileContent("test/README.md", fileCreateRequest).get();
@@ -326,21 +354,23 @@ public class RepositoryClientTest {
   @Test
   public void updateFileContent() throws Exception {
     String rawFileUpdateRequest = getFixture("update-content-request.json");
-    final CompletableFuture<CommitWithFolderContent> fixture = completedFuture(
-        json.fromJson(getFixture("create-content-repsonse.json"), CommitWithFolderContent.class)
-    );
+    final CompletableFuture<CommitWithFolderContent> fixture =
+        completedFuture(
+            json.fromJson(
+                getFixture("create-content-repsonse.json"), CommitWithFolderContent.class));
     when(github.put(
-        eq("/repos/someowner/somerepo/contents/test/README.md"),
-        argThat(body -> SameJSONAs.sameJSONAs(rawFileUpdateRequest).matches(body)),
-        eq(CommitWithFolderContent.class)
-    )).thenReturn(fixture);
+            eq("/repos/someowner/somerepo/contents/test/README.md"),
+            argThat(body -> SameJSONAs.sameJSONAs(rawFileUpdateRequest).matches(body)),
+            eq(CommitWithFolderContent.class)))
+        .thenReturn(fixture);
 
-    FileUpdate fileUpdateRequest = ImmutableFileUpdate.builder()
-        .message("my commit message")
-        .content("encoded content ...")
-        .branch("test-branch")
-        .sha("12345")
-        .build();
+    FileUpdate fileUpdateRequest =
+        ImmutableFileUpdate.builder()
+            .message("my commit message")
+            .content("encoded content ...")
+            .branch("test-branch")
+            .sha("12345")
+            .build();
 
     final CommitWithFolderContent commitWithFolderContent =
         repoClient.updateFileContent("test/README.md", fileUpdateRequest).get();
@@ -394,14 +424,18 @@ public class RepositoryClientTest {
         .thenReturn(fixture);
     final Branch branch = repoClient.getBranch("somebranch").get();
     assertThat(branch.isProtected().orElse(false), is(true));
-    assertThat(branch.protectionUrl().get().toString(), is("https://api.github.com/repos/octocat/Hello-World/branches/master/protection"));
+    assertThat(
+        branch.protectionUrl().get().toString(),
+        is("https://api.github.com/repos/octocat/Hello-World/branches/master/protection"));
     assertThat(branch.commit().sha(), is("6dcb09b5b57875f334f61aebed695e2e4193db5e"));
     assertThat(
         branch.commit().url().toString(),
-        is("https://api.github.com/repos/octocat/Hello-World/commits/c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc"));
+        is(
+            "https://api.github.com/repos/octocat/Hello-World/commits/c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc"));
     assertTrue(branch.protection().isPresent());
     assertTrue(branch.protection().get().enabled());
-    assertThat(branch.protection().get().requiredStatusChecks().enforcementLevel(), is("non_admins"));
+    assertThat(
+        branch.protection().get().requiredStatusChecks().enforcementLevel(), is("non_admins"));
     assertTrue(branch.protection().get().requiredStatusChecks().contexts().contains("Context 1"));
     assertTrue(branch.protection().get().requiredStatusChecks().contexts().contains("Context 2"));
   }
@@ -421,7 +455,8 @@ public class RepositoryClientTest {
   @Test
   public void getBranchWithoutProtectionFields() throws Exception {
     final CompletableFuture<Branch> fixture =
-        completedFuture(json.fromJson(getFixture("branch-no-protection-fields.json"), Branch.class));
+        completedFuture(
+            json.fromJson(getFixture("branch-no-protection-fields.json"), Branch.class));
     when(github.request("/repos/someowner/somerepo/branches/somebranch", Branch.class))
         .thenReturn(fixture);
     final Branch branch = repoClient.getBranch("somebranch").get();
@@ -430,41 +465,47 @@ public class RepositoryClientTest {
     assertThat(branch.commit().sha(), is("6dcb09b5b57875f334f61aebed695e2e4193db5e"));
     assertThat(
         branch.commit().url().toString(),
-        is("https://api.github.com/repos/octocat/Hello-World/commits/c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc"));
+        is(
+            "https://api.github.com/repos/octocat/Hello-World/commits/c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc"));
   }
 
   @Test
   public void getBranchWithCharactersIncorrectlyUnescapedByTheGithubApi() throws Exception {
     final CompletableFuture<Branch> fixture =
         completedFuture(json.fromJson(getFixture("branch-escape-chars.json"), Branch.class));
-    when(github.request("/repos/someowner/somerepo/branches/unescaped-percent-sign-%", Branch.class))
+    when(github.request(
+            "/repos/someowner/somerepo/branches/unescaped-percent-sign-%", Branch.class))
         .thenReturn(fixture);
     final Branch branch = repoClient.getBranch("unescaped-percent-sign-%").get();
     assertThat(branch.commit().sha(), is("6dcb09b5b57875f334f61aebed695e2e4193db5e"));
     assertThat(
         branch.protectionUrl().get().toString(),
-        is("https://api.github.com/repos/octocat/Hello-World/branches/unescaped-percent-sign-%25/protection"));
+        is(
+            "https://api.github.com/repos/octocat/Hello-World/branches/unescaped-percent-sign-%25/protection"));
   }
 
   @Test
-  public void getBranchWithCharactersIncorrectlyUnescapedByTheGithubApi_uriVariationTwo() throws Exception {
+  public void getBranchWithCharactersIncorrectlyUnescapedByTheGithubApi_uriVariationTwo()
+      throws Exception {
     final CompletableFuture<Branch> fixture =
-        completedFuture(json.fromJson(getFixture("branch-escape-chars-url-variation-two.json"), Branch.class));
-    when(github.request("/repos/someowner/somerepo/branches/unescaped-percent-sign-%", Branch.class))
+        completedFuture(
+            json.fromJson(getFixture("branch-escape-chars-url-variation-two.json"), Branch.class));
+    when(github.request(
+            "/repos/someowner/somerepo/branches/unescaped-percent-sign-%", Branch.class))
         .thenReturn(fixture);
     final Branch branch = repoClient.getBranch("unescaped-percent-sign-%").get();
     assertThat(branch.commit().sha(), is("6dcb09b5b57875f334f61aebed695e2e4193db5e"));
     assertThat(
         branch.protectionUrl().get().toString(),
-        is("https://api.github.com/api/v3/repos/octocat/Hello-World/branches/branch-name-with-slashes/unescaped-percent-sign-%25/protection"));
+        is(
+            "https://api.github.com/api/v3/repos/octocat/Hello-World/branches/branch-name-with-slashes/unescaped-percent-sign-%25/protection"));
   }
 
   @Test
   public void listBranches() throws Exception {
     final CompletableFuture<List<Branch>> fixture =
         completedFuture(json.fromJson(getFixture("list_branches.json"), LIST_BRANCHES));
-    when(github.request("/repos/someowner/somerepo/branches", LIST_BRANCHES))
-        .thenReturn(fixture);
+    when(github.request("/repos/someowner/somerepo/branches", LIST_BRANCHES)).thenReturn(fixture);
     final List<Branch> branches = repoClient.listBranches().get();
     assertThat(branches.get(0).commit().sha(), is("c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc"));
     assertThat(branches.size(), is(1));
@@ -472,12 +513,15 @@ public class RepositoryClientTest {
 
   @Test
   void listAllBranches() throws Exception {
-    final String link = "<https://github.com/api/v3/repos/someowner/somerepo/branches>; rel=\"last\"";
-    final Response response = createMockResponse(link, getFixture( "list_branches.json"));
+    final String link =
+        "<https://github.com/api/v3/repos/someowner/somerepo/branches>; rel=\"last\"";
+    final Response response = createMockResponse(link, getFixture("list_branches.json"));
 
     when(github.request("/repos/someowner/somerepo/branches"))
         .thenReturn(completedFuture(response));
-    final List<Branch> branches = Async.streamFromPaginatingIterable(repoClient::listAllBranches).collect(Collectors.toList());
+    final List<Branch> branches =
+        Async.streamFromPaginatingIterable(repoClient::listAllBranches)
+            .collect(Collectors.toList());
     assertThat(branches.get(0).commit().sha(), is("c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc"));
     assertThat(branches.size(), is(1));
   }
@@ -527,16 +571,24 @@ public class RepositoryClientTest {
     when(github.urlFor("")).thenReturn("https://github.com/api/v3");
 
     when(github.request(
-        format(STATUS_URI_TEMPLATE, "someowner", "somerepo", "553c2077f0edc3d5dc5d17262f6aa498e69d6f8e")))
+            format(
+                STATUS_URI_TEMPLATE,
+                "someowner",
+                "somerepo",
+                "553c2077f0edc3d5dc5d17262f6aa498e69d6f8e")))
         .thenReturn(completedFuture(firstPageResponse));
     when(github.request(
-        format(STATUS_URI_TEMPLATE + "?page=2", "someowner", "somerepo", "553c2077f0edc3d5dc5d17262f6aa498e69d6f8e")))
+            format(
+                STATUS_URI_TEMPLATE + "?page=2",
+                "someowner",
+                "somerepo",
+                "553c2077f0edc3d5dc5d17262f6aa498e69d6f8e")))
         .thenReturn(completedFuture(lastPageResponse));
 
     final List<Status> listStatuses = Lists.newArrayList();
-    repoClient.listCommitStatuses("553c2077f0edc3d5dc5d17262f6aa498e69d6f8e", 10)
-        .forEachRemaining(page -> page.iterator()
-            .forEachRemaining(listStatuses::add));
+    repoClient
+        .listCommitStatuses("553c2077f0edc3d5dc5d17262f6aa498e69d6f8e", 10)
+        .forEachRemaining(page -> page.iterator().forEachRemaining(listStatuses::add));
 
     assertThat(listStatuses.size(), is(12));
     assertThat(listStatuses.get(0).id(), is(61764535L));
@@ -545,23 +597,23 @@ public class RepositoryClientTest {
 
   @Test
   public void merge() throws IOException {
-    CompletableFuture<Response> okResponse = completedFuture(
-        new Response.Builder()
-            .request(new Request.Builder().url("http://example.com/whatever").build())
-            .protocol(Protocol.HTTP_1_1)
-            .message("")
-            .code(201)
-            .body(
-                ResponseBody.create(
-                    MediaType.get("application/json"),
-                    getFixture("merge_commit_item.json")
-                ))
-            .build());
-    final String expectedRequestBody = json.toJsonUnchecked(ImmutableMap.of(
-        "base", "basebranch",
-        "head", "headbranch"));
-    when(github
-        .post("/repos/someowner/somerepo/merges", expectedRequestBody))
+    CompletableFuture<Response> okResponse =
+        completedFuture(
+            new Response.Builder()
+                .request(new Request.Builder().url("http://example.com/whatever").build())
+                .protocol(Protocol.HTTP_1_1)
+                .message("")
+                .code(201)
+                .body(
+                    ResponseBody.create(
+                        MediaType.get("application/json"), getFixture("merge_commit_item.json")))
+                .build());
+    final String expectedRequestBody =
+        json.toJsonUnchecked(
+            ImmutableMap.of(
+                "base", "basebranch",
+                "head", "headbranch"));
+    when(github.post("/repos/someowner/somerepo/merges", expectedRequestBody))
         .thenReturn(okResponse);
     final CommitItem commit = repoClient.merge("basebranch", "headbranch").join().get();
 
@@ -572,21 +624,19 @@ public class RepositoryClientTest {
 
   @Test
   public void createFork() throws IOException {
-    CompletableFuture<Response> okResponse = completedFuture(
-        new Response.Builder()
-            .request(new Request.Builder().url("http://example.com/whatever").build())
-            .protocol(Protocol.HTTP_1_1)
-            .message("")
-            .code(202)
-            .body(
-                ResponseBody.create(
-                    MediaType.get("application/json"),
-                    getFixture("fork_create_item.json")
-                ))
-            .build());
+    CompletableFuture<Response> okResponse =
+        completedFuture(
+            new Response.Builder()
+                .request(new Request.Builder().url("http://example.com/whatever").build())
+                .protocol(Protocol.HTTP_1_1)
+                .message("")
+                .code(202)
+                .body(
+                    ResponseBody.create(
+                        MediaType.get("application/json"), getFixture("fork_create_item.json")))
+                .build());
     final String expectedRequestBody = json.toJsonUnchecked(ImmutableMap.of());
-    when(github
-        .post("/repos/someowner/somerepo/forks", expectedRequestBody))
+    when(github.post("/repos/someowner/somerepo/forks", expectedRequestBody))
         .thenReturn(okResponse);
 
     final Repository repo = repoClient.createFork(null).join();
@@ -595,13 +645,14 @@ public class RepositoryClientTest {
 
   @Test
   public void mergeNoop() {
-    CompletableFuture<Response> okResponse = completedFuture(
-        new Response.Builder()
-            .request(new Request.Builder().url("http://example.com/whatever").build())
-            .protocol(Protocol.HTTP_1_1)
-            .message("")
-            .code(204) // No Content
-            .build());
+    CompletableFuture<Response> okResponse =
+        completedFuture(
+            new Response.Builder()
+                .request(new Request.Builder().url("http://example.com/whatever").build())
+                .protocol(Protocol.HTTP_1_1)
+                .message("")
+                .code(204) // No Content
+                .build());
     when(github.post(any(), any())).thenReturn(okResponse);
     final Optional<CommitItem> maybeCommit = repoClient.merge("basebranch", "headbranch").join();
     assertThat(maybeCommit, is(Optional.empty()));
@@ -609,21 +660,21 @@ public class RepositoryClientTest {
 
   @Test
   public void shouldDownloadTarball() throws Exception {
-    CompletableFuture<Response> fixture = completedFuture(
-        new Response.Builder()
-            .request(new Request.Builder().url("https://example.com/whatever").build())
-            .protocol(Protocol.HTTP_1_1)
-            .message("")
-            .code(200)
-            .body(
-                ResponseBody.create(
-                    "some bytes".getBytes(StandardCharsets.UTF_8),
-                    MediaType.get("application/gzip")
-                ))
-            .build());
+    CompletableFuture<Response> fixture =
+        completedFuture(
+            new Response.Builder()
+                .request(new Request.Builder().url("https://example.com/whatever").build())
+                .protocol(Protocol.HTTP_1_1)
+                .message("")
+                .code(200)
+                .body(
+                    ResponseBody.create(
+                        "some bytes".getBytes(StandardCharsets.UTF_8),
+                        MediaType.get("application/gzip")))
+                .build());
     when(github.request("/repos/someowner/somerepo/tarball/")).thenReturn(fixture);
 
-    try(InputStream response = repoClient.downloadTarball().get().orElseThrow()) {
+    try (InputStream response = repoClient.downloadTarball().get().orElseThrow()) {
       String result = new String(response.readAllBytes(), StandardCharsets.UTF_8);
       assertThat(result, is("some bytes"));
     }
@@ -631,18 +682,18 @@ public class RepositoryClientTest {
 
   @Test
   public void shouldDownloadZipball() throws Exception {
-    CompletableFuture<Response> fixture = completedFuture(
-        new Response.Builder()
-            .request(new Request.Builder().url("https://example.com/whatever").build())
-            .protocol(Protocol.HTTP_1_1)
-            .message("")
-            .code(200)
-            .body(
-                ResponseBody.create(
-                    "some bytes".getBytes(StandardCharsets.UTF_8),
-                    MediaType.get("application/gzip")
-                ))
-            .build());
+    CompletableFuture<Response> fixture =
+        completedFuture(
+            new Response.Builder()
+                .request(new Request.Builder().url("https://example.com/whatever").build())
+                .protocol(Protocol.HTTP_1_1)
+                .message("")
+                .code(200)
+                .body(
+                    ResponseBody.create(
+                        "some bytes".getBytes(StandardCharsets.UTF_8),
+                        MediaType.get("application/gzip")))
+                .build());
     when(github.request("/repos/someowner/somerepo/zipball/")).thenReturn(fixture);
 
     try (InputStream response = repoClient.downloadZipball().get().orElseThrow()) {
@@ -653,16 +704,39 @@ public class RepositoryClientTest {
 
   @Test
   public void shouldReturnEmptyOptionalWhenResponseBodyNotPresent() throws Exception {
-    CompletableFuture<Response> fixture = completedFuture(
-        new Response.Builder()
-            .request(new Request.Builder().url("https://example.com/whatever").build())
-            .protocol(Protocol.HTTP_1_1)
-            .message("")
-            .code(204) // No Content
-            .build());
+    CompletableFuture<Response> fixture =
+        completedFuture(
+            new Response.Builder()
+                .request(new Request.Builder().url("https://example.com/whatever").build())
+                .protocol(Protocol.HTTP_1_1)
+                .message("")
+                .code(204) // No Content
+                .build());
     when(github.request("/repos/someowner/somerepo/zipball/master")).thenReturn(fixture);
 
     Optional<InputStream> response = repoClient.downloadZipball("master").get();
     assertThat(response, is(Optional.empty()));
   }
+
+  @Test
+  public void shouldReturnEmptyResponseWhenRepositoryDispatchEndpointTriggered() throws Exception {
+    final Response response = mock(Response.class);
+    when(response.code()).thenReturn(204);
+
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode clientPayload = mapper.createObjectNode();
+    clientPayload.put("my-custom-true-property","true");
+    clientPayload.put("my-custom-false-property", "false");
+
+    RepositoryDispatch repositoryDispatchRequest = ImmutableRepositoryDispatch.builder()
+        .eventType("my-custom-event")
+        .clientPayload(clientPayload)
+        .build();
+
+    when(github.post("/repos/someowner/somerepo/dispatches", json.toJsonUnchecked(repositoryDispatchRequest))).thenReturn(completedFuture(response));
+
+    boolean repoDispatchResult = repoClient.createRepositoryDispatchEvent(repositoryDispatchRequest).get();
+    assertTrue(repoDispatchResult);
+  }
+
 }

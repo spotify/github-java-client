@@ -27,15 +27,21 @@ public class UserClient {
 
   public static final int NO_CONTENT = 204;
   private final GitHubClient github;
+  private final String owner;
 
   private static final String SUSPEND_USER_TEMPLATE = "/users/%s/suspended";
 
-  UserClient(final GitHubClient github) {
+  UserClient(final GitHubClient github, final String owner) {
     this.github = github;
+    this.owner = owner;
   }
 
-  static UserClient create(final GitHubClient github) {
-    return new UserClient(github);
+  static UserClient create(final GitHubClient github, final String owner) {
+    return new UserClient(github, owner);
+  }
+
+  public GithubAppClient createGithubAppClient() {
+    return new GithubAppClient(this.github, this.owner);
   }
 
   /**

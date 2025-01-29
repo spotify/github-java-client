@@ -18,25 +18,34 @@
  * -/-/-
  */
 
-package com.spotify.github.v3.exceptions;
+package com.spotify.github.v3.workflows;
+
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.spotify.github.GithubStyle;
+import org.immutables.value.Value;
 
 import java.util.List;
-import java.util.Map;
 
-/** The Read only repository exception. */
-public class ReadOnlyRepositoryException extends RequestNotOkException {
-  private static final long serialVersionUID = 1L;
+/**
+ * The WorkflowsResponse list resource
+ *
+ * @see "https://docs.github.com/en/rest/actions/workflows#list-repository-workflows"
+ */
+@Value.Immutable
+@GithubStyle
+@JsonDeserialize(as = ImmutableWorkflowsRepositoryResponseList.class)
+public interface WorkflowsRepositoryResponseList {
+  /**
+   * The count of workflows in the response
+   *
+   * @return the int
+   */
+  int totalCount();
 
   /**
-   * Instantiates a new Read only repository exception.
+   * Workflows list.
    *
-   * @param method HTTP method
-   * @param path the path
-   * @param statusCode the status code
-   * @param msg the msg
+   * @return the list of workflows
    */
-  public ReadOnlyRepositoryException(
-      final String method, final String path, final int statusCode, final String msg, final Map<String, List<String>> headers) {
-    super(method, path, statusCode, msg, headers);
-  }
+  List<WorkflowsResponse> workflows();
 }

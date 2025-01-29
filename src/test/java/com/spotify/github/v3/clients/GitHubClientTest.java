@@ -22,6 +22,8 @@ package com.spotify.github.v3.clients;
 
 import static com.google.common.io.Resources.getResource;
 import static java.nio.charset.Charset.defaultCharset;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+import static java.util.concurrent.CompletableFuture.failedFuture;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
@@ -33,15 +35,19 @@ import static org.mockito.Mockito.*;
 import com.google.common.io.Resources;
 import com.spotify.github.Tracer;
 import com.spotify.github.v3.checks.CheckSuiteResponseList;
+import com.spotify.github.v3.checks.Installation;
 import com.spotify.github.v3.exceptions.ReadOnlyRepositoryException;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.repos.CommitItem;
 import com.spotify.github.v3.repos.RepositoryInvitation;
+import com.spotify.github.v3.workflows.WorkflowsResponse;
+import com.spotify.github.v3.workflows.WorkflowsState;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -227,5 +233,89 @@ public class GitHubClientTest {
     assertThat(result.totalCount(), is(1));
     assertThat(result.checkSuites().get(0).app().get().slug().get(), is("octoapp"));
 
+  }
+
+  @Test
+  public void testGetWorkflow() throws Throwable {
+    final Call call = mock(Call.class);
+    final ArgumentCaptor<Callback> callbackCapture = ArgumentCaptor.forClass(Callback.class);
+    doNothing().when(call).enqueue(callbackCapture.capture());
+
+    final Response response = new okhttp3.Response.Builder()
+        .code(200)
+        .body(
+            ResponseBody.create(
+                MediaType.get("application/json"),
+                getFixture("../workflows/workflows-get-workflow-response.json")))
+        .message("")
+        .protocol(Protocol.HTTP_1_1)
+        .request(new Request.Builder().url("http://localhost/").build())
+        .build();
+
+    when(client.newCall(any())).thenReturn(call);
+    WorkflowsClient client = github.withTracer(tracer).createRepositoryClient("testorg", "testrepo")
+        .createActionsClient().createWorkflowsClient();
+
+    CompletableFuture<WorkflowsResponse> future = client.getWorkflow(161335);
+    callbackCapture.getValue().onResponse(call, response);
+    var result = future.get();
+
+    assertThat(result.id(), is(161335));
+    assertThat(result.state(), is(WorkflowsState.active));
+  }
+
+  @Test
+  void asAppScopedClientGetsUserClientIfOrgClientNotFound() {
+    var appGithub = GitHubClient.create(client, URI.create("http://bogus"), new byte[] {}, 1);
+    var githubSpy = spy(appGithub);
+
+    var orgClientMock = mock(OrganisationClient.class);
+    when(githubSpy.createOrganisationClient("owner")).thenReturn(orgClientMock);
+
+    var appClientMock = mock(GithubAppClient.class);
+    when(orgClientMock.createGithubAppClient()).thenReturn(appClientMock);
+    when(appClientMock.getInstallation()).thenReturn(failedFuture(new RequestNotOkException("", "", 404, "", new HashMap<>())));
+
+    var userClientMock = mock(UserClient.class);
+    when(githubSpy.createUserClient("owner")).thenReturn(userClientMock);
+
+    var appClientMock2 = mock(GithubAppClient.class);
+    when(userClientMock.createGithubAppClient()).thenReturn(appClientMock2);
+
+    var installationMock = mock(Installation.class);
+    when(appClientMock2.getUserInstallation()).thenReturn(completedFuture(installationMock));
+    when(installationMock.id()).thenReturn(1);
+
+    var maybeScopedClient = githubSpy.asAppScopedClient("owner").toCompletableFuture().join();
+
+    Assertions.assertTrue(maybeScopedClient.isPresent());
+    verify(githubSpy, times(1)).createOrganisationClient("owner");
+    verify(githubSpy, times(1)).createUserClient("owner");
+  }
+
+  @Test
+  void asAppScopedClientReturnsEmptyIfNoInstallation() {
+    var appGithub = GitHubClient.create(client, URI.create("http://bogus"), new byte[] {}, 1);
+    var githubSpy = spy(appGithub);
+
+    var orgClientMock = mock(OrganisationClient.class);
+    when(githubSpy.createOrganisationClient("owner")).thenReturn(orgClientMock);
+
+    var appClientMock = mock(GithubAppClient.class);
+    when(orgClientMock.createGithubAppClient()).thenReturn(appClientMock);
+    when(appClientMock.getInstallation()).thenReturn(failedFuture(new RequestNotOkException("", "", 404, "", new HashMap<>())));
+
+    var userClientMock = mock(UserClient.class);
+    when(githubSpy.createUserClient("owner")).thenReturn(userClientMock);
+
+    var appClientMock2 = mock(GithubAppClient.class);
+    when(userClientMock.createGithubAppClient()).thenReturn(appClientMock2);
+
+    var installationMock = mock(Installation.class);
+    when(appClientMock2.getUserInstallation()).thenReturn(failedFuture(new RequestNotOkException("", "", 404, "", new HashMap<>())));
+    when(installationMock.id()).thenReturn(1);
+
+    var maybeScopedClient = githubSpy.asAppScopedClient("owner").toCompletableFuture().join();
+    Assertions.assertTrue(maybeScopedClient.isEmpty());
   }
 }

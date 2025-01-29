@@ -18,25 +18,29 @@
  * -/-/-
  */
 
-package com.spotify.github.v3.exceptions;
+package com.spotify.github.v3.clients;
 
-import java.util.List;
-import java.util.Map;
+public class ActionsClient {
+  private final String owner;
+  private final String repo;
+  private final GitHubClient github;
 
-/** The Read only repository exception. */
-public class ReadOnlyRepositoryException extends RequestNotOkException {
-  private static final long serialVersionUID = 1L;
+  ActionsClient(final GitHubClient github, final String owner, final String repo) {
+    this.github = github;
+    this.owner = owner;
+    this.repo = repo;
+  }
+
+  static ActionsClient create(final GitHubClient github, final String owner, final String repo) {
+    return new ActionsClient(github, owner, repo);
+  }
 
   /**
-   * Instantiates a new Read only repository exception.
+   * Workflows API client
    *
-   * @param method HTTP method
-   * @param path the path
-   * @param statusCode the status code
-   * @param msg the msg
+   * @return Workflows API client
    */
-  public ReadOnlyRepositoryException(
-      final String method, final String path, final int statusCode, final String msg, final Map<String, List<String>> headers) {
-    super(method, path, statusCode, msg, headers);
+  public WorkflowsClient createWorkflowsClient() {
+    return WorkflowsClient.create(github, owner, repo);
   }
 }
