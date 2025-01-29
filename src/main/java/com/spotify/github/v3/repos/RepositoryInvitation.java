@@ -61,7 +61,6 @@ public interface RepositoryInvitation {
   ZonedDateTime createdAt();
 
   /** Whether or not the invitation has expired */
-  @Nullable
   Optional<Boolean> expired();
 
   /** API URL */

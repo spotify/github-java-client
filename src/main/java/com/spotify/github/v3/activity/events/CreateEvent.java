@@ -47,7 +47,6 @@ public interface CreateEvent extends BaseEvent {
   String masterBranch();
 
   /** The repository's current description. */
-  @Nullable
   Optional<String> description();
 
   /** No doc found on github - Usually is "user". */
