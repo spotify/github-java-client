@@ -23,15 +23,17 @@ package com.spotify.github.tracing;
 
 import com.spotify.github.tracing.opencensus.OpenCensusTracer;
 import io.grpc.Context;
-import io.opencensus.trace.*;
 import io.opencensus.trace.Span;
+import io.opencensus.trace.*;
 import io.opencensus.trace.config.TraceConfig;
 import io.opencensus.trace.config.TraceParams;
 import io.opencensus.trace.export.SpanData;
 import io.opencensus.trace.samplers.Samplers;
 import io.opencensus.trace.unsafe.ContextUtils;
-import org.junit.jupiter.api.BeforeEach;
+import okhttp3.Call;
+import okhttp3.OkHttpClient;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -40,6 +42,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static io.opencensus.trace.AttributeValue.stringAttributeValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class OpenCensusTracerTest {
 
@@ -102,6 +105,14 @@ public class OpenCensusTracerTest {
         assertEquals(stringAttributeValue("path"), attributes.get("http.url"));
         assertEquals(stringAttributeValue("POST"), attributes.get("method"));
         assertEquals(Status.UNKNOWN, inner.getStatus());
+    }
+
+    @Test
+    public void test_createTracedClient() {
+        OpenCensusTracer tracer = new OpenCensusTracer();
+        OkHttpClient client = new OkHttpClient.Builder().build();
+        Call.Factory callFactory = tracer.createTracedClient(client);
+        assertNotNull(callFactory);
     }
 
     private io.opencensus.trace.Span startRootSpan() {
