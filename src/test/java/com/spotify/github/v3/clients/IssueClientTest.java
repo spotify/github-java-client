@@ -23,13 +23,18 @@ package com.spotify.github.v3.clients;
 import static com.google.common.io.Resources.getResource;
 import static com.spotify.github.FixtureHelper.loadFixture;
 import static com.spotify.github.v3.clients.IssueClient.COMMENTS_URI_NUMBER_TEMPLATE;
+import static com.spotify.github.v3.clients.IssueClient.ISSUES_URI_ID_TEMPLATE;
 import static com.spotify.github.v3.clients.MockHelper.createMockResponse;
 import static java.lang.String.format;
 import static java.nio.charset.Charset.defaultCharset;
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static java.util.concurrent.CompletableFuture.failedFuture;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -41,8 +46,13 @@ import com.spotify.github.async.Async;
 import com.spotify.github.async.AsyncPage;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.comment.Comment;
+import com.spotify.github.v3.exceptions.RequestNotOkException;
+import com.spotify.github.v3.issues.Issue;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,11 +61,14 @@ public class IssueClientTest {
 
   private GitHubClient github;
   private IssueClient issueClient;
+  private Json json;
+
 
   @BeforeEach
   public void setUp() {
+    json = Json.create();
     github = mock(GitHubClient.class);
-    when(github.json()).thenReturn(Json.create());
+    when(github.json()).thenReturn(json);
     when(github.urlFor("")).thenReturn("https://github.com/api/v3");
     issueClient = new IssueClient(github, "someowner", "somerepo");
   }
@@ -131,5 +144,28 @@ public class IssueClientTest {
     final Comment comment = issueClient.createComment(10, "Me too").join();
 
     assertThat(comment.id(), is(114));
+  }
+
+  @Test
+  public void testGetIssue() throws IOException {
+    final String fixture = loadFixture("issues/issue.json");
+    final CompletableFuture<Issue> response = completedFuture(json.fromJson(fixture, Issue.class));
+    final String path = format(ISSUES_URI_ID_TEMPLATE, "someowner", "somerepo", 2);
+    when(github.request(eq(path), eq(Issue.class))).thenReturn(response);
+
+    final var issue = issueClient.getIssue(2).join();
+
+    assertThat(issue.id(), is(2));
+    assertNotNull(issue.labels());
+    assertFalse(issue.labels().isEmpty());
+    assertThat(issue.labels().get(0).name(), is("bug"));
+  }
+
+  @Test
+  public void testGetIssueNoIssue() {
+    final String path = format(ISSUES_URI_ID_TEMPLATE, "someowner", "somerepo", 2);
+    when(github.request(eq(path), eq(Issue.class))).thenReturn(failedFuture(new RequestNotOkException("", "", 404, "", new HashMap<>())));
+
+    assertThrows(CompletionException.class, () -> issueClient.getIssue(2).join());
   }
 }

@@ -26,6 +26,7 @@ import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMENT_TYPE_REFER
 import com.google.common.collect.ImmutableMap;
 import com.spotify.github.async.AsyncPage;
 import com.spotify.github.v3.comment.Comment;
+import com.spotify.github.v3.issues.Issue;
 import java.lang.invoke.MethodHandles;
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
@@ -38,6 +39,7 @@ public class IssueClient {
   static final String COMMENTS_URI_NUMBER_TEMPLATE = "/repos/%s/%s/issues/%s/comments";
   static final String COMMENTS_URI_TEMPLATE = "/repos/%s/%s/issues/comments";
   static final String COMMENTS_URI_ID_TEMPLATE = "/repos/%s/%s/issues/comments/%s";
+  static final String ISSUES_URI_ID_TEMPLATE = "/repos/%s/%s/issues/%s";
   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
   private final GitHubClient github;
@@ -124,5 +126,15 @@ public class IssueClient {
 
   private Iterator<AsyncPage<Comment>> listComments(final String path) {
     return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_COMMENT_TYPE_REFERENCE));
+  }
+
+  /***
+   * Get issue by id
+   *
+   * @param id
+   * @return the Issue for the given id if exists.
+   */
+  public CompletableFuture<Issue> getIssue(final int id) {
+    return github.request(String.format(ISSUES_URI_ID_TEMPLATE, owner, repo, id), Issue.class);
   }
 }
