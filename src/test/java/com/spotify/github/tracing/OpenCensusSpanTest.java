@@ -18,9 +18,9 @@
  * -/-/-
  */
 
-package com.spotify.github.opencensus;
+package com.spotify.github.tracing;
 
-import com.spotify.github.Span;
+import com.spotify.github.tracing.opencensus.OpenCensusSpan;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import io.opencensus.trace.AttributeValue;
 import io.opencensus.trace.Status;
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 class OpenCensusSpanTest {
-    private io.opencensus.trace.Span wrapped = mock(io.opencensus.trace.Span.class);
+    private final io.opencensus.trace.Span wrapped = mock(io.opencensus.trace.Span.class);
 
     @Test
     public void succeed() {

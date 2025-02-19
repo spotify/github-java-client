@@ -28,7 +28,7 @@
 
     <organization>
         <name>Spotify AB</name>
-        <url>http://www.spotify.com</url>
+        <url>https://www.spotify.com</url>
     </organization>
 
     <distributionManagement>
@@ -41,23 +41,6 @@
             <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
-
-    <developers>
-        <developer>
-            <id>henriquetruta</id>
-            <name>Henrique Truta</name>
-            <email>henriquet@spotify.com</email>
-            <organization>Spotify AB</organization>
-            <organizationUrl>http://www.spotify.com</organizationUrl>
-        </developer>
-        <developer>
-            <id>hewhomustnotbenamed</id>
-            <name>Abhimanyu Shegokar</name>
-            <email>abhimanyus@spotify.com</email>
-            <organization>Spotify AB</organization>
-            <organizationUrl>http://www.spotify.com</organizationUrl>
-        </developer>
-    </developers>
 
     <repositories>
         <repository>
@@ -102,6 +85,7 @@
         <objenesis.version>3.3</objenesis.version>
         <opencensus.version>0.31.1</opencensus.version>
         <okhttp.version>4.11.0</okhttp.version>
+        <opentelemetry.version>1.42.1</opentelemetry.version>
 
         <shade.id>${project.groupId}.githubclient.shade</shade.id>
     </properties>
@@ -119,6 +103,13 @@
                 <version>${jackson.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-bom</artifactId>
+                <version>${opentelemetry.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -178,6 +169,30 @@
             <groupId>io.opencensus</groupId>
             <artifactId>opencensus-api</artifactId>
             <version>${opencensus.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-testing</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-okhttp-3.0</artifactId>
+            <version>2.8.0-alpha</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.7</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>

@@ -18,18 +18,22 @@
  * -/-/-
  */
 
-package com.spotify.github.opencensus;
+package com.spotify.github.tracing;
 
 
+import com.spotify.github.tracing.opencensus.OpenCensusTracer;
 import io.grpc.Context;
+import io.opencensus.trace.Span;
 import io.opencensus.trace.*;
 import io.opencensus.trace.config.TraceConfig;
 import io.opencensus.trace.config.TraceParams;
 import io.opencensus.trace.export.SpanData;
 import io.opencensus.trace.samplers.Samplers;
 import io.opencensus.trace.unsafe.ContextUtils;
-import org.junit.jupiter.api.BeforeEach;
+import okhttp3.Call;
+import okhttp3.OkHttpClient;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -38,12 +42,13 @@ import java.util.concurrent.CompletableFuture;
 
 import static io.opencensus.trace.AttributeValue.stringAttributeValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class OpenCensusTracerTest {
 
 
     private final String rootSpanName = "root span";
-    private TestExportHandler spanExporterHandler;
+    private OcTestExportHandler spanExporterHandler;
 
     /**
      * Test that trace() a) returns a future that completes when the input future completes and b)
@@ -52,7 +57,7 @@ public class OpenCensusTracerTest {
      */
     @Test
     public void testTrace_CompletionStage_Simple() throws Exception {
-        Span rootSpan = startRootSpan();
+        io.opencensus.trace.Span rootSpan = startRootSpan();
         final CompletableFuture<String> future = new CompletableFuture<>();
         OpenCensusTracer tracer = new OpenCensusTracer();
 
@@ -78,7 +83,7 @@ public class OpenCensusTracerTest {
 
     @Test
     public void testTrace_CompletionStage_Fails() throws Exception {
-        Span rootSpan = startRootSpan();
+        io.opencensus.trace.Span rootSpan = startRootSpan();
         final CompletableFuture<String> future = new CompletableFuture<>();
         OpenCensusTracer tracer = new OpenCensusTracer();
 
@@ -102,7 +107,15 @@ public class OpenCensusTracerTest {
         assertEquals(Status.UNKNOWN, inner.getStatus());
     }
 
-    private Span startRootSpan() {
+    @Test
+    public void test_createTracedClient() {
+        OpenCensusTracer tracer = new OpenCensusTracer();
+        OkHttpClient client = new OkHttpClient.Builder().build();
+        Call.Factory callFactory = tracer.createTracedClient(client);
+        assertNotNull(callFactory);
+    }
+
+    private io.opencensus.trace.Span startRootSpan() {
         Span rootSpan = Tracing.getTracer().spanBuilder(rootSpanName).startSpan();
         Context context = ContextUtils.withValue(Context.current(), rootSpan);
         context.attach();
@@ -115,7 +128,7 @@ public class OpenCensusTracerTest {
 
     @BeforeEach
     public void setUpExporter() {
-        spanExporterHandler = new TestExportHandler();
+        spanExporterHandler = new OcTestExportHandler();
         Tracing.getExportComponent().getSpanExporter().registerHandler("test", spanExporterHandler);
     }
 

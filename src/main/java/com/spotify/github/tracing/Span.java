@@ -18,7 +18,7 @@
  * -/-/-
  */
 
-package com.spotify.github;
+package com.spotify.github.tracing;
 
 public interface Span extends AutoCloseable {
 
