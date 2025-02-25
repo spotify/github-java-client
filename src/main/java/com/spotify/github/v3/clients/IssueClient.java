@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,16 +20,18 @@
 
 package com.spotify.github.v3.clients;
 
-import static com.spotify.github.v3.clients.GitHubClient.IGNORE_RESPONSE_CONSUMER;
-import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMENT_TYPE_REFERENCE;
+import static com.spotify.github.v3.clients.GitHubClient.*;
 
 import com.google.common.collect.ImmutableMap;
 import com.spotify.github.async.AsyncPage;
 import com.spotify.github.v3.comment.Comment;
+import com.spotify.github.v3.comment.CommentReaction;
+import com.spotify.github.v3.comment.CommentReactionContent;
 import com.spotify.github.v3.issues.Issue;
 import java.lang.invoke.MethodHandles;
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
+import okhttp3.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +41,8 @@ public class IssueClient {
   static final String COMMENTS_URI_NUMBER_TEMPLATE = "/repos/%s/%s/issues/%s/comments";
   static final String COMMENTS_URI_TEMPLATE = "/repos/%s/%s/issues/comments";
   static final String COMMENTS_URI_ID_TEMPLATE = "/repos/%s/%s/issues/comments/%s";
+  static final String COMMENTS_REACTION_TEMPLATE = "/repos/%s/%s/issues/comments/%s/reactions";
+  static final String COMMENTS_REACTION_ID_TEMPLATE = "/repos/%s/%s/issues/%s/reactions/%s";
   static final String ISSUES_URI_ID_TEMPLATE = "/repos/%s/%s/issues/%s";
   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -128,13 +132,59 @@ public class IssueClient {
     return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_COMMENT_TYPE_REFERENCE));
   }
 
-  /***
+  /**
    * Get issue by id
    *
-   * @param id
+   * @param id issue id
    * @return the Issue for the given id if exists.
    */
   public CompletableFuture<Issue> getIssue(final int id) {
     return github.request(String.format(ISSUES_URI_ID_TEMPLATE, owner, repo, id), Issue.class);
+  }
+
+  /**
+   * Create a reaction on a comment. See <a *
+   * href="https://docs.github.com/en/rest/reactions/reactions?apiVersion=2022-11-28#create-reaction-for-an-issue-comment">Create
+   * reaction for an issue comment</a>
+   *
+   * @param commentId comment id
+   * @param reaction reaction content
+   * @return the Comment that was just created
+   */
+  public CompletableFuture<CommentReaction> createCommentReaction(
+      final long commentId, final CommentReactionContent reaction) {
+    final String path = String.format(COMMENTS_REACTION_TEMPLATE, owner, repo, commentId);
+    final String requestBody =
+        github.json().toJsonUnchecked(ImmutableMap.of("content", reaction.toString()));
+    return github.post(path, requestBody, CommentReaction.class);
+  }
+
+  /**
+   * Delete a reaction on a comment. See <a
+   * href="https://docs.github.com/en/rest/reactions/reactions?apiVersion=2022-11-28#delete-an-issue-comment-reaction">List
+   * reactions for an issue comment</a>
+   *
+   * @param issueNumber issue number
+   * @param reactionId reaction id
+   */
+  public CompletableFuture<Response> deleteCommentReaction(
+      final long issueNumber, final long reactionId) {
+    final String path =
+        String.format(COMMENTS_REACTION_ID_TEMPLATE, owner, repo, issueNumber, reactionId);
+    return github.delete(path);
+  }
+
+  /**
+   * List reactions on a comment. See <a
+   * href="https://docs.github.com/en/rest/reactions/reactions?apiVersion=2022-11-28#list-reactions-for-an-issue-comment">List
+   * reactions for an issue comment</a>
+   *
+   * @param commentId comment id
+   * @return reactions
+   */
+  public GithubPageIterator<CommentReaction> listCommentReaction(final long commentId) {
+    final String path = String.format(COMMENTS_REACTION_TEMPLATE, owner, repo, commentId);
+    return new GithubPageIterator<>(
+        new GithubPage<>(github, path, LIST_COMMENT_REACTION_TYPE_REFERENCE));
   }
 }
