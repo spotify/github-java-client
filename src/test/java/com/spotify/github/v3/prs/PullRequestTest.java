@@ -38,6 +38,8 @@ public class PullRequestTest {
     String fixture =
         Resources.toString(getResource(this.getClass(), "pull_request.json"), defaultCharset());
     final PullRequest pr = Json.create().fromJson(fixture, PullRequest.class);
+
+    assertThat(pr.id(), is(1L));
     assertThat(pr.nodeId(), is("MDExOlB1bGxSZXF1ZXN0NDI3NDI0Nw=="));
     assertThat(pr.mergeCommitSha().get(), is("e5bd3914e2e596debea16f433f57875b5b90bcd6"));
     assertThat(pr.merged(), is(false));
@@ -51,6 +53,19 @@ public class PullRequestTest {
     assertThat(pr.labels().get(0).name(),is("bug"));
     assertThat(pr.labels().get(0).id(),is(42L));
     assertThat(pr.labels().get(0).color(),is("ff0000"));
+  }
+
+  @Test
+  public void testDeserializationPrWithLargeId() throws IOException {
+    String fixture =
+            Resources.toString(getResource(this.getClass(), "pull_request_long_id.json"), defaultCharset());
+    final PullRequest pr = Json.create().fromJson(fixture, PullRequest.class);
+
+    assertThat(pr.id(), is(2459198527L));
+    assertThat(pr.head().sha(), is("f74c7f420282f584acd2fb5964202e5b525c3ab8"));
+    assertThat(pr.merged(), is(false));
+    assertThat(pr.mergeable().get(), is(false));
+    assertThat(pr.draft(), is(Optional.of(true)));
   }
 
   @Test

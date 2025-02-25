@@ -46,7 +46,7 @@ public interface Comment extends UpdateTracking {
   URI htmlUrl();
 
   /** Comment ID. */
-  int id();
+  Long id();
 
   /** The {@link User} that made the comment. */
   @Nullable

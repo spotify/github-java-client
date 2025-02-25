@@ -42,7 +42,7 @@ public class SearchTest {
         issues.url(),
         is(URI.create("https://api.github.com/repos/batterseapower/pinyin-toolkit/issues/132")));
     assertThat(issues.number(), is(132));
-    assertThat(issues.id(), is(35802));
+    assertThat(issues.id(), is(35802L));
     assertThat(issues.title(), is("Line Number Indexes Beyond 20 Not Displayed"));
   }
 
@@ -53,5 +53,18 @@ public class SearchTest {
 
     final SearchIssues search = Json.create().fromJson(fixture, SearchIssues.class);
     assertSearchIssues(search);
+  }
+
+  @Test
+  public void testDeserializationWithLargeIssueId() throws IOException {
+    final String fixture =
+        Resources.toString(getResource(this.getClass(), "issues-long-id.json"), defaultCharset());
+
+    final SearchIssues search = Json.create().fromJson(fixture, SearchIssues.class);
+    assertThat(search.items().size(), is(1));
+
+    final Issue issue = search.items().get(0);
+    assertThat(issue.id(), is(2592843837L));
+    assertThat(issue.number(), is(5514));
   }
 }
