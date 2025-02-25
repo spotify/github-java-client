@@ -365,6 +365,8 @@
                             <serverId>ossrh</serverId>
                             <nexusUrl>https://oss.sonatype.org/</nexusUrl>
                             <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                            <connectTimeout>600000</connectTimeout> <!-- 10 minutes -->
+                            <readTimeout>600000</readTimeout> <!-- 10 minutes -->
                         </configuration>
                     </plugin>
                 </plugins>
