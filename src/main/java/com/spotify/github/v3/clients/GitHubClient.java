@@ -30,6 +30,7 @@ import com.spotify.github.v3.User;
 import com.spotify.github.v3.checks.AccessToken;
 import com.spotify.github.v3.checks.Installation;
 import com.spotify.github.v3.comment.Comment;
+import com.spotify.github.v3.comment.CommentReaction;
 import com.spotify.github.v3.exceptions.ReadOnlyRepositoryException;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.git.Reference;
@@ -84,6 +85,8 @@ public class GitHubClient {
     static final TypeReference<List<Comment>> LIST_COMMENT_TYPE_REFERENCE =
             new TypeReference<>() {
             };
+    static final TypeReference<List<CommentReaction>> LIST_COMMENT_REACTION_TYPE_REFERENCE =
+            new TypeReference<>() {};
     static final TypeReference<List<Repository>> LIST_REPOSITORY =
             new TypeReference<>() {
             };
