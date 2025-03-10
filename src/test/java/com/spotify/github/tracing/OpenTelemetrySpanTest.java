@@ -91,4 +91,27 @@ class OpenTelemetrySpanTest {
     verify(wrapped).setAttribute("error", true);
     verify(wrapped).end();
   }
+
+  @Test
+  public void addTags() {
+    final Span span = new OpenTelemetrySpan(wrapped);
+    span.addTag("key", "value");
+    span.addTag("key", true);
+    span.addTag("key", 42L);
+    span.close();
+
+    verify(wrapped).setAttribute("key", "value");
+    verify(wrapped).setAttribute("key", true);
+    verify(wrapped).setAttribute("key", 42L);
+  }
+
+  @Test
+  public void addEvent() {
+    final Span span = new OpenTelemetrySpan(wrapped);
+    span.addEvent("description");
+    span.close();
+
+    verify(wrapped).addEvent("description");
+    verify(wrapped).end();
+  }
 }
