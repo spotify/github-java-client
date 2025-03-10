@@ -21,7 +21,6 @@
 package com.spotify.github.v3.clients;
 
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -34,7 +33,6 @@ import java.util.Date;
 /** The helper Jwt token issuer. */
 public class JwtTokenIssuer {
 
-  private static final SignatureAlgorithm SIGNATURE_ALGORITHM = SignatureAlgorithm.RS256;
   private static final long TOKEN_TTL = 600000;
 
   private final PrivateKey signingKey;
@@ -69,12 +67,14 @@ public class JwtTokenIssuer {
    */
   public String getToken(final Integer appId) {
     return Jwts.builder()
-        .setId("github-auth")
-        .setSubject("authenticating via private key")
-        .setIssuer(String.valueOf(appId))
-        .signWith(signingKey, SIGNATURE_ALGORITHM)
-        .setExpiration(new Date(System.currentTimeMillis() + TOKEN_TTL))
-        .setIssuedAt(new Date())
+        .claims()
+        .id("github-auth")
+        .subject("authenticating via private key")
+        .issuer(String.valueOf(appId))
+        .issuedAt(new Date())
+        .expiration(new Date(System.currentTimeMillis() + TOKEN_TTL))
+        .and()
+        .signWith(signingKey, Jwts.SIG.RS256)
         .compact();
   }
 }

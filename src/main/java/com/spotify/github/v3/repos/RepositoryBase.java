@@ -42,6 +42,10 @@ public interface RepositoryBase extends UpdateTracking {
   @Nullable
   Integer id();
 
+  /** Node id */
+  @Nullable
+  String nodeId();
+
   /** Name */
   @Nullable
   String name();
