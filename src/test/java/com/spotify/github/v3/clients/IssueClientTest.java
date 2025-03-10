@@ -172,7 +172,7 @@ public class IssueClientTest {
 
     final var issue = issueClient.getIssue(2).join();
 
-    assertThat(issue.id(), is(2));
+    assertThat(issue.id(), is(2L));
     assertNotNull(issue.labels());
     assertFalse(issue.labels().isEmpty());
     assertThat(issue.labels().get(0).name(), is("bug"));
