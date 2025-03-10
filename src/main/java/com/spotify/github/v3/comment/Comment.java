@@ -60,6 +60,7 @@ public interface Comment extends UpdateTracking {
    *
    * @deprecated Use {@link #position()} instead
    */
+  @Deprecated
   Optional<Integer> line();
 
   /** Relative path of the file to comment on. */

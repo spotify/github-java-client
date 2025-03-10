@@ -51,7 +51,6 @@ public interface Review {
   User user();
 
   /** Body. */
-  @Nullable
   Optional<String> body();
 
   /** Submitted at. */

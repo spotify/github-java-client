@@ -93,7 +93,6 @@ public interface PushEvent {
   List<PushCommit> commits();
 
   /** The push commit object of the most recent commit on ref after the push. */
-  @Nullable
   Optional<PushCommit> headCommit();
 
   /** Pusher */

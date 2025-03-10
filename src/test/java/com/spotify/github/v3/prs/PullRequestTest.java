@@ -49,6 +49,10 @@ public class PullRequestTest {
     assertThat(pr.deletions(), is(3));
     assertThat(pr.changedFiles(), is(5));
     assertThat(pr.draft(), is(Optional.of(false)));
+    assertThat(pr.labels().size(),is(1));
+    assertThat(pr.labels().get(0).name(),is("bug"));
+    assertThat(pr.labels().get(0).id(),is(42L));
+    assertThat(pr.labels().get(0).color(),is("ff0000"));
   }
 
   @Test

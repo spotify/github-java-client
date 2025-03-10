@@ -17,60 +17,34 @@
  * limitations under the License.
  * -/-/-
  */
+package com.spotify.github.v3.comment;
 
-package com.spotify.github.v3.issues;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.spotify.github.GithubStyle;
-
-import java.net.URI;
-import javax.annotation.Nullable;
-
+import com.spotify.github.UpdateTracking;
+import com.spotify.github.v3.User;
 import org.immutables.value.Value;
 
 /**
- * Issue label resource
+ * Comment reaction object.
+ *
+ * <p>See <a
+ * href="https://docs.github.com/en/rest/reactions/reactions?apiVersion=2022-11-28#about-reactions">About
+ * GitHub Issue Comment reactions</a>
  */
 @Value.Immutable
 @GithubStyle
-@JsonSerialize(as = ImmutableLabel.class)
-@JsonDeserialize(as = ImmutableLabel.class)
-public interface Label {
+@JsonSerialize(as = ImmutableCommentReaction.class)
+@JsonDeserialize(as = ImmutableCommentReaction.class)
+public interface CommentReaction extends UpdateTracking {
 
-    /**
-     * Id
-     */
-    Long id();
+  /** Reaction ID. */
+  long id();
 
-    @Nullable
-    String nodeId();
+  /** Reaction user. */
+  User user();
 
-    /**
-     * URL
-     */
-    @Nullable
-    URI url();
-
-    /**
-     * Name
-     */
-    @Nullable
-    String name();
-
-    /**
-     * Color
-     */
-    @Nullable
-    String color();
-
-    @Nullable
-    String description();
-
-    /**
-     * Default
-     */
-    @JsonProperty("default")
-    boolean isDefault();
+  /** Reaction content. */
+  CommentReactionContent content();
 }
