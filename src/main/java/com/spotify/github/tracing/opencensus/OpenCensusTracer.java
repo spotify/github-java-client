@@ -20,61 +20,89 @@
 
 package com.spotify.github.tracing.opencensus;
 
-import com.spotify.github.tracing.BaseTracer;
-import com.spotify.github.tracing.Span;
-import io.opencensus.trace.Tracing;
-import okhttp3.Call;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import org.jetbrains.annotations.NotNull;
-
-import java.util.concurrent.CompletionStage;
-
-import static io.opencensus.trace.AttributeValue.stringAttributeValue;
 import static io.opencensus.trace.Span.Kind.CLIENT;
 import static java.util.Objects.requireNonNull;
 
+import com.spotify.github.tracing.BaseTracer;
+import com.spotify.github.tracing.Span;
+import com.spotify.github.tracing.TraceHelper;
+import io.opencensus.trace.Tracing;
+import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import okhttp3.*;
+import org.jetbrains.annotations.NotNull;
+
 public class OpenCensusTracer extends BaseTracer {
 
-    private static final io.opencensus.trace.Tracer TRACER = Tracing.getTracer();
+  private static final io.opencensus.trace.Tracer TRACER = Tracing.getTracer();
 
-    @SuppressWarnings("MustBeClosedChecker")
-    protected Span internalSpan(
-            final String path,
-            final String method,
-            final CompletionStage<?> future) {
-        requireNonNull(path);
+  @SuppressWarnings("MustBeClosedChecker")
+  protected Span internalSpan(
+      final String path, final String method, final CompletionStage<?> future) {
+    requireNonNull(path);
 
-        final io.opencensus.trace.Span ocSpan =
-                TRACER.spanBuilder("GitHub Request").setSpanKind(CLIENT).startSpan();
+    final io.opencensus.trace.Span ocSpan =
+        TRACER.spanBuilder("GitHub Request").setSpanKind(CLIENT).startSpan();
 
-        ocSpan.putAttribute("component", stringAttributeValue("github-api-client"));
-        ocSpan.putAttribute("peer.service", stringAttributeValue("github"));
-        ocSpan.putAttribute("http.url", stringAttributeValue(path));
-        ocSpan.putAttribute("method", stringAttributeValue(method));
-        final Span span = new OpenCensusSpan(ocSpan);
+    final Span span =
+        new OpenCensusSpan(ocSpan)
+            .addTag(TraceHelper.TraceTags.COMPONENT, "github-api-client")
+            .addTag(TraceHelper.TraceTags.PEER_SERVICE, "github")
+            .addTag(TraceHelper.TraceTags.HTTP_URL, path)
+            .addTag(TraceHelper.TraceTags.HTTP_METHOD, method);
 
-        if (future != null) {
-            attachSpanToFuture(span, future);
-        }
-
-        return span;
+    if (future != null) {
+      attachSpanToFuture(span, future);
     }
 
-    @Override
-    protected Span internalSpan(final Request request, final CompletionStage<?> future) {
-        requireNonNull(request);
-        return internalSpan(request.url().toString(), request.method(), future);
-    }
+    return span;
+  }
 
-    @Override
-    public Call.Factory createTracedClient(final OkHttpClient client) {
-        return new Call.Factory() {
-            @NotNull
-            @Override
-            public Call newCall(@NotNull final Request request) {
-                return client.newCall(request);
-            }
-        };
-    }
+  @Override
+  protected Span internalSpan(final Request request, final CompletionStage<?> future) {
+    requireNonNull(request);
+    return internalSpan(request.url().toString(), request.method(), future);
+  }
+
+  @Override
+  public Call.Factory createTracedClient(final OkHttpClient client) {
+    return new Call.Factory() {
+      @NotNull
+      @Override
+      public Call newCall(@NotNull final Request request) {
+        CompletableFuture<Response> future = new CompletableFuture<>();
+        Span span =
+            internalSpan(request, future)
+                .addTag(TraceHelper.TraceTags.HTTP_URL, request.url().toString());
+        OkHttpClient.Builder okBuilder = client.newBuilder();
+        okBuilder
+            .networkInterceptors()
+            .add(
+                0,
+                new Interceptor() {
+                  @NotNull
+                  @Override
+                  public Response intercept(@NotNull final Chain chain) throws IOException {
+                    try {
+                      Response response = chain.proceed(chain.request());
+                      span.addTag(TraceHelper.TraceTags.HTTP_STATUS_CODE, response.code())
+                          .addTag(TraceHelper.TraceTags.HTTP_STATUS_MESSAGE, response.message())
+                          .success();
+                      future.complete(response);
+                      return response;
+                    } catch (Exception ex) {
+                      span.failure(ex);
+                      future.completeExceptionally(ex);
+                      throw ex;
+                    } finally {
+                      span.close();
+                    }
+                  }
+                });
+
+        return okBuilder.build().newCall(request);
+      }
+    };
+  }
 }

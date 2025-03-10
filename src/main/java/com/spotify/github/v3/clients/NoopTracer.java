@@ -49,6 +49,31 @@ public class NoopTracer implements Tracer {
                 @Override
                 public void close() {
                 }
+
+                @Override
+                public Span addTag(final String key, final String value) {
+                    return this;
+                }
+
+                @Override
+                public Span addTag(final String key, final boolean value) {
+                    return this;
+                }
+
+                @Override
+                public Span addTag(final String key, final long value) {
+                    return this;
+                }
+
+                @Override
+                public Span addTag(final String key, final double value) {
+                    return this;
+                }
+
+                @Override
+                public Span addEvent(final String description) {
+                    return this;
+                }
             };
 
     private NoopTracer() {

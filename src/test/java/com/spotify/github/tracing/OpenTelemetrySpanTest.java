@@ -30,61 +30,65 @@ import java.util.Collections;
 import static org.mockito.Mockito.*;
 
 class OpenTelemetrySpanTest {
-    private final io.opentelemetry.api.trace.Span wrapped = mock(io.opentelemetry.api.trace.Span.class);
+  private final io.opentelemetry.api.trace.Span wrapped =
+      mock(io.opentelemetry.api.trace.Span.class);
 
-    @Test
-    public void succeed() {
-        final Span span = new OpenTelemetrySpan(wrapped);
-        span.success();
-        span.close();
+  @Test
+  public void succeed() {
+    final Span span = new OpenTelemetrySpan(wrapped);
+    span.success();
+    span.close();
 
-        verify(wrapped).setStatus(StatusCode.OK);
-        verify(wrapped).end();
-    }
+    verify(wrapped).setStatus(StatusCode.OK);
+    verify(wrapped).end();
+  }
 
-    @Test
-    public void fail() {
-        final Span span = new OpenTelemetrySpan(wrapped);
-        span.failure(new RequestNotOkException("method", "path", 404, "Not found", Collections.emptyMap()));
-        span.close();
+  @Test
+  public void fail() {
+    final Span span = new OpenTelemetrySpan(wrapped);
+    span.failure(
+        new RequestNotOkException("method", "path", 404, "Not found", Collections.emptyMap()));
+    span.close();
 
-        verify(wrapped).setStatus(StatusCode.UNSET);
-        verify(wrapped).setAttribute("http.status_code", 404);
-        verify(wrapped).end();
-    }
+    verify(wrapped).setStatus(StatusCode.ERROR);
+    verify(wrapped).setAttribute("http.status_code", 404);
+    verify(wrapped).end();
+  }
 
-    @Test
-    public void failOnServerError() {
-        final Span span = new OpenTelemetrySpan(wrapped);
-        span.failure(new RequestNotOkException("method", "path", 500, "Internal Server Error", Collections.emptyMap()));
-        span.close();
+  @Test
+  public void failOnServerError() {
+    final Span span = new OpenTelemetrySpan(wrapped);
+    span.failure(
+        new RequestNotOkException(
+            "method", "path", 500, "Internal Server Error", Collections.emptyMap()));
+    span.close();
 
-        verify(wrapped).setStatus(StatusCode.UNSET);
-        verify(wrapped).setAttribute("http.status_code", 500);
-        verify(wrapped).setAttribute("error", true);
-        verify(wrapped).end();
-    }
+    verify(wrapped).setStatus(StatusCode.ERROR);
+    verify(wrapped).setAttribute("http.status_code", 500);
+    verify(wrapped).setAttribute("error", true);
+    verify(wrapped).end();
+  }
 
-    @Test
-    public void failWithNullThrowable() {
-        final Span span = new OpenTelemetrySpan(wrapped);
-        span.failure(null);
-        span.close();
+  @Test
+  public void failWithNullThrowable() {
+    final Span span = new OpenTelemetrySpan(wrapped);
+    span.failure(null);
+    span.close();
 
-        verify(wrapped).setStatus(StatusCode.UNSET);
-        verify(wrapped, never()).setAttribute(anyString(), any());
-        verify(wrapped).end();
-    }
+    verify(wrapped).setStatus(StatusCode.ERROR);
+    verify(wrapped, never()).setAttribute(anyString(), any());
+    verify(wrapped).end();
+  }
 
-    @Test
-    public void failWithNonRequestNotOkException() {
-        final Span span = new OpenTelemetrySpan(wrapped);
-        span.failure(new RuntimeException("Unexpected error"));
-        span.close();
+  @Test
+  public void failWithNonRequestNotOkException() {
+    final Span span = new OpenTelemetrySpan(wrapped);
+    span.failure(new RuntimeException("Unexpected error"));
+    span.close();
 
-        verify(wrapped).setStatus(StatusCode.UNSET);
-        verify(wrapped, never()).setAttribute("http.status_code", 404);
-        verify(wrapped, never()).setAttribute("error", true);
-        verify(wrapped).end();
-    }
+    verify(wrapped).setStatus(StatusCode.ERROR);
+    verify(wrapped, never()).setAttribute("http.status_code", 404);
+    verify(wrapped).setAttribute("error", true);
+    verify(wrapped).end();
+  }
 }

@@ -20,44 +20,67 @@
 
 package com.spotify.github.tracing.opentelemetry;
 
-import com.spotify.github.tracing.Span;
-import com.spotify.github.v3.exceptions.RequestNotOkException;
-import io.opentelemetry.api.trace.StatusCode;
-
+import static com.spotify.github.tracing.TraceHelper.failSpan;
 import static java.util.Objects.requireNonNull;
 
+import com.spotify.github.tracing.Span;
+import io.opentelemetry.api.trace.StatusCode;
+
 public class OpenTelemetrySpan implements Span {
-    public static final int NOT_FOUND = 404;
-    public static final int INTERNAL_SERVER_ERROR = 500;
+  public static final int NOT_FOUND = 404;
+  public static final int INTERNAL_SERVER_ERROR = 500;
 
-    private final io.opentelemetry.api.trace.Span span;
+  private final io.opentelemetry.api.trace.Span span;
 
-    public OpenTelemetrySpan(final io.opentelemetry.api.trace.Span span) {
-        this.span = requireNonNull(span);
-    }
+  public OpenTelemetrySpan(final io.opentelemetry.api.trace.Span span) {
+    this.span = requireNonNull(span);
+  }
 
-    @Override
-    public Span success() {
-        span.setStatus(StatusCode.OK);
-        return this;
-    }
+  @Override
+  public Span success() {
+    span.setStatus(StatusCode.OK);
+    return this;
+  }
 
-    @Override
-    public Span failure(final Throwable t) {
-        if (t instanceof RequestNotOkException) {
-            RequestNotOkException ex = (RequestNotOkException) t;
-            span.setAttribute("http.status_code", ex.statusCode());
-            span.setAttribute("message", ex.getRawMessage());
-            if (ex.statusCode() - INTERNAL_SERVER_ERROR >= 0) {
-                span.setAttribute("error", true);
-            }
-        }
-        span.setStatus(StatusCode.UNSET);
-        return this;
-    }
+  @Override
+  public Span failure(final Throwable t) {
+    failSpan(this, t);
+    span.setStatus(StatusCode.ERROR);
+    return this;
+  }
 
-    @Override
-    public void close() {
-        span.end();
-    }
+  @Override
+  public void close() {
+    span.end();
+  }
+
+  @Override
+  public Span addTag(final String key, final String value) {
+    this.span.setAttribute(key, value);
+    return this;
+  }
+
+  @Override
+  public Span addTag(final String key, final boolean value) {
+    this.span.setAttribute(key, value);
+    return this;
+  }
+
+  @Override
+  public Span addTag(final String key, final long value) {
+    this.span.setAttribute(key, value);
+    return this;
+  }
+
+  @Override
+  public Span addTag(final String key, final double value) {
+    this.span.setAttribute(key, value);
+    return this;
+  }
+
+  @Override
+  public Span addEvent(final String description) {
+    this.span.addEvent(description);
+    return this;
+  }
 }

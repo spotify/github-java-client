@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,12 +22,21 @@ package com.spotify.github.tracing;
 
 public interface Span extends AutoCloseable {
 
-    Span success();
+  Span success();
 
-    Span failure(Throwable t);
+  Span failure(Throwable t);
 
-    /** Close span. Must be called for any opened span. */
-    @Override
-    void close();
+  /** Close span. Must be called for any opened span. */
+  @Override
+  void close();
+
+  Span addTag(String key, String value);
+
+  Span addTag(String key, boolean value);
+
+  Span addTag(String key, long value);
+
+  Span addTag(String key, double value);
+
+  Span addEvent(String description);
 }
-

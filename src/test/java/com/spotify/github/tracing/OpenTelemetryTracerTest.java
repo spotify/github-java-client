@@ -114,7 +114,7 @@ public class OpenTelemetryTracerTest {
     assertEquals("github", attributes.get(AttributeKey.stringKey("peer.service")));
     assertEquals("path", attributes.get(AttributeKey.stringKey("http.url")));
     assertEquals(requestMethod, attributes.get(AttributeKey.stringKey("method")));
-    assertEquals(StatusCode.UNSET, inner.getStatus().getStatusCode());
+    assertEquals(StatusCode.ERROR, inner.getStatus().getStatusCode());
   }
 
   @ParameterizedTest
