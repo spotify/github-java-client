@@ -66,4 +66,40 @@ class OpenCensusSpanTest {
         verify(wrapped).end();
     }
 
+    @Test
+    @SuppressWarnings("deprecation")
+    public void succeedDeprecated() {
+        final Span span = new com.spotify.github.opencensus.OpenCensusSpan(wrapped);
+        span.success();
+        span.close();
+
+        verify(wrapped).setStatus(Status.OK);
+        verify(wrapped).end();
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void failDeprecated() {
+        final Span span = new com.spotify.github.opencensus.OpenCensusSpan(wrapped);
+        span.failure(new RequestNotOkException("method", "path", 404, "Not found", Collections.emptyMap()));
+        span.close();
+
+        verify(wrapped).setStatus(Status.UNKNOWN);
+        verify(wrapped).putAttribute("http.status_code", AttributeValue.longAttributeValue(404));
+        verify(wrapped).end();
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void failOnServerErrorDeprecated() {
+        final Span span = new com.spotify.github.opencensus.OpenCensusSpan(wrapped);
+        span.failure(new RequestNotOkException("method", "path", 500, "Internal Server Error", Collections.emptyMap()));
+        span.close();
+
+        verify(wrapped).setStatus(Status.UNKNOWN);
+        verify(wrapped).putAttribute("http.status_code", AttributeValue.longAttributeValue(500));
+        verify(wrapped).putAttribute("error", AttributeValue.booleanAttributeValue(true));
+        verify(wrapped).end();
+    }
+
 }
