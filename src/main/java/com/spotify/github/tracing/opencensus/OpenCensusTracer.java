@@ -33,6 +33,7 @@ import java.util.concurrent.CompletionStage;
 import okhttp3.*;
 import org.jetbrains.annotations.NotNull;
 
+/** Tracer implementation using OpenCensus. */
 public class OpenCensusTracer extends BaseTracer {
 
   private static final io.opencensus.trace.Tracer TRACER = Tracing.getTracer();
