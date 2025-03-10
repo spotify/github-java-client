@@ -102,8 +102,8 @@ public class IssueClientTest {
         Async.streamFromPaginatingIterable(pageIterator).collect(toList());
 
     assertThat(listComments.size(), is(30));
-    assertThat(listComments.get(0).id(), is(1345268));
-    assertThat(listComments.get(listComments.size() - 1).id(), is(1356168));
+    assertThat(listComments.get(0).id(), is(1345268L));
+    assertThat(listComments.get(listComments.size() - 1).id(), is(1356168L));
   }
 
   @Test
@@ -135,8 +135,8 @@ public class IssueClientTest {
             });
 
     assertThat(listComments.size(), is(30));
-    assertThat(listComments.get(0).id(), is(1345268));
-    assertThat(listComments.get(listComments.size() - 1).id(), is(1356168));
+    assertThat(listComments.get(0).id(), is(1345268L));
+    assertThat(listComments.get(listComments.size() - 1).id(), is(1356168L));
   }
 
   @Test
@@ -148,7 +148,19 @@ public class IssueClientTest {
     when(github.post(eq(path), anyString())).thenReturn(completedFuture(response));
     final Comment comment = issueClient.createComment(10, "Me too").join();
 
-    assertThat(comment.id(), is(114));
+    assertThat(comment.id(), is(114L));
+  }
+
+  @Test
+  public void testCommentCreatedWithLargeId() throws IOException {
+    final String fixture = loadFixture("clients/comment_created_long_id.json");
+    final Response response = createMockResponse("", fixture);
+    final String path = format(COMMENTS_URI_NUMBER_TEMPLATE, "someowner", "somerepo", 10);
+    when(github.post(anyString(), anyString(), eq(Comment.class))).thenCallRealMethod();
+    when(github.post(eq(path), anyString())).thenReturn(completedFuture(response));
+    final Comment comment = issueClient.createComment(10, "Me too").join();
+
+    assertThat(comment.id(), is(2459198527L));
   }
 
   @Test
@@ -160,7 +172,7 @@ public class IssueClientTest {
 
     final var issue = issueClient.getIssue(2).join();
 
-    assertThat(issue.id(), is(2));
+    assertThat(issue.id(), is(2L));
     assertNotNull(issue.labels());
     assertFalse(issue.labels().isEmpty());
     assertThat(issue.labels().get(0).name(), is("bug"));

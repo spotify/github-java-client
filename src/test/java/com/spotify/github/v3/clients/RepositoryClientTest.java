@@ -539,7 +539,7 @@ public class RepositoryClientTest {
         .thenReturn(fixture);
     final Comment comment = repoClient.createComment("someweirdsha", "Me too").join();
 
-    assertThat(comment.id(), is(123));
+    assertThat(comment.id(), is(123L));
     assertThat(comment.commitId().get(), is("6dcb09b5b57875f334f61aebed695e2e4193db5e"));
   }
 
@@ -551,7 +551,7 @@ public class RepositoryClientTest {
         .thenReturn(fixture);
     final Comment comment = repoClient.getComment(123).join();
 
-    assertThat(comment.id(), is(123));
+    assertThat(comment.id(), is(123L));
     assertThat(comment.commitId().get(), is("6dcb09b5b57875f334f61aebed695e2e4193db5e"));
   }
 
