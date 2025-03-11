@@ -3,7 +3,6 @@
 ![lifecycle: beta](https://img.shields.io/badge/lifecycle-beta-509bf5.svg)
 [![Maven Central](https://img.shields.io/maven-central/v/com.spotify/github-client)](https://mvnrepository.com/artifact/com.spotify/github-client)
 
-
 # github-java-client
 
 A small Java library for talking to GitHub/GitHub Enterprise and interacting with projects.
@@ -74,6 +73,7 @@ log.info(repositoryClient.getCommit("sha").get().htmlUrl());
 
 Another example of the mirrored structure is that some of the APIs are nested under a parent API.
 For example, endpoints related to check runs or issues are nested under the Repository client:
+
 ```java
 final ChecksClient checksClient = repositoryClient.createChecksApiClient();
 checksClient.createCheckRun(CHECK_RUN_REQUEST);
@@ -85,9 +85,49 @@ issueClient.createComment(ISSUE_ID, "comment body")
 ``` 
 
 And endpoints related to teams and memberships are nested under the Organisation client:
+
 ```java
 final TeamClient teamClient = organisationClient.createTeamClient();
     teamClient.getMembership("username");
+```
+
+## Tracing
+
+The GitHub client supports tracing via both OpenCensus and OpenTelemetry. Since OpenCensus is deprecated, we recommend
+using OpenTelemetry. Using OpenTelemetry also enables context propagation when using this library.  
+To enable tracing, you need to provide a tracer when initializing the client.
+
+### OpenTelemetry
+
+```java
+import com.spotify.github.tracing.opentelemetry.OpenTelemetryTracer;
+
+final GitHubClient githubClient =
+        GitHubClient.create(baseUri, accessToken)
+                // Uses GlobalOpenTelemetry.get() to fetch the default tracer
+                .withTracer(new OpenTelemetryTracer());
+```
+
+You can also provide a custom `OpenTelemetry` object if you want to use a specific one.
+
+```java
+import com.spotify.github.tracing.opentelemetry.OpenTelemetryTracer;
+
+final GitHubClient githubClient =
+        GitHubClient.create(baseUri, accessToken)
+                // Uses custom openTelemetry object to fetch the tracer
+                .withTracer(new OpenTelemetryTracer(openTelemetry));
+```
+
+### OpenCensus
+
+```java
+import com.spotify.github.tracing.opencensus.OpenCensusTracer;
+
+final GitHubClient githubClient =
+        GitHubClient.create(baseUri, accessToken)
+                // Uses Tracing.getTracer() to fetch the default tracer
+                .withTracer(new OpenCensusTracer());
 ```
 
 ## Supported Java versions
@@ -107,6 +147,7 @@ mvn clean verify
 If you are a maintainer, you can release a new version by just triggering the workflow 
 [prepare-release](./.github/workflows/prepare-release.yml) through the 
 [web UI](https://github.com/spotify/github-java-client/actions/workflows/prepare-release.yml).
+
 - Select whether the new release should be a `major`, `minor` or `patch` release
 - Trigger the release preparation on the `master` branch
 - Pushes of this workflow will trigger runs of the
