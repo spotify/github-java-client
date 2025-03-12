@@ -20,7 +20,6 @@
 
 package com.spotify.github.v3.clients;
 
-import static com.spotify.github.v3.clients.GitHubClient.responseBodyUnchecked;
 import static java.util.Arrays.stream;
 import static java.util.Objects.nonNull;
 import static java.util.function.Function.identity;
@@ -38,7 +37,6 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
-import okhttp3.ResponseBody;
 
 /**
  * Async page implementation for github resources
@@ -149,7 +147,7 @@ public class GithubPage<T> implements AsyncPage<T> {
             response ->
                 github
                     .json()
-                    .fromJsonUncheckedNotNull(responseBodyUnchecked(response), typeReference))
+                    .fromJsonUncheckedNotNull(response.bodyString(), typeReference))
         .join()
         .iterator();
   }
@@ -159,8 +157,7 @@ public class GithubPage<T> implements AsyncPage<T> {
         .request(path)
         .thenApply(
             response -> {
-                Optional.ofNullable(response.body()).ifPresent(ResponseBody::close);
-                return Optional.ofNullable(response.headers().get("Link"))
+                return Optional.ofNullable(response.headers().get("Link").get(0))
                     .map(linkHeader -> stream(linkHeader.split(",")))
                     .orElseGet(Stream::empty)
                     .map(linkString -> Link.from(linkString.split(";")))

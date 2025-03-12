@@ -20,6 +20,7 @@
 
 package com.spotify.github.http;
 
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -27,7 +28,9 @@ public interface HttpResponse {
     HttpRequest request();
     int statusCode();
     String statusMessage();
-    String body();
+    InputStream body();
+    String bodyString();
     Map<String, List<String>> headers();
     boolean isSuccessful();
+    void close();
 }

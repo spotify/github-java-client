@@ -20,6 +20,7 @@
 
 package com.spotify.github.tracing;
 
+import com.spotify.github.http.HttpRequest;
 import com.spotify.github.tracing.opentelemetry.OpenTelemetryTracer;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
@@ -123,9 +124,9 @@ public class OpenTelemetryTracerTest {
     Span rootSpan = startRootSpan();
     final CompletableFuture<String> future = new CompletableFuture<>();
     OpenTelemetryTracer tracer = new OpenTelemetryTracer();
-    Request mockRequest = mock(Request.class);
+    HttpRequest mockRequest = mock(HttpRequest.class);
     when(mockRequest.url())
-        .thenReturn(HttpUrl.parse("https://api.github.com/repos/spotify/github-java-client"));
+        .thenReturn("https://api.github.com/repos/spotify/github-java-client");
     when(mockRequest.method()).thenReturn(requestMethod);
 
     try (com.spotify.github.tracing.Span span = tracer.span(mockRequest)) {
@@ -150,24 +151,6 @@ public class OpenTelemetryTracerTest {
         attributes.get(AttributeKey.stringKey("http.url")));
     assertEquals(requestMethod, attributes.get(AttributeKey.stringKey("method")));
     assertEquals(StatusCode.OK, inner.getStatus().getStatusCode());
-  }
-
-  @Test
-  public void createTracedClient() throws IOException {
-    OpenTelemetryTracer tracer = new OpenTelemetryTracer(openTelemetry);
-    OkHttpClient.Builder mockBuilder = mock(OkHttpClient.Builder.class);
-    OkHttpClient mockClient = mock(OkHttpClient.class);
-    LinkedList<Interceptor> interceptors = new LinkedList<>();
-    when(mockClient.newBuilder()).thenReturn(mockBuilder);
-    when(mockBuilder.build()).thenReturn(mockClient);
-    when(mockBuilder.interceptors()).thenReturn(interceptors);
-    when(mockBuilder.networkInterceptors()).thenReturn(interceptors);
-    Call.Factory callFactory = tracer.createTracedClient(mockClient);
-    assertNotNull(callFactory);
-    assertEquals(
-        "class io.opentelemetry.instrumentation.okhttp.v3_0.TracingCallFactory",
-        callFactory.getClass().toString());
-    assertEquals(3, interceptors.size());
   }
 
   private Span startRootSpan() {

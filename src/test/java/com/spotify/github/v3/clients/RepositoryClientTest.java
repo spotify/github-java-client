@@ -227,7 +227,7 @@ public class RepositoryClientTest {
 
   @Test
   public void removeCollaborator() throws Exception {
-    CompletableFuture<Response> response = completedFuture(mock(Response.class));
+    CompletableFuture<HttpResponse> response = completedFuture(mock(HttpResponse.class));
     final ArgumentCaptor<String> capture = ArgumentCaptor.forClass(String.class);
     when(github.delete(capture.capture())).thenReturn(response);
 
@@ -239,7 +239,7 @@ public class RepositoryClientTest {
 
   @Test
   public void removeInvite() throws Exception {
-    CompletableFuture<Response> response = completedFuture(mock(Response.class));
+    CompletableFuture<HttpResponse> response = completedFuture(mock(HttpResponse.class));
     final ArgumentCaptor<String> capture = ArgumentCaptor.forClass(String.class);
     when(github.delete(capture.capture())).thenReturn(response);
 
@@ -655,7 +655,7 @@ public class RepositoryClientTest {
             createMockHttpResponse(
                 "http://example.com/whatever",
                 200,
-                "some bytes".getBytes(StandardCharsets.UTF_8).toString(),
+                "some bytes",
                 Map.of()));
     when(github.request("/repos/someowner/somerepo/tarball/")).thenReturn(fixture);
 
@@ -672,7 +672,7 @@ public class RepositoryClientTest {
             createMockHttpResponse(
                 "http://example.com/whatever",
                 200,
-                "some bytes".getBytes(StandardCharsets.UTF_8).toString(),
+                "some bytes",
                 Map.of()));
     when(github.request("/repos/someowner/somerepo/zipball/")).thenReturn(fixture);
 

@@ -78,10 +78,10 @@ public class GitHubClient {
 
   private Tracer tracer = NoopTracer.INSTANCE;
 
-  static final Consumer<Response> IGNORE_RESPONSE_CONSUMER =
+  static final Consumer<HttpResponse> IGNORE_RESPONSE_CONSUMER =
       (response) -> {
-        if (response.body() != null) {
-          response.body().close();
+        if (response != null) {
+          response.close();
         }
       };
   static final TypeReference<List<Comment>> LIST_COMMENT_TYPE_REFERENCE = new TypeReference<>() {};
@@ -627,7 +627,7 @@ public class GitHubClient {
     final HttpRequest request = requestBuilder(path).build();
     log.debug("Making request to {}", request.url().toString());
     return call(request)
-        .thenApply(response -> json().fromJsonUncheckedNotNull(response.body(), clazz));
+        .thenApply(response -> json().fromJsonUncheckedNotNull(response.bodyString(), clazz));
   }
 
   /**
@@ -645,7 +645,7 @@ public class GitHubClient {
     final HttpRequest request = builder.build();
     log.debug("Making request to {}", request.url().toString());
     return call(request)
-        .thenApply(response -> json().fromJsonUncheckedNotNull(response.body(), clazz));
+        .thenApply(response -> json().fromJsonUncheckedNotNull(response.bodyString(), clazz));
   }
 
   /**
@@ -664,7 +664,8 @@ public class GitHubClient {
     final HttpRequest request = builder.build();
     log.debug("Making request to {}", request.url().toString());
     return call(request)
-        .thenApply(response -> json().fromJsonUncheckedNotNull(response.body(), typeReference));
+        .thenApply(
+            response -> json().fromJsonUncheckedNotNull(response.bodyString(), typeReference));
   }
 
   /**
@@ -677,7 +678,8 @@ public class GitHubClient {
     final HttpRequest request = requestBuilder(path).build();
     log.debug("Making request to {}", request.url().toString());
     return call(request)
-        .thenApply(response -> json().fromJsonUncheckedNotNull(response.body(), typeReference));
+        .thenApply(
+            response -> json().fromJsonUncheckedNotNull(response.bodyString(), typeReference));
   }
 
   /**
@@ -725,7 +727,7 @@ public class GitHubClient {
       final Class<T> clazz,
       final Map<String, String> extraHeaders) {
     return post(path, data, extraHeaders)
-        .thenApply(response -> json().fromJsonUncheckedNotNull(response.body(), clazz));
+        .thenApply(response -> json().fromJsonUncheckedNotNull(response.bodyString(), clazz));
   }
 
   /**
@@ -738,7 +740,7 @@ public class GitHubClient {
    */
   <T> CompletableFuture<T> post(final String path, final String data, final Class<T> clazz) {
     return post(path, data)
-        .thenApply(response -> json().fromJsonUncheckedNotNull(response.body(), clazz));
+        .thenApply(response -> json().fromJsonUncheckedNotNull(response.bodyString(), clazz));
   }
 
   /**
@@ -778,7 +780,7 @@ public class GitHubClient {
    */
   <T> CompletableFuture<T> put(final String path, final String data, final Class<T> clazz) {
     return put(path, data)
-        .thenApply(response -> json().fromJsonUncheckedNotNull(response.body(), clazz));
+        .thenApply(response -> json().fromJsonUncheckedNotNull(response.bodyString(), clazz));
   }
 
   /**
@@ -804,7 +806,7 @@ public class GitHubClient {
    */
   <T> CompletableFuture<T> patch(final String path, final String data, final Class<T> clazz) {
     return patch(path, data)
-        .thenApply(response -> json().fromJsonUncheckedNotNull(response.body(), clazz));
+        .thenApply(response -> json().fromJsonUncheckedNotNull(response.bodyString(), clazz));
   }
 
   /**
@@ -825,7 +827,7 @@ public class GitHubClient {
     final HttpRequest request = builder.build();
     log.debug("Making PATCH request to {}", request.url().toString());
     return call(request)
-        .thenApply(response -> json().fromJsonUncheckedNotNull(response.body(), clazz));
+        .thenApply(response -> json().fromJsonUncheckedNotNull(response.bodyString(), clazz));
   }
 
   /**
@@ -973,13 +975,13 @@ public class GitHubClient {
               response.statusCode(), response.statusMessage()));
     }
 
-    if (response.body() == null) {
+    if (response.bodyString() == null) {
       throw new Exception(
           String.format(
               "Got empty response body when getting an access token from GitHub, HTTP status was: %s",
               response.statusMessage()));
     }
-    final String text = response.body();
+    final String text = response.bodyString();
     return Json.create().fromJson(text, AccessToken.class);
   }
 
@@ -1016,7 +1018,7 @@ public class GitHubClient {
 
   private RequestNotOkException mapException(
       final HttpRequest httpRequest, final HttpResponse httpResponse) throws IOException {
-    String bodyString = Optional.ofNullable(httpResponse.body()).orElse("");
+    String bodyString = Optional.ofNullable(httpResponse.bodyString()).orElse("");
     Map<String, List<String>> headersMap = httpResponse.headers();
 
     if (httpResponse.statusCode() == FORBIDDEN) {

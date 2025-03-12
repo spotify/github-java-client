@@ -23,9 +23,12 @@ package com.spotify.github.http.okhttp;
 import com.spotify.github.http.HttpRequest;
 import com.spotify.github.http.HttpResponse;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 
@@ -34,31 +37,19 @@ public class OkHttpHttpResponse implements HttpResponse {
   private static final int HTTP_BAD_REQUEST = 400;
 
   private final HttpRequest request;
+  private final Response response;
   private final int statusCode;
   private final String statusMessage;
-  private final String body;
+  private InputStream body;
   private final Map<String, List<String>> headers;
+  private String bodyString;
 
   public OkHttpHttpResponse(final HttpRequest request, final Response response) {
     this.request = request;
     this.statusCode = response.code();
     this.statusMessage = response.message();
-    this.body = responseBodyUnchecked(response);
     this.headers = response.headers().toMultimap();
-    response.close();
-  }
-
-  public OkHttpHttpResponse(
-      final HttpRequest request,
-      final int statusCode,
-      final String statusMessage,
-      final String body,
-      final Map<String, List<String>> headers) {
-    this.request = request;
-    this.statusCode = statusCode;
-    this.statusMessage = statusMessage;
-    this.body = body;
-    this.headers = headers;
+    this.response = response;
   }
 
   @Override
@@ -75,8 +66,21 @@ public class OkHttpHttpResponse implements HttpResponse {
     return statusMessage;
   }
 
-  public String body() {
+  @Override
+  public InputStream body() {
+    if (body == null) {
+      body = Optional.ofNullable(response.body()).map(ResponseBody::byteStream).orElse(null);
+    }
     return body;
+  }
+
+  public String bodyString() {
+    if (bodyString == null) {
+      if (response != null) {
+        bodyString = responseBodyUnchecked(response);
+      }
+    }
+    return bodyString;
   }
 
   @Override
@@ -87,6 +91,16 @@ public class OkHttpHttpResponse implements HttpResponse {
   @Override
   public boolean isSuccessful() {
     return this.statusCode() >= HTTP_OK && this.statusCode() < HTTP_BAD_REQUEST;
+  }
+
+  @Override
+  public void close() {
+    if (response != null) {
+      response.close();
+      if (response.body() != null) {
+        response.body().close();
+      }
+    }
   }
 
   private static String responseBodyUnchecked(final Response response) {

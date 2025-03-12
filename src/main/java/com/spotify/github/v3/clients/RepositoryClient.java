@@ -214,7 +214,7 @@ public class RepositoryClient {
    */
   public CompletableFuture<Boolean> isCollaborator(final String user) {
     final String path = String.format(REPOSITORY_COLLABORATOR, owner, repo, user);
-    return github.request(path).thenApply(response -> response.code() == NO_CONTENT);
+    return github.request(path).thenApply(response -> response.statusCode() == NO_CONTENT);
   }
 
   /**
@@ -235,7 +235,7 @@ public class RepositoryClient {
             response -> {
               // Non-successful statuses result in an RequestNotOkException exception and this code
               // not called.
-              if (response.code() == NO_CONTENT) {
+              if (response.statusCode() == NO_CONTENT) {
                 /*
                  GitHub returns a 204 when:
                  - an existing collaborator is added as a collaborator
@@ -248,8 +248,7 @@ public class RepositoryClient {
               final RepositoryInvitation invitation =
                   github
                       .json()
-                      .fromJsonUnchecked(
-                          GitHubClient.responseBodyUnchecked(response), RepositoryInvitation.class);
+                      .fromJsonUnchecked(response.bodyString(), RepositoryInvitation.class);
               return Optional.of(invitation);
             });
   }
@@ -309,18 +308,7 @@ public class RepositoryClient {
       final String path, final Optional<String> maybeRef) {
     final var repoRef = maybeRef.orElse("");
     final var repoPath = String.format(path, owner, repo, repoRef);
-    return github
-        .request(repoPath)
-        .thenApply(
-            response -> {
-              var body = response.body();
-
-              if (body == null) {
-                return Optional.empty();
-              }
-
-              return Optional.of(body.byteStream());
-            });
+    return github.request(repoPath).thenApply(response -> Optional.of(response.body()));
   }
 
   /**
@@ -663,15 +651,12 @@ public class RepositoryClient {
               // Non-successful statuses result in an RequestNotOkException exception and this code
               // not being called.
 
-              if (response.code() == NO_CONTENT) {
+              if (response.statusCode() == NO_CONTENT) {
                 // Base already contains the head, nothing to merge
                 return Optional.empty();
               }
               final CommitItem commitItem =
-                  github
-                      .json()
-                      .fromJsonUnchecked(
-                          GitHubClient.responseBodyUnchecked(response), CommitItem.class);
+                  github.json().fromJsonUnchecked(response.bodyString(), CommitItem.class);
               return Optional.of(commitItem);
             });
   }
@@ -694,10 +679,7 @@ public class RepositoryClient {
         .thenApply(
             response -> {
               final Repository repositoryItem =
-                  github
-                      .json()
-                      .fromJsonUnchecked(
-                          GitHubClient.responseBodyUnchecked(response), Repository.class);
+                  github.json().fromJsonUnchecked(response.bodyString(), Repository.class);
               return repositoryItem;
             });
   }
@@ -714,11 +696,11 @@ public class RepositoryClient {
    *
    * @param request The repository dispatch request.
    */
-
-  public CompletableFuture<Boolean> createRepositoryDispatchEvent(final RepositoryDispatch request) {
+  public CompletableFuture<Boolean> createRepositoryDispatchEvent(
+      final RepositoryDispatch request) {
     final String path = String.format(CREATE_REPOSITORY_DISPATCH_EVENT_TEMPLATE, owner, repo);
     return github
         .post(path, github.json().toJsonUnchecked(request))
-        .thenApply(response -> response.code() == NO_CONTENT); //should always return a 204
+        .thenApply(response -> response.statusCode() == NO_CONTENT); // should always return a 204
   }
 }

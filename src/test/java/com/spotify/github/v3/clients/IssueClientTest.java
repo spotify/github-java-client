@@ -217,7 +217,7 @@ public class IssueClientTest {
 
     final var response = issueClient.deleteCommentReaction(issueNumber, reactionId).join();
 
-    assertThat(response.code(), is(204));
+    assertThat(response.statusCode(), is(204));
     assertThat(response, is(mockResponse));
     verify(github, times(1)).delete(eq(path));
   }

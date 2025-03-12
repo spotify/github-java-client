@@ -22,7 +22,12 @@ package com.spotify.github.v3.clients;
 
 import com.spotify.github.http.HttpRequest;
 import com.spotify.github.http.HttpResponse;
+import com.spotify.github.http.ImmutableHttpRequest;
+
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -30,21 +35,6 @@ import java.util.Optional;
 public class MockHelper {
   private static final int HTTP_OK = 200;
   private static final int HTTP_BAD_REQUEST = 400;
-
-  //  public static Response createMockResponse(final String headerLinksFixture, final String
-  // bodyFixture)
-  //      throws IOException {
-  //    final ResponseBody body = mock(ResponseBody.class);
-  //    when(body.string()).thenReturn(bodyFixture);
-  //
-  //    final Headers headers = mock(Headers.class);
-  //    when(headers.get("Link")).thenReturn(headerLinksFixture);
-  //
-  //    final Response response = mock(Response.class);
-  //    when(response.headers()).thenReturn(headers);
-  //    when(response.body()).thenReturn(body);
-  //    return response;
-  //  }
 
   public static HttpResponse createMockResponse(
       final String headerLinksFixture, final String bodyFixture) throws IOException {
@@ -61,7 +51,7 @@ public class MockHelper {
     return new HttpResponse() {
       @Override
       public HttpRequest request() {
-        return ImmutableHttpRequest.builder.url(url).build();
+        return ImmutableHttpRequest.builder().url(url).build();
       }
 
       @Override
@@ -75,7 +65,12 @@ public class MockHelper {
       }
 
       @Override
-      public String body() {
+      public InputStream body() {
+        return new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8));
+      }
+
+      @Override
+      public String bodyString() {
         return body;
       }
 
@@ -87,6 +82,11 @@ public class MockHelper {
       @Override
       public boolean isSuccessful() {
         return MockHelper.isSuccessful(statusCode);
+      }
+
+      @Override
+      public void close() {
+
       }
     };
   }
