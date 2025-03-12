@@ -25,14 +25,18 @@ import com.spotify.github.http.HttpResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.lang.invoke.MethodHandles;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class OkHttpHttpResponse implements HttpResponse {
+  private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
   private static final int HTTP_OK = 200;
   private static final int HTTP_BAD_REQUEST = 400;
 
@@ -95,11 +99,15 @@ public class OkHttpHttpResponse implements HttpResponse {
 
   @Override
   public void close() {
-    if (response != null) {
-      response.close();
-      if (response.body() != null) {
-        response.body().close();
+    try {
+      if (response != null) {
+        if (response.body() != null) {
+          response.body().close();
+        }
+        response.close();
       }
+    } catch (IllegalStateException e) {
+      log.debug("Failed closing response: {}", e.getMessage());
     }
   }
 

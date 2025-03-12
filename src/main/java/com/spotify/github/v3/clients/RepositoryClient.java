@@ -308,7 +308,7 @@ public class RepositoryClient {
       final String path, final Optional<String> maybeRef) {
     final var repoRef = maybeRef.orElse("");
     final var repoPath = String.format(path, owner, repo, repoRef);
-    return github.request(repoPath).thenApply(response -> Optional.of(response.body()));
+    return github.request(repoPath).thenApply(response -> Optional.ofNullable(response.body()));
   }
 
   /**

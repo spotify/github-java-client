@@ -51,10 +51,7 @@ import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.net.URI;
 import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
@@ -611,8 +608,7 @@ public class GitHubClient {
   CompletableFuture<HttpResponse> request(
       final String path, final Map<String, String> extraHeaders) {
     final ImmutableHttpRequest.Builder builder = requestBuilder(path);
-    toHttpRequestHeaders(builder, extraHeaders);
-    final HttpRequest request = builder.build();
+    final HttpRequest request = toHttpRequestHeaders(builder, extraHeaders).build();
     log.debug("Making request to {}", request.url().toString());
     return call(request);
   }
@@ -640,9 +636,7 @@ public class GitHubClient {
   <T> CompletableFuture<T> request(
       final String path, final Class<T> clazz, final Map<String, String> extraHeaders) {
     final ImmutableHttpRequest.Builder builder = requestBuilder(path);
-    extraHeaders.forEach(
-        (headerKey, headerValue) -> builder.putHeaders(headerKey, List.of(headerValue)));
-    final HttpRequest request = builder.build();
+    final HttpRequest request = toHttpRequestHeaders(builder, extraHeaders).build();
     log.debug("Making request to {}", request.url().toString());
     return call(request)
         .thenApply(response -> json().fromJsonUncheckedNotNull(response.bodyString(), clazz));
@@ -660,8 +654,7 @@ public class GitHubClient {
       final TypeReference<T> typeReference,
       final Map<String, String> extraHeaders) {
     final ImmutableHttpRequest.Builder builder = requestBuilder(path);
-    toHttpRequestHeaders(builder, extraHeaders);
-    final HttpRequest request = builder.build();
+    final HttpRequest request = toHttpRequestHeaders(builder, extraHeaders).build();
     log.debug("Making request to {}", request.url().toString());
     return call(request)
         .thenApply(
@@ -706,8 +699,7 @@ public class GitHubClient {
   CompletableFuture<HttpResponse> post(
       final String path, final String data, final Map<String, String> extraHeaders) {
     final ImmutableHttpRequest.Builder builder = requestBuilder(path).method("POST").body(data);
-    toHttpRequestHeaders(builder, extraHeaders);
-    final HttpRequest request = builder.build();
+    final HttpRequest request = toHttpRequestHeaders(builder, extraHeaders).build();
     log.debug("Making POST request to {}", request.url().toString());
     return call(request);
   }
@@ -823,8 +815,7 @@ public class GitHubClient {
       final Class<T> clazz,
       final Map<String, String> extraHeaders) {
     final ImmutableHttpRequest.Builder builder = requestBuilder(path).method("PATCH").body(data);
-    toHttpRequestHeaders(builder, extraHeaders);
-    final HttpRequest request = builder.build();
+    final HttpRequest request = toHttpRequestHeaders(builder, extraHeaders).build();
     log.debug("Making PATCH request to {}", request.url().toString());
     return call(request)
         .thenApply(response -> json().fromJsonUncheckedNotNull(response.bodyString(), clazz));
@@ -865,16 +856,29 @@ public class GitHubClient {
     return baseUrl.toString().replaceAll("/+$", "") + "/" + path.replaceAll("^/+", "");
   }
 
-  private void toHttpRequestHeaders(
+  private ImmutableHttpRequest.Builder toHttpRequestHeaders(
       final ImmutableHttpRequest.Builder builder, final Map<String, String> extraHeaders) {
+    HttpRequest request = builder.build();
+
     extraHeaders.forEach(
-        (headerKey, headerValue) -> builder.putHeaders(headerKey, List.of(headerValue)));
+        (headerKey, headerValue) -> {
+          if (request.headers().containsKey(headerKey)) {
+            List<String> headers = new ArrayList<>(request.headers().get(headerKey));
+            headers.add(headerValue);
+            builder.putHeaders(headerKey, headers);
+          } else {
+            builder.putHeaders(headerKey, List.of(headerValue));
+          }
+        });
+    return builder;
   }
 
   private ImmutableHttpRequest.Builder requestBuilder(final String path) {
 
     return ImmutableHttpRequest.builder()
         .url(urlFor(path))
+        .method("GET")
+        .body("")
         .putHeaders(HttpHeaders.ACCEPT, List.of(MediaType.APPLICATION_JSON))
         .putHeaders(HttpHeaders.CONTENT_TYPE, List.of(MediaType.APPLICATION_JSON))
         .putHeaders(HttpHeaders.AUTHORIZATION, List.of(getAuthorizationHeader(path)));
@@ -1025,7 +1029,7 @@ public class GitHubClient {
       if (bodyString.contains("Repository was archived so is read-only")) {
         return new ReadOnlyRepositoryException(
             httpRequest.method(),
-            httpRequest.url(),
+            URI.create(httpRequest.url()).getPath(),
             httpResponse.statusCode(),
             bodyString,
             headersMap);
@@ -1033,7 +1037,11 @@ public class GitHubClient {
     }
 
     return new RequestNotOkException(
-        httpRequest.method(), httpRequest.url(), httpResponse.statusCode(), bodyString, headersMap);
+        httpRequest.method(),
+        URI.create(httpRequest.url()).getPath(),
+        httpResponse.statusCode(),
+        bodyString,
+        headersMap);
   }
 
   CompletableFuture<HttpResponse> processPossibleRedirects(

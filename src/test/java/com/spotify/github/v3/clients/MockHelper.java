@@ -66,12 +66,15 @@ public class MockHelper {
 
       @Override
       public InputStream body() {
-        return new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8));
+        if (body != null) {
+          return new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8));
+        }
+        return null;
       }
 
       @Override
       public String bodyString() {
-        return body;
+        return Optional.ofNullable(body).orElse("");
       }
 
       @Override
@@ -85,9 +88,7 @@ public class MockHelper {
       }
 
       @Override
-      public void close() {
-
-      }
+      public void close() {}
     };
   }
 

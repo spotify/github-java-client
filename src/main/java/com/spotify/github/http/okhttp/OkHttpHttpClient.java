@@ -60,73 +60,30 @@ public class OkHttpHttpClient implements HttpClient {
   public CompletableFuture<HttpResponse> send(final HttpRequest httpRequest) {
     Request request = buildRequest(httpRequest);
     CompletableFuture<HttpResponse> future = new CompletableFuture<>();
-    if (this.callFactory == null) {
-      this.callFactory = createTracedClient();
+    try (Span span = tracer.span(httpRequest)) {
+      if (this.callFactory == null) {
+        this.callFactory = createTracedClient();
+      }
+      this.callFactory
+          .newCall(request)
+          .enqueue(
+              new Callback() {
+
+                @Override
+                public void onResponse(@NotNull final Call call, @NotNull final Response response)
+                    throws IOException {
+                  future.complete(new OkHttpHttpResponse(httpRequest, response));
+                }
+
+                @Override
+                public void onFailure(@NotNull final Call call, @NotNull final IOException e) {
+                  future.completeExceptionally(e);
+                }
+              });
+      tracer.attachSpanToFuture(span, future);
     }
-    this.callFactory
-        .newCall(request)
-        .enqueue(
-            new Callback() {
-
-              @Override
-              public void onResponse(@NotNull final Call call, @NotNull final Response response)
-                  throws IOException {
-                future.complete(new OkHttpHttpResponse(httpRequest, response));
-              }
-
-              @Override
-              public void onFailure(@NotNull final Call call, @NotNull final IOException e) {
-                future.completeExceptionally(e);
-              }
-            });
     return future;
   }
-
-  //  try (Span span = tracer.span(request)) {
-  //    if (this.callFactory == null) {
-  //      this.callFactory = this.tracer.createTracedClient(this.client);
-  //    }
-  //    final Call call = this.callFactory.newCall(request);
-  //
-  //    final CompletableFuture<Response> future = new CompletableFuture<>();
-  //
-  //    // avoid multiple redirects
-  //    final AtomicBoolean redirected = new AtomicBoolean(false);
-  //
-  //    call.enqueue(
-  //            new Callback() {
-  //              @Override
-  //              public void onFailure(@NotNull final Call call, final IOException e) {
-  //                future.completeExceptionally(e);
-  //              }
-  //
-  //              @Override
-  //              public void onResponse(@NotNull final Call call, final Response response) {
-  //                processPossibleRedirects(response, redirected)
-  //                        .handle(
-  //                                (res, ex) -> {
-  //                                  if (Objects.nonNull(ex)) {
-  //                                    future.completeExceptionally(ex);
-  //                                  } else if (!res.isSuccessful()) {
-  //                                    try {
-  //                                      future.completeExceptionally(mapException(res, request));
-  //                                    } catch (final Throwable e) {
-  //                                      future.completeExceptionally(e);
-  //                                    } finally {
-  //                                      if (res.body() != null) {
-  //                                        res.body().close();
-  //                                      }
-  //                                    }
-  //                                  } else {
-  //                                    future.complete(res);
-  //                                  }
-  //                                  return res;
-  //                                });
-  //              }
-  //            });
-  //    tracer.attachSpanToFuture(span, future);
-  //    return future;
-  //  }
 
   @Override
   public void setTracer(final Tracer tracer) {
@@ -142,9 +99,13 @@ public class OkHttpHttpClient implements HttpClient {
             (key, values) -> {
               values.forEach(value -> requestBuilder.addHeader(key, value));
             });
-    requestBuilder.method(
-        request.method(),
-        RequestBody.create(parse(javax.ws.rs.core.MediaType.APPLICATION_JSON), request.body()));
+    if (request.method().equals("GET")) {
+      requestBuilder.get();
+    } else {
+      requestBuilder.method(
+          request.method(),
+          RequestBody.create(parse(javax.ws.rs.core.MediaType.APPLICATION_JSON), request.body()));
+    }
     return requestBuilder.build();
   }
 

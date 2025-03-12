@@ -642,7 +642,7 @@ public class RepositoryClientTest {
   @Test
   public void mergeNoop() {
     CompletableFuture<HttpResponse> okResponse =
-        completedFuture(createMockHttpResponse("http://example.com/whatever", 202, "", Map.of()));
+        completedFuture(createMockHttpResponse("http://example.com/whatever", 204, null, Map.of()));
     when(github.post(any(), any())).thenReturn(okResponse);
     final Optional<CommitItem> maybeCommit = repoClient.merge("basebranch", "headbranch").join();
     assertThat(maybeCommit, is(Optional.empty()));
@@ -685,7 +685,7 @@ public class RepositoryClientTest {
   @Test
   public void shouldReturnEmptyOptionalWhenResponseBodyNotPresent() throws Exception {
     CompletableFuture<HttpResponse> fixture =
-        completedFuture(createMockHttpResponse("http://example.com/whatever", 204, "", Map.of()));
+        completedFuture(createMockHttpResponse("http://example.com/whatever", 204, null, Map.of()));
     when(github.request("/repos/someowner/somerepo/zipball/master")).thenReturn(fixture);
 
     Optional<InputStream> response = repoClient.downloadZipball("master").get();

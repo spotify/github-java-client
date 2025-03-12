@@ -21,6 +21,7 @@
 package com.spotify.github.tracing;
 
 import com.spotify.github.http.HttpRequest;
+import com.spotify.github.http.ImmutableHttpRequest;
 import com.spotify.github.tracing.opentelemetry.OpenTelemetryTracer;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
@@ -45,6 +46,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -124,10 +126,13 @@ public class OpenTelemetryTracerTest {
     Span rootSpan = startRootSpan();
     final CompletableFuture<String> future = new CompletableFuture<>();
     OpenTelemetryTracer tracer = new OpenTelemetryTracer();
-    HttpRequest mockRequest = mock(HttpRequest.class);
-    when(mockRequest.url())
-        .thenReturn("https://api.github.com/repos/spotify/github-java-client");
-    when(mockRequest.method()).thenReturn(requestMethod);
+    HttpRequest mockRequest =
+        ImmutableHttpRequest.builder()
+            .url("https://api.github.com/repos/spotify/github-java-client")
+            .method(requestMethod)
+            .body("")
+            .headers(Map.of())
+            .build();
 
     try (com.spotify.github.tracing.Span span = tracer.span(mockRequest)) {
       tracer.attachSpanToFuture(span, future);
