@@ -31,6 +31,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.google.common.io.Resources;
+import com.spotify.github.http.HttpResponse;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.checks.Installation;
 import com.spotify.github.v3.user.requests.ImmutableSuspensionReason;
@@ -62,8 +63,8 @@ public class UserClientTest {
 
     @Test
     public void testSuspendUserSuccess() throws Exception {
-        Response response = mock(Response.class);
-        when(response.code()).thenReturn(204);
+        HttpResponse response = mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(204);
         when(github.put(eq("/users/username/suspended"), any())).thenReturn(completedFuture(response));
         final CompletableFuture<Boolean> result = userClient.suspendUser("username", ImmutableSuspensionReason.builder().reason("That's why").build());
         assertTrue(result.get());
@@ -71,8 +72,8 @@ public class UserClientTest {
 
     @Test
     public void testSuspendUserFailure() throws Exception {
-        Response response = mock(Response.class);
-        when(response.code()).thenReturn(403);
+        HttpResponse response = mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(403);
         when(github.put(eq("/users/username/suspended"), any())).thenReturn(completedFuture(response));
         final CompletableFuture<Boolean> result = userClient.suspendUser("username", ImmutableSuspensionReason.builder().reason("That's why").build());
         assertFalse(result.get());
@@ -80,8 +81,8 @@ public class UserClientTest {
 
     @Test
     public void testUnSuspendUserSuccess() throws Exception {
-        Response response = mock(Response.class);
-        when(response.code()).thenReturn(204);
+        HttpResponse response = mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(204);
         when(github.delete(eq("/users/username/suspended"), any())).thenReturn(completedFuture(response));
         final CompletableFuture<Boolean> result = userClient.unSuspendUser("username", ImmutableSuspensionReason.builder().reason("That's why").build());
         assertTrue(result.get());
@@ -89,8 +90,8 @@ public class UserClientTest {
 
     @Test
     public void testUnSuspendUserFailure() throws Exception {
-        Response response = mock(Response.class);
-        when(response.code()).thenReturn(403);
+        HttpResponse response = mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(403);
         when(github.delete(eq("/users/username/suspended"), any())).thenReturn(completedFuture(response));
         final CompletableFuture<Boolean> result = userClient.unSuspendUser("username", ImmutableSuspensionReason.builder().reason("That's why").build());
         assertFalse(result.get());

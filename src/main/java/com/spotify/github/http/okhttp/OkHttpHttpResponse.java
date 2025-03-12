@@ -39,7 +39,7 @@ public class OkHttpHttpResponse implements HttpResponse {
   private final String body;
   private final Map<String, List<String>> headers;
 
-  public OkHttpHttpResponse(final HttpRequest request, final Response response) throws IOException {
+  public OkHttpHttpResponse(final HttpRequest request, final Response response) {
     this.request = request;
     this.statusCode = response.code();
     this.statusMessage = response.message();
@@ -90,6 +90,9 @@ public class OkHttpHttpResponse implements HttpResponse {
   }
 
   private static String responseBodyUnchecked(final Response response) {
+    if (response.body() == null) {
+      return null;
+    }
     try (ResponseBody body = response.body()) {
       return body.string();
     } catch (IOException e) {
