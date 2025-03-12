@@ -18,21 +18,26 @@
  * -/-/-
  */
 
-package com.spotify.github.tracing;
+package com.spotify.github.http;
 
-import com.spotify.github.http.HttpRequest;
-import java.util.concurrent.CompletionStage;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.spotify.github.GithubStyle;
+import org.immutables.value.Value;
 
-public interface Tracer {
+import java.util.List;
+import java.util.Map;
 
-  /** Create scoped span. Span will be closed when future completes. */
-  Span span(String path, String method, CompletionStage<?> future);
+@Value.Immutable
+@GithubStyle
+@JsonSerialize(as = ImmutableHttpRequest.class)
+@JsonDeserialize(as = ImmutableHttpRequest.class)
+public interface HttpRequest {
+  String method();
 
-  Span span(String path, String method);
+  String url();
 
-  Span span(HttpRequest request);
+  String body();
 
-  Span span(HttpRequest request, CompletionStage<?> future);
-
-  void attachSpanToFuture(Span span, CompletionStage<?> future);
+  Map<String, List<String>> headers();
 }

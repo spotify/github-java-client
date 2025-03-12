@@ -20,10 +20,17 @@
 
 package com.spotify.github.v3.clients;
 
+import static java.util.concurrent.CompletableFuture.completedFuture;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.spotify.github.async.Async;
+import com.spotify.github.http.HttpClient;
+import com.spotify.github.http.HttpRequest;
+import com.spotify.github.http.HttpResponse;
+import com.spotify.github.http.ImmutableHttpRequest;
+import com.spotify.github.http.okhttp.OkHttpHttpClient;
 import com.spotify.github.jackson.Json;
-import com.spotify.github.tracing.Span;
+import com.spotify.github.tracing.NoopTracer;
 import com.spotify.github.tracing.Tracer;
 import com.spotify.github.v3.Team;
 import com.spotify.github.v3.User;
@@ -39,17 +46,8 @@ import com.spotify.github.v3.prs.PullRequestItem;
 import com.spotify.github.v3.prs.Review;
 import com.spotify.github.v3.prs.ReviewRequests;
 import com.spotify.github.v3.repos.*;
-import okhttp3.*;
-import org.apache.commons.io.FileUtils;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
 import java.io.File;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.lang.invoke.MethodHandles;
 import java.net.URI;
 import java.time.ZonedDateTime;
@@ -62,9 +60,12 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
-
-import static java.util.concurrent.CompletableFuture.completedFuture;
-import static okhttp3.MediaType.parse;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import okhttp3.*;
+import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * GitHub client is a main communication entry point. Provides lower level communication
@@ -72,936 +73,1029 @@ import static okhttp3.MediaType.parse;
  */
 public class GitHubClient {
 
-    private static final int EXPIRY_MARGIN_IN_MINUTES = 5;
-    private static final int HTTP_NOT_FOUND = 404;
+  private static final int EXPIRY_MARGIN_IN_MINUTES = 5;
+  private static final int HTTP_NOT_FOUND = 404;
 
-    private Tracer tracer = NoopTracer.INSTANCE;
+  private Tracer tracer = NoopTracer.INSTANCE;
 
-    static final Consumer<Response> IGNORE_RESPONSE_CONSUMER = (response) -> {
+  static final Consumer<Response> IGNORE_RESPONSE_CONSUMER =
+      (response) -> {
         if (response.body() != null) {
-            response.body().close();
+          response.body().close();
         }
-    };
-    static final TypeReference<List<Comment>> LIST_COMMENT_TYPE_REFERENCE =
-            new TypeReference<>() {
-            };
-    static final TypeReference<List<CommentReaction>> LIST_COMMENT_REACTION_TYPE_REFERENCE =
-            new TypeReference<>() {};
-    static final TypeReference<List<Repository>> LIST_REPOSITORY =
-            new TypeReference<>() {
-            };
-    static final TypeReference<List<CommitItem>> LIST_COMMIT_TYPE_REFERENCE =
-            new TypeReference<>() {
-            };
-    static final TypeReference<List<Review>> LIST_REVIEW_TYPE_REFERENCE = new TypeReference<>() {
-    };
-    static final TypeReference<ReviewRequests> LIST_REVIEW_REQUEST_TYPE_REFERENCE =
-            new TypeReference<>() {
-            };
-    static final TypeReference<List<Status>> LIST_STATUS_TYPE_REFERENCE =
-            new TypeReference<>() {
-            };
-    static final TypeReference<List<FolderContent>> LIST_FOLDERCONTENT_TYPE_REFERENCE =
-            new TypeReference<>() {
-            };
-    static final TypeReference<List<PullRequestItem>> LIST_PR_TYPE_REFERENCE =
-            new TypeReference<>() {
-            };
-    static final TypeReference<List<Branch>> LIST_BRANCHES =
-            new TypeReference<>() {
-            };
-    static final TypeReference<List<Reference>> LIST_REFERENCES =
-            new TypeReference<>() {
-            };
-    static final TypeReference<List<RepositoryInvitation>> LIST_REPOSITORY_INVITATION = new TypeReference<>() {
-    };
+      };
+  static final TypeReference<List<Comment>> LIST_COMMENT_TYPE_REFERENCE = new TypeReference<>() {};
+  static final TypeReference<List<CommentReaction>> LIST_COMMENT_REACTION_TYPE_REFERENCE =
+      new TypeReference<>() {};
+  static final TypeReference<List<Repository>> LIST_REPOSITORY = new TypeReference<>() {};
+  static final TypeReference<List<CommitItem>> LIST_COMMIT_TYPE_REFERENCE =
+      new TypeReference<>() {};
+  static final TypeReference<List<Review>> LIST_REVIEW_TYPE_REFERENCE = new TypeReference<>() {};
+  static final TypeReference<ReviewRequests> LIST_REVIEW_REQUEST_TYPE_REFERENCE =
+      new TypeReference<>() {};
+  static final TypeReference<List<Status>> LIST_STATUS_TYPE_REFERENCE = new TypeReference<>() {};
+  static final TypeReference<List<FolderContent>> LIST_FOLDERCONTENT_TYPE_REFERENCE =
+      new TypeReference<>() {};
+  static final TypeReference<List<PullRequestItem>> LIST_PR_TYPE_REFERENCE =
+      new TypeReference<>() {};
+  static final TypeReference<List<Branch>> LIST_BRANCHES = new TypeReference<>() {};
+  static final TypeReference<List<Reference>> LIST_REFERENCES = new TypeReference<>() {};
+  static final TypeReference<List<RepositoryInvitation>> LIST_REPOSITORY_INVITATION =
+      new TypeReference<>() {};
 
-    static final TypeReference<List<Team>> LIST_TEAMS =
-            new TypeReference<>() {
-            };
+  static final TypeReference<List<Team>> LIST_TEAMS = new TypeReference<>() {};
 
-    static final TypeReference<List<User>> LIST_TEAM_MEMBERS =
-            new TypeReference<>() {
-            };
+  static final TypeReference<List<User>> LIST_TEAM_MEMBERS = new TypeReference<>() {};
 
-    static final TypeReference<List<TeamInvitation>> LIST_PENDING_TEAM_INVITATIONS =
-            new TypeReference<>() {
-            };
+  static final TypeReference<List<TeamInvitation>> LIST_PENDING_TEAM_INVITATIONS =
+      new TypeReference<>() {};
 
-    private static final String GET_ACCESS_TOKEN_URL = "app/installations/%s/access_tokens";
+  private static final String GET_ACCESS_TOKEN_URL = "app/installations/%s/access_tokens";
 
-    private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+  private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private static final int PERMANENT_REDIRECT = 301;
-    private static final int TEMPORARY_REDIRECT = 307;
-    private static final int FORBIDDEN = 403;
+  private static final int PERMANENT_REDIRECT = 301;
+  private static final int TEMPORARY_REDIRECT = 307;
+  private static final int FORBIDDEN = 403;
 
-    private final URI baseUrl;
+  private final URI baseUrl;
 
-    private final Optional<URI> graphqlUrl;
-    private final Json json = Json.create();
-    private final OkHttpClient client;
-    private Call.Factory callFactory;
-    private final String token;
+  private final Optional<URI> graphqlUrl;
+  private final Json json = Json.create();
+  private final HttpClient client;
+  private Call.Factory callFactory;
+  private final String token;
 
-    private final byte[] privateKey;
-    private final Integer appId;
-    private final Integer installationId;
+  private final byte[] privateKey;
+  private final Integer appId;
+  private final Integer installationId;
 
-    private final Map<Integer, AccessToken> installationTokens;
+  private final Map<Integer, AccessToken> installationTokens;
 
-    private GitHubClient(
-            final OkHttpClient client,
-            final URI baseUrl,
-            final URI graphqlUrl,
-            final String accessToken,
-            final byte[] privateKey,
-            final Integer appId,
-            final Integer installationId) {
-        this.baseUrl = baseUrl;
-        this.graphqlUrl = Optional.ofNullable(graphqlUrl);
-        this.token = accessToken;
-        this.client = client;
-        this.privateKey = privateKey;
-        this.appId = appId;
-        this.installationId = installationId;
-        this.installationTokens = new ConcurrentHashMap<>();
+  private GitHubClient(
+      final HttpClient client,
+      final URI baseUrl,
+      final URI graphqlUrl,
+      final String accessToken,
+      final byte[] privateKey,
+      final Integer appId,
+      final Integer installationId) {
+    this.baseUrl = baseUrl;
+    this.graphqlUrl = Optional.ofNullable(graphqlUrl);
+    this.token = accessToken;
+    this.client = client;
+    this.privateKey = privateKey;
+    this.appId = appId;
+    this.installationId = installationId;
+    this.installationTokens = new ConcurrentHashMap<>();
+  }
+
+  private GitHubClient(
+      final OkHttpClient client,
+      final URI baseUrl,
+      final URI graphqlUrl,
+      final String accessToken,
+      final byte[] privateKey,
+      final Integer appId,
+      final Integer installationId) {
+    this.baseUrl = baseUrl;
+    this.graphqlUrl = Optional.ofNullable(graphqlUrl);
+    this.token = accessToken;
+    this.client = new OkHttpHttpClient(client);
+    this.privateKey = privateKey;
+    this.appId = appId;
+    this.installationId = installationId;
+    this.installationTokens = new ConcurrentHashMap<>();
+  }
+
+  /**
+   * Create a github api client with a given base URL and authorization token.
+   *
+   * @param baseUrl base URL
+   * @param token authorization token
+   * @return github api client
+   */
+  public static GitHubClient create(final URI baseUrl, final String token) {
+    return new GitHubClient(new OkHttpClient(), baseUrl, null, token, null, null, null);
+  }
+
+  public static GitHubClient create(final URI baseUrl, final URI graphqlUri, final String token) {
+    return new GitHubClient(new OkHttpClient(), baseUrl, graphqlUri, token, null, null, null);
+  }
+
+  /**
+   * Create a github api client with a given base URL and a path to a key.
+   *
+   * @param baseUrl base URL
+   * @param privateKey the private key PEM file
+   * @param appId the github app ID
+   * @return github api client
+   */
+  public static GitHubClient create(final URI baseUrl, final File privateKey, final Integer appId) {
+    return createOrThrow(new OkHttpClient(), baseUrl, null, privateKey, appId, null);
+  }
+
+  /**
+   * Create a github api client with a given base URL and a path to a key.
+   *
+   * @param baseUrl base URL
+   * @param privateKey the private key as byte array
+   * @param appId the github app ID
+   * @return github api client
+   */
+  public static GitHubClient create(
+      final URI baseUrl, final byte[] privateKey, final Integer appId) {
+    return new GitHubClient(new OkHttpClient(), baseUrl, null, null, privateKey, appId, null);
+  }
+
+  /**
+   * Create a github api client with a given base URL and a path to a key.
+   *
+   * @param baseUrl base URL
+   * @param privateKey the private key PEM file
+   * @param appId the github app ID
+   * @param installationId the installationID to be authenticated as
+   * @return github api client
+   */
+  public static GitHubClient create(
+      final URI baseUrl, final File privateKey, final Integer appId, final Integer installationId) {
+    return createOrThrow(new OkHttpClient(), baseUrl, null, privateKey, appId, installationId);
+  }
+
+  /**
+   * Create a github api client with a given base URL and a path to a key.
+   *
+   * @param baseUrl base URL
+   * @param privateKey the private key as byte array
+   * @param appId the github app ID
+   * @param installationId the installationID to be authenticated as
+   * @return github api client
+   */
+  public static GitHubClient create(
+      final URI baseUrl,
+      final byte[] privateKey,
+      final Integer appId,
+      final Integer installationId) {
+    return new GitHubClient(
+        new OkHttpClient(), baseUrl, null, null, privateKey, appId, installationId);
+  }
+
+  /**
+   * Create a github api client with a given base URL and a path to a key.
+   *
+   * @param httpClient an instance of OkHttpClient
+   * @param baseUrl base URL
+   * @param privateKey the private key PEM file
+   * @param appId the github app ID
+   * @return github api client
+   */
+  public static GitHubClient create(
+      final OkHttpClient httpClient,
+      final URI baseUrl,
+      final File privateKey,
+      final Integer appId) {
+    return createOrThrow(httpClient, baseUrl, null, privateKey, appId, null);
+  }
+
+  /**
+   * Create a github api client with a given base URL and a path to a key.
+   *
+   * @param httpClient an instance of OkHttpClient
+   * @param baseUrl base URL
+   * @param privateKey the private key PEM file
+   * @param appId the github app ID
+   * @return github api client
+   */
+  public static GitHubClient create(
+      final OkHttpClient httpClient,
+      final URI baseUrl,
+      final URI graphqlUrl,
+      final File privateKey,
+      final Integer appId) {
+    return createOrThrow(httpClient, baseUrl, graphqlUrl, privateKey, appId, null);
+  }
+
+  /**
+   * Create a github api client with a given base URL and a path to a key.
+   *
+   * @param httpClient an instance of OkHttpClient
+   * @param baseUrl base URL
+   * @param privateKey the private key as byte array
+   * @param appId the github app ID
+   * @return github api client
+   */
+  public static GitHubClient create(
+      final OkHttpClient httpClient,
+      final URI baseUrl,
+      final byte[] privateKey,
+      final Integer appId) {
+    return new GitHubClient(httpClient, baseUrl, null, null, privateKey, appId, null);
+  }
+
+  /**
+   * Create a github api client with a given base URL and a path to a key.
+   *
+   * @param httpClient an instance of OkHttpClient
+   * @param baseUrl base URL
+   * @param privateKey the private key PEM file
+   * @param appId the github app ID
+   * @return github api client
+   */
+  public static GitHubClient create(
+      final OkHttpClient httpClient,
+      final URI baseUrl,
+      final File privateKey,
+      final Integer appId,
+      final Integer installationId) {
+    return createOrThrow(httpClient, baseUrl, null, privateKey, appId, installationId);
+  }
+
+  /**
+   * Create a github api client with a given base URL and a path to a key.
+   *
+   * @param httpClient an instance of OkHttpClient
+   * @param baseUrl base URL
+   * @param privateKey the private key as byte array
+   * @param appId the github app ID
+   * @return github api client
+   */
+  public static GitHubClient create(
+      final OkHttpClient httpClient,
+      final URI baseUrl,
+      final byte[] privateKey,
+      final Integer appId,
+      final Integer installationId) {
+    return new GitHubClient(httpClient, baseUrl, null, null, privateKey, appId, installationId);
+  }
+
+  /**
+   * Create a github api client with a given base URL and authorization token.
+   *
+   * @param httpClient an instance of OkHttpClient
+   * @param baseUrl base URL
+   * @param token authorization token
+   * @return github api client
+   */
+  public static GitHubClient create(
+      final OkHttpClient httpClient, final URI baseUrl, final String token) {
+    return new GitHubClient(httpClient, baseUrl, null, token, null, null, null);
+  }
+
+  public static GitHubClient create(
+      final OkHttpClient httpClient, final URI baseUrl, final URI graphqlUrl, final String token) {
+    return new GitHubClient(httpClient, baseUrl, graphqlUrl, token, null, null, null);
+  }
+
+  /**
+   * Create a github api client with a given base URL and a path to a key.
+   *
+   * @param httpClient an instance of OkHttpClient
+   * @param baseUrl base URL
+   * @param privateKey the private key PEM file
+   * @param appId the github app ID
+   * @return github api client
+   */
+  public static GitHubClient create(
+      final HttpClient httpClient, final URI baseUrl, final File privateKey, final Integer appId) {
+    return createOrThrow(httpClient, baseUrl, null, privateKey, appId, null);
+  }
+
+  /**
+   * Create a github api client with a given base URL and a path to a key.
+   *
+   * @param httpClient an instance of OkHttpClient
+   * @param baseUrl base URL
+   * @param privateKey the private key PEM file
+   * @param appId the github app ID
+   * @return github api client
+   */
+  public static GitHubClient create(
+      final HttpClient httpClient,
+      final URI baseUrl,
+      final URI graphqlUrl,
+      final File privateKey,
+      final Integer appId) {
+    return createOrThrow(httpClient, baseUrl, graphqlUrl, privateKey, appId, null);
+  }
+
+  /**
+   * Create a github api client with a given base URL and a path to a key.
+   *
+   * @param httpClient an instance of OkHttpClient
+   * @param baseUrl base URL
+   * @param privateKey the private key as byte array
+   * @param appId the github app ID
+   * @return github api client
+   */
+  public static GitHubClient create(
+      final HttpClient httpClient,
+      final URI baseUrl,
+      final byte[] privateKey,
+      final Integer appId) {
+    return new GitHubClient(httpClient, baseUrl, null, null, privateKey, appId, null);
+  }
+
+  /**
+   * Create a github api client with a given base URL and a path to a key.
+   *
+   * @param httpClient an instance of OkHttpClient
+   * @param baseUrl base URL
+   * @param privateKey the private key PEM file
+   * @param appId the github app ID
+   * @return github api client
+   */
+  public static GitHubClient create(
+      final HttpClient httpClient,
+      final URI baseUrl,
+      final File privateKey,
+      final Integer appId,
+      final Integer installationId) {
+    return createOrThrow(httpClient, baseUrl, null, privateKey, appId, installationId);
+  }
+
+  /**
+   * Create a github api client with a given base URL and a path to a key.
+   *
+   * @param httpClient an instance of OkHttpClient
+   * @param baseUrl base URL
+   * @param privateKey the private key as byte array
+   * @param appId the github app ID
+   * @return github api client
+   */
+  public static GitHubClient create(
+      final HttpClient httpClient,
+      final URI baseUrl,
+      final byte[] privateKey,
+      final Integer appId,
+      final Integer installationId) {
+    return new GitHubClient(httpClient, baseUrl, null, null, privateKey, appId, installationId);
+  }
+
+  /**
+   * Create a github api client with a given base URL and authorization token.
+   *
+   * @param httpClient an instance of OkHttpClient
+   * @param baseUrl base URL
+   * @param token authorization token
+   * @return github api client
+   */
+  public static GitHubClient create(
+      final HttpClient httpClient, final URI baseUrl, final String token) {
+    return new GitHubClient(httpClient, baseUrl, null, token, null, null, null);
+  }
+
+  public static GitHubClient create(
+      final HttpClient httpClient, final URI baseUrl, final URI graphqlUrl, final String token) {
+    return new GitHubClient(httpClient, baseUrl, graphqlUrl, token, null, null, null);
+  }
+
+  /**
+   * Receives a github client and scopes it to a certain installation ID.
+   *
+   * @param client the github client with a valid private key
+   * @param installationId the installation ID to be scoped
+   * @return github api client
+   */
+  public static GitHubClient scopeForInstallationId(
+      final GitHubClient client, final int installationId) {
+    if (client.getPrivateKey().isEmpty()) {
+      throw new RuntimeException("Installation ID scoped client needs a private key");
+    }
+    return new GitHubClient(
+        client.client,
+        client.baseUrl,
+        null,
+        null,
+        client.getPrivateKey().get(),
+        client.appId,
+        installationId);
+  }
+
+  public GitHubClient withScopeForInstallationId(final int installationId) {
+    if (Optional.ofNullable(privateKey).isEmpty()) {
+      throw new RuntimeException("Installation ID scoped client needs a private key");
+    }
+    return new GitHubClient(
+        client, baseUrl, graphqlUrl.orElse(null), null, privateKey, appId, installationId);
+  }
+
+  /**
+   * This is for clients authenticated as a GitHub App: when performing operations, the
+   * "installation" of the App must be specified. This returns a {@code GitHubClient} that has been
+   * scoped to the user's/organization's installation of the app, if any.
+   */
+  public CompletionStage<Optional<GitHubClient>> asAppScopedClient(final String owner) {
+    return Async.exceptionallyCompose(
+            this.createOrganisationClient(owner)
+                .createGithubAppClient()
+                .getInstallation()
+                .thenApply(Installation::id),
+            e -> {
+              if (e.getCause() instanceof RequestNotOkException
+                  && ((RequestNotOkException) e.getCause()).statusCode() == HTTP_NOT_FOUND) {
+                return this.createUserClient(owner)
+                    .createGithubAppClient()
+                    .getUserInstallation()
+                    .thenApply(Installation::id);
+              }
+              return CompletableFuture.failedFuture(e);
+            })
+        .thenApply(id -> Optional.of(this.withScopeForInstallationId(id)))
+        .exceptionally(
+            e -> {
+              if (e.getCause() instanceof RequestNotOkException
+                  && ((RequestNotOkException) e.getCause()).statusCode() == HTTP_NOT_FOUND) {
+                return Optional.empty();
+              }
+              throw new RuntimeException(e);
+            });
+  }
+
+  public GitHubClient withTracer(final Tracer tracer) {
+    this.tracer = tracer;
+    this.client.setTracer(tracer);
+    return this;
+  }
+
+  public Optional<byte[]> getPrivateKey() {
+    return Optional.ofNullable(privateKey);
+  }
+
+  public Optional<String> getAccessToken() {
+    return Optional.ofNullable(token);
+  }
+
+  /**
+   * Create a repository API client
+   *
+   * @param owner repository owner
+   * @param repo repository name
+   * @return repository API client
+   */
+  public RepositoryClient createRepositoryClient(final String owner, final String repo) {
+    return RepositoryClient.create(this, owner, repo);
+  }
+
+  /**
+   * Create a GitData API client
+   *
+   * @param owner repository owner
+   * @param repo repository name
+   * @return GitData API client
+   */
+  public GitDataClient createGitDataClient(final String owner, final String repo) {
+    return GitDataClient.create(this, owner, repo);
+  }
+
+  /**
+   * Create search API client
+   *
+   * @return search API client
+   */
+  public SearchClient createSearchClient() {
+    return SearchClient.create(this);
+  }
+
+  /**
+   * Create a checks API client
+   *
+   * @param owner repository owner
+   * @param repo repository name
+   * @return checks API client
+   */
+  public ChecksClient createChecksClient(final String owner, final String repo) {
+    return ChecksClient.create(this, owner, repo);
+  }
+
+  /**
+   * Create organisation API client
+   *
+   * @return organisation API client
+   */
+  public OrganisationClient createOrganisationClient(final String org) {
+    return OrganisationClient.create(this, org);
+  }
+
+  /**
+   * Create user API client
+   *
+   * @return user API client
+   */
+  public UserClient createUserClient(final String owner) {
+    return UserClient.create(this, owner);
+  }
+
+  Json json() {
+    return json;
+  }
+
+  /**
+   * Make an http GET request for the given path on the server
+   *
+   * @param path relative to the Github base url
+   * @return response body as a String
+   */
+  CompletableFuture<HttpResponse> request(final String path) {
+    final HttpRequest request = requestBuilder(path).build();
+    log.debug("Making request to {}", request.url().toString());
+    return call(request);
+  }
+
+  /**
+   * Make an http GET request for the given path on the server
+   *
+   * @param path relative to the Github base url
+   * @param extraHeaders extra github headers to be added to the call
+   * @return a reader of response body
+   */
+  CompletableFuture<HttpResponse> request(
+      final String path, final Map<String, String> extraHeaders) {
+    final ImmutableHttpRequest.Builder builder = requestBuilder(path);
+    toHttpRequestHeaders(builder, extraHeaders);
+    final HttpRequest request = builder.build();
+    log.debug("Making request to {}", request.url().toString());
+    return call(request);
+  }
+
+  /**
+   * Make an http GET request for the given path on the server
+   *
+   * @param path relative to the Github base url
+   * @return body deserialized as provided type
+   */
+  <T> CompletableFuture<T> request(final String path, final Class<T> clazz) {
+    final HttpRequest request = requestBuilder(path).build();
+    log.debug("Making request to {}", request.url().toString());
+    return call(request)
+        .thenApply(response -> json().fromJsonUncheckedNotNull(response.body(), clazz));
+  }
+
+  /**
+   * Make an http GET request for the given path on the server
+   *
+   * @param path relative to the Github base url
+   * @param extraHeaders extra github headers to be added to the call
+   * @return body deserialized as provided type
+   */
+  <T> CompletableFuture<T> request(
+      final String path, final Class<T> clazz, final Map<String, String> extraHeaders) {
+    final ImmutableHttpRequest.Builder builder = requestBuilder(path);
+    extraHeaders.forEach(
+        (headerKey, headerValue) -> builder.putHeaders(headerKey, List.of(headerValue)));
+    final HttpRequest request = builder.build();
+    log.debug("Making request to {}", request.url().toString());
+    return call(request)
+        .thenApply(response -> json().fromJsonUncheckedNotNull(response.body(), clazz));
+  }
+
+  /**
+   * Make an http request for the given path on the Github server.
+   *
+   * @param path relative to the Github base url
+   * @param extraHeaders extra github headers to be added to the call
+   * @return body deserialized as provided type
+   */
+  <T> CompletableFuture<T> request(
+      final String path,
+      final TypeReference<T> typeReference,
+      final Map<String, String> extraHeaders) {
+    final ImmutableHttpRequest.Builder builder = requestBuilder(path);
+    toHttpRequestHeaders(builder, extraHeaders);
+    final HttpRequest request = builder.build();
+    log.debug("Making request to {}", request.url().toString());
+    return call(request)
+        .thenApply(response -> json().fromJsonUncheckedNotNull(response.body(), typeReference));
+  }
+
+  /**
+   * Make an http request for the given path on the Github server.
+   *
+   * @param path relative to the Github base url
+   * @return body deserialized as provided type
+   */
+  <T> CompletableFuture<T> request(final String path, final TypeReference<T> typeReference) {
+    final HttpRequest request = requestBuilder(path).build();
+    log.debug("Making request to {}", request.url().toString());
+    return call(request)
+        .thenApply(response -> json().fromJsonUncheckedNotNull(response.body(), typeReference));
+  }
+
+  /**
+   * Make an http POST request for the given path with provided JSON body.
+   *
+   * @param path relative to the Github base url
+   * @param data request body as stringified JSON
+   * @return response body as String
+   */
+  CompletableFuture<HttpResponse> post(final String path, final String data) {
+    final HttpRequest request = requestBuilder(path).method("POST").body(data).build();
+    log.debug("Making POST request to {}", request.url().toString());
+    return call(request);
+  }
+
+  /**
+   * Make an http POST request for the given path with provided JSON body.
+   *
+   * @param path relative to the Github base url
+   * @param data request body as stringified JSON
+   * @param extraHeaders
+   * @return response body as String
+   */
+  CompletableFuture<HttpResponse> post(
+      final String path, final String data, final Map<String, String> extraHeaders) {
+    final ImmutableHttpRequest.Builder builder = requestBuilder(path).method("POST").body(data);
+    toHttpRequestHeaders(builder, extraHeaders);
+    final HttpRequest request = builder.build();
+    log.debug("Making POST request to {}", request.url().toString());
+    return call(request);
+  }
+
+  /**
+   * Make an http POST request for the given path with provided JSON body.
+   *
+   * @param path relative to the Github base url
+   * @param data request body as stringified JSON
+   * @param clazz class to cast response as
+   * @param extraHeaders
+   * @return response body deserialized as provided class
+   */
+  <T> CompletableFuture<T> post(
+      final String path,
+      final String data,
+      final Class<T> clazz,
+      final Map<String, String> extraHeaders) {
+    return post(path, data, extraHeaders)
+        .thenApply(response -> json().fromJsonUncheckedNotNull(response.body(), clazz));
+  }
+
+  /**
+   * Make an http POST request for the given path with provided JSON body.
+   *
+   * @param path relative to the Github base url
+   * @param data request body as stringified JSON
+   * @param clazz class to cast response as
+   * @return response body deserialized as provided class
+   */
+  <T> CompletableFuture<T> post(final String path, final String data, final Class<T> clazz) {
+    return post(path, data)
+        .thenApply(response -> json().fromJsonUncheckedNotNull(response.body(), clazz));
+  }
+
+  /**
+   * Make a POST request to the graphql endpoint of Github
+   *
+   * @param data request body as stringified JSON
+   * @return response
+   * @see
+   *     "https://docs.github.com/en/enterprise-server@3.9/graphql/guides/forming-calls-with-graphql#communicating-with-graphql"
+   */
+  public CompletableFuture<HttpResponse> postGraphql(final String data) {
+    final HttpRequest request = graphqlRequestBuilder().method("POST").body(data).build();
+    log.info("Making POST request to {}", request.url());
+    return call(request);
+  }
+
+  /**
+   * Make an http PUT request for the given path with provided JSON body.
+   *
+   * @param path relative to the Github base url
+   * @param data request body as stringified JSON
+   * @return response body as String
+   */
+  CompletableFuture<HttpResponse> put(final String path, final String data) {
+    final HttpRequest request = requestBuilder(path).method("PUT").body(data).build();
+    log.debug("Making POST request to {}", request.url().toString());
+    return call(request);
+  }
+
+  /**
+   * Make a HTTP PUT request for the given path with provided JSON body.
+   *
+   * @param path relative to the Github base url
+   * @param data request body as stringified JSON
+   * @param clazz class to cast response as
+   * @return response body deserialized as provided class
+   */
+  <T> CompletableFuture<T> put(final String path, final String data, final Class<T> clazz) {
+    return put(path, data)
+        .thenApply(response -> json().fromJsonUncheckedNotNull(response.body(), clazz));
+  }
+
+  /**
+   * Make an http PATCH request for the given path with provided JSON body.
+   *
+   * @param path relative to the Github base url
+   * @param data request body as stringified JSON
+   * @return response body as String
+   */
+  CompletableFuture<HttpResponse> patch(final String path, final String data) {
+    final HttpRequest request = requestBuilder(path).method("PATCH").body(data).build();
+    log.debug("Making PATCH request to {}", request.url().toString());
+    return call(request);
+  }
+
+  /**
+   * Make an http PATCH request for the given path with provided JSON body.
+   *
+   * @param path relative to the Github base url
+   * @param data request body as stringified JSON
+   * @param clazz class to cast response as
+   * @return response body deserialized as provided class
+   */
+  <T> CompletableFuture<T> patch(final String path, final String data, final Class<T> clazz) {
+    return patch(path, data)
+        .thenApply(response -> json().fromJsonUncheckedNotNull(response.body(), clazz));
+  }
+
+  /**
+   * Make an http PATCH request for the given path with provided JSON body
+   *
+   * @param path relative to the Github base url
+   * @param data request body as stringified JSON
+   * @param clazz class to cast response as
+   * @return response body deserialized as provided class
+   */
+  <T> CompletableFuture<T> patch(
+      final String path,
+      final String data,
+      final Class<T> clazz,
+      final Map<String, String> extraHeaders) {
+    final ImmutableHttpRequest.Builder builder = requestBuilder(path).method("PATCH").body(data);
+    toHttpRequestHeaders(builder, extraHeaders);
+    final HttpRequest request = builder.build();
+    log.debug("Making PATCH request to {}", request.url().toString());
+    return call(request)
+        .thenApply(response -> json().fromJsonUncheckedNotNull(response.body(), clazz));
+  }
+
+  /**
+   * Make an http DELETE request for the given path.
+   *
+   * @param path relative to the Github base url
+   * @return response body as String
+   */
+  CompletableFuture<HttpResponse> delete(final String path) {
+    final HttpRequest request = requestBuilder(path).method("DELETE").build();
+    log.debug("Making DELETE request to {}", request.url().toString());
+    return call(request);
+  }
+
+  /**
+   * Make an http DELETE request for the given path.
+   *
+   * @param path relative to the Github base url
+   * @param data request body as stringified JSON
+   * @return response body as String
+   */
+  CompletableFuture<HttpResponse> delete(final String path, final String data) {
+    final HttpRequest request = requestBuilder(path).method("DELETE").body(data).build();
+    log.debug("Making DELETE request to {}", request.url().toString());
+    return call(request);
+  }
+
+  /**
+   * Create a URL for a given path to this Github server.
+   *
+   * @param path relative URI
+   * @return URL to path on this server
+   */
+  String urlFor(final String path) {
+    return baseUrl.toString().replaceAll("/+$", "") + "/" + path.replaceAll("^/+", "");
+  }
+
+  private void toHttpRequestHeaders(
+      final ImmutableHttpRequest.Builder builder, final Map<String, String> extraHeaders) {
+    extraHeaders.forEach(
+        (headerKey, headerValue) -> builder.putHeaders(headerKey, List.of(headerValue)));
+  }
+
+  private ImmutableHttpRequest.Builder requestBuilder(final String path) {
+
+    return ImmutableHttpRequest.builder()
+        .url(urlFor(path))
+        .putHeaders(HttpHeaders.ACCEPT, List.of(MediaType.APPLICATION_JSON))
+        .putHeaders(HttpHeaders.CONTENT_TYPE, List.of(MediaType.APPLICATION_JSON))
+        .putHeaders(HttpHeaders.AUTHORIZATION, List.of(getAuthorizationHeader(path)));
+  }
+
+  private ImmutableHttpRequest.Builder graphqlRequestBuilder() {
+    URI url = graphqlUrl.orElseThrow(() -> new IllegalStateException("No graphql url set"));
+    return ImmutableHttpRequest.builder()
+        .url(url.toString())
+        .putHeaders(HttpHeaders.ACCEPT, List.of(MediaType.APPLICATION_JSON))
+        .putHeaders(HttpHeaders.CONTENT_TYPE, List.of(MediaType.APPLICATION_JSON))
+        .putHeaders(HttpHeaders.AUTHORIZATION, List.of(getAuthorizationHeader("/graphql")));
+  }
+
+  public boolean isGraphqlEnabled() {
+    return graphqlUrl.isPresent();
+  }
+
+  /*
+   Generates the Authentication header, given the API endpoint and the credentials provided.
+
+   <p>GitHub Requests can be authenticated in 3 different ways.
+   (1) Regular, static access token;
+   (2) JWT Token, generated from a private key. Used in GitHub Apps;
+   (3) Installation Token, generated from the JWT token. Also used in GitHub Apps.
+  */
+  private String getAuthorizationHeader(final String path) {
+    if (isJwtRequest(path) && getPrivateKey().isEmpty()) {
+      throw new IllegalStateException("This endpoint needs a client with a private key for an App");
+    }
+    if (getAccessToken().isPresent()) {
+      return String.format("token %s", token);
+    } else if (getPrivateKey().isPresent()) {
+      final String jwtToken;
+      try {
+        jwtToken = JwtTokenIssuer.fromPrivateKey(privateKey).getToken(appId);
+      } catch (Exception e) {
+        throw new RuntimeException("There was an error generating JWT token", e);
+      }
+      if (isJwtRequest(path)) {
+        return String.format("Bearer %s", jwtToken);
+      }
+      if (installationId == null) {
+        throw new RuntimeException("This endpoint needs a client with an installation ID");
+      }
+      try {
+        return String.format("token %s", getInstallationToken(jwtToken, installationId));
+      } catch (Exception e) {
+        throw new RuntimeException("Could not generate access token for github app", e);
+      }
+    }
+    throw new RuntimeException("Not possible to authenticate. ");
+  }
+
+  private boolean isJwtRequest(final String path) {
+    return path.startsWith("/app/installation") || path.endsWith("installation");
+  }
+
+  private String getInstallationToken(final String jwtToken, final int installationId)
+      throws Exception {
+
+    AccessToken installationToken = installationTokens.get(installationId);
+
+    if (installationToken == null || isExpired(installationToken)) {
+      log.info(
+          "Github token for installation {} is either expired or null. Trying to get a new one.",
+          installationId);
+      installationToken = generateInstallationToken(jwtToken, installationId);
+      installationTokens.put(installationId, installationToken);
+    }
+    return installationToken.token();
+  }
+
+  private boolean isExpired(final AccessToken token) {
+    // Adds a few minutes to avoid making calls with an expired token due to clock differences
+    return token.expiresAt().isBefore(ZonedDateTime.now().plusMinutes(EXPIRY_MARGIN_IN_MINUTES));
+  }
+
+  private AccessToken generateInstallationToken(final String jwtToken, final int installationId)
+      throws Exception {
+    log.info("Got JWT Token. Now getting Github access_token for installation {}", installationId);
+    final String url = String.format(urlFor(GET_ACCESS_TOKEN_URL), installationId);
+    final HttpRequest request =
+        ImmutableHttpRequest.builder()
+            .url(url)
+            .putHeaders("Accept", List.of("application/vnd.github.machine-man-preview+json"))
+            .putHeaders("Authorization", List.of("Bearer " + jwtToken))
+            .method("POST")
+            .body("")
+            .build();
+
+    final HttpResponse response = this.client.send(request).toCompletableFuture().join();
+
+    if (!response.isSuccessful()) {
+      throw new Exception(
+          String.format(
+              "Got non-2xx status %s when getting an access token from GitHub: %s",
+              response.statusCode(), response.statusMessage()));
     }
 
-    /**
-     * Create a github api client with a given base URL and authorization token.
-     *
-     * @param baseUrl base URL
-     * @param token   authorization token
-     * @return github api client
-     */
-    public static GitHubClient create(final URI baseUrl, final String token) {
-        return new GitHubClient(new OkHttpClient(), baseUrl, null, token, null, null, null);
+    if (response.body() == null) {
+      throw new Exception(
+          String.format(
+              "Got empty response body when getting an access token from GitHub, HTTP status was: %s",
+              response.statusMessage()));
+    }
+    final String text = response.body();
+    return Json.create().fromJson(text, AccessToken.class);
+  }
+
+  private CompletableFuture<HttpResponse> call(final HttpRequest httpRequest) {
+    return this.client
+        .send(httpRequest)
+        .thenCompose(httpResponse -> handleResponse(httpRequest, httpResponse));
+  }
+
+  private CompletableFuture<HttpResponse> handleResponse(
+      final HttpRequest httpRequest, final HttpResponse httpResponse) {
+    final CompletableFuture<HttpResponse> future = new CompletableFuture<>();
+    // avoid multiple redirects
+    final AtomicBoolean redirected = new AtomicBoolean(false);
+    processPossibleRedirects(httpResponse, redirected)
+        .handle(
+            (res, ex) -> {
+              if (Objects.nonNull(ex)) {
+                future.completeExceptionally(ex);
+              } else if (!res.isSuccessful()) {
+                try {
+                  future.completeExceptionally(mapException(httpRequest, res));
+                } catch (final Throwable e) {
+                  future.completeExceptionally(e);
+                }
+              } else {
+                future.complete(res);
+              }
+              return res;
+            })
+        .join();
+    return future;
+  }
+
+  private RequestNotOkException mapException(
+      final HttpRequest httpRequest, final HttpResponse httpResponse) throws IOException {
+    String bodyString = Optional.ofNullable(httpResponse.body()).orElse("");
+    Map<String, List<String>> headersMap = httpResponse.headers();
+
+    if (httpResponse.statusCode() == FORBIDDEN) {
+      if (bodyString.contains("Repository was archived so is read-only")) {
+        return new ReadOnlyRepositoryException(
+            httpRequest.method(),
+            httpRequest.url(),
+            httpResponse.statusCode(),
+            bodyString,
+            headersMap);
+      }
     }
 
-    public static GitHubClient create(final URI baseUrl, final URI graphqlUri, final String token) {
-        return new GitHubClient(new OkHttpClient(), baseUrl, graphqlUri, token, null, null, null);
+    return new RequestNotOkException(
+        httpRequest.method(), httpRequest.url(), httpResponse.statusCode(), bodyString, headersMap);
+  }
+
+  CompletableFuture<HttpResponse> processPossibleRedirects(
+      final HttpResponse response, final AtomicBoolean redirected) {
+    if (response.statusCode() >= PERMANENT_REDIRECT
+        && response.statusCode() <= TEMPORARY_REDIRECT
+        && !redirected.get()) {
+      redirected.set(true);
+      // redo the same request with a new URL
+      final String newLocation = response.headers().get("Location").get(0);
+      final HttpRequest request =
+          requestBuilder(newLocation)
+              .url(newLocation)
+              .method(response.request().method())
+              .body(response.request().body())
+              .build();
+      // Do the new call and complete the original future when the new call completes
+      return call(request);
     }
 
-    /**
-     * Create a github api client with a given base URL and a path to a key.
-     *
-     * @param baseUrl    base URL
-     * @param privateKey the private key PEM file
-     * @param appId      the github app ID
-     * @return github api client
-     */
-    public static GitHubClient create(final URI baseUrl, final File privateKey, final Integer appId) {
-        return createOrThrow(new OkHttpClient(), baseUrl, null, privateKey, appId, null);
+    return completedFuture(response);
+  }
+
+  /** Wrapper to Constructors that expose File object for the privateKey argument */
+  private static GitHubClient createOrThrow(
+      final OkHttpClient httpClient,
+      final URI baseUrl,
+      final URI graphqlUrl,
+      final File privateKey,
+      final Integer appId,
+      final Integer installationId) {
+    try {
+      return new GitHubClient(
+          httpClient,
+          baseUrl,
+          graphqlUrl,
+          null,
+          FileUtils.readFileToByteArray(privateKey),
+          appId,
+          installationId);
+    } catch (IOException e) {
+      throw new RuntimeException("There was an error generating JWT token", e);
     }
+  }
 
-    /**
-     * Create a github api client with a given base URL and a path to a key.
-     *
-     * @param baseUrl    base URL
-     * @param privateKey the private key as byte array
-     * @param appId      the github app ID
-     * @return github api client
-     */
-    public static GitHubClient create(final URI baseUrl, final byte[] privateKey, final Integer appId) {
-        return new GitHubClient(new OkHttpClient(), baseUrl, null, null, privateKey, appId, null);
+  /** Wrapper to Constructors that expose File object for the privateKey argument */
+  private static GitHubClient createOrThrow(
+      final HttpClient httpClient,
+      final URI baseUrl,
+      final URI graphqlUrl,
+      final File privateKey,
+      final Integer appId,
+      final Integer installationId) {
+    try {
+      return new GitHubClient(
+          httpClient,
+          baseUrl,
+          graphqlUrl,
+          null,
+          FileUtils.readFileToByteArray(privateKey),
+          appId,
+          installationId);
+    } catch (IOException e) {
+      throw new RuntimeException("There was an error generating JWT token", e);
     }
-
-    /**
-     * Create a github api client with a given base URL and a path to a key.
-     *
-     * @param baseUrl        base URL
-     * @param privateKey     the private key PEM file
-     * @param appId          the github app ID
-     * @param installationId the installationID to be authenticated as
-     * @return github api client
-     */
-    public static GitHubClient create(
-            final URI baseUrl, final File privateKey, final Integer appId, final Integer installationId) {
-        return createOrThrow(new OkHttpClient(), baseUrl, null, privateKey, appId, installationId);
-    }
-
-    /**
-     * Create a github api client with a given base URL and a path to a key.
-     *
-     * @param baseUrl        base URL
-     * @param privateKey     the private key as byte array
-     * @param appId          the github app ID
-     * @param installationId the installationID to be authenticated as
-     * @return github api client
-     */
-    public static GitHubClient create(
-            final URI baseUrl, final byte[] privateKey, final Integer appId, final Integer installationId) {
-        return new GitHubClient(new OkHttpClient(), baseUrl, null, null, privateKey, appId, installationId);
-    }
-
-    /**
-     * Create a github api client with a given base URL and a path to a key.
-     *
-     * @param httpClient an instance of OkHttpClient
-     * @param baseUrl    base URL
-     * @param privateKey the private key PEM file
-     * @param appId      the github app ID
-     * @return github api client
-     */
-    public static GitHubClient create(
-            final OkHttpClient httpClient,
-            final URI baseUrl,
-            final File privateKey,
-            final Integer appId) {
-        return createOrThrow(httpClient, baseUrl, null, privateKey, appId, null);
-    }
-
-    /**
-     * Create a github api client with a given base URL and a path to a key.
-     *
-     * @param httpClient an instance of OkHttpClient
-     * @param baseUrl    base URL
-     * @param privateKey the private key PEM file
-     * @param appId      the github app ID
-     * @return github api client
-     */
-    public static GitHubClient create(
-            final OkHttpClient httpClient,
-            final URI baseUrl,
-            final URI graphqlUrl,
-            final File privateKey,
-            final Integer appId) {
-        return createOrThrow(httpClient, baseUrl, graphqlUrl, privateKey, appId, null);
-    }
-
-    /**
-     * Create a github api client with a given base URL and a path to a key.
-     *
-     * @param httpClient an instance of OkHttpClient
-     * @param baseUrl    base URL
-     * @param privateKey the private key as byte array
-     * @param appId      the github app ID
-     * @return github api client
-     */
-    public static GitHubClient create(
-            final OkHttpClient httpClient,
-            final URI baseUrl,
-            final byte[] privateKey,
-            final Integer appId) {
-        return new GitHubClient(httpClient, baseUrl, null, null, privateKey, appId, null);
-    }
-
-
-    /**
-     * Create a github api client with a given base URL and a path to a key.
-     *
-     * @param httpClient an instance of OkHttpClient
-     * @param baseUrl    base URL
-     * @param privateKey the private key PEM file
-     * @param appId      the github app ID
-     * @return github api client
-     */
-    public static GitHubClient create(
-            final OkHttpClient httpClient,
-            final URI baseUrl,
-            final File privateKey,
-            final Integer appId,
-            final Integer installationId) {
-        return createOrThrow(httpClient, baseUrl, null, privateKey, appId, installationId);
-    }
-
-    /**
-     * Create a github api client with a given base URL and a path to a key.
-     *
-     * @param httpClient an instance of OkHttpClient
-     * @param baseUrl    base URL
-     * @param privateKey the private key as byte array
-     * @param appId      the github app ID
-     * @return github api client
-     */
-    public static GitHubClient create(
-            final OkHttpClient httpClient,
-            final URI baseUrl,
-            final byte[] privateKey,
-            final Integer appId,
-            final Integer installationId) {
-        return new GitHubClient(httpClient, baseUrl, null, null, privateKey, appId, installationId);
-    }
-
-    /**
-     * Create a github api client with a given base URL and authorization token.
-     *
-     * @param httpClient an instance of OkHttpClient
-     * @param baseUrl    base URL
-     * @param token      authorization token
-     * @return github api client
-     */
-    public static GitHubClient create(
-            final OkHttpClient httpClient, final URI baseUrl, final String token) {
-        return new GitHubClient(httpClient, baseUrl, null, token, null, null, null);
-    }
-
-    public static GitHubClient create(
-            final OkHttpClient httpClient, final URI baseUrl, final URI graphqlUrl, final String token) {
-        return new GitHubClient(httpClient, baseUrl, graphqlUrl, token, null, null, null);
-    }
-
-    /**
-     * Receives a github client and scopes it to a certain installation ID.
-     *
-     * @param client         the github client with a valid private key
-     * @param installationId the installation ID to be scoped
-     * @return github api client
-     */
-    public static GitHubClient scopeForInstallationId(
-            final GitHubClient client, final int installationId) {
-        if (client.getPrivateKey().isEmpty()) {
-            throw new RuntimeException("Installation ID scoped client needs a private key");
-        }
-        return new GitHubClient(
-                client.client,
-                client.baseUrl,
-                null,
-                null,
-                client.getPrivateKey().get(),
-                client.appId,
-                installationId);
-    }
-
-    static String responseBodyUnchecked(final Response response) {
-        try (ResponseBody body = response.body()) {
-            return body.string();
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed getting response body for: " + response, e);
-        }
-    }
-
-    public GitHubClient withScopeForInstallationId(final int installationId) {
-        if (Optional.ofNullable(privateKey).isEmpty()) {
-            throw new RuntimeException("Installation ID scoped client needs a private key");
-        }
-        return new GitHubClient(
-                client,
-                baseUrl,
-                graphqlUrl.orElse(null),
-                null,
-                privateKey,
-                appId,
-                installationId);
-    }
-
-    /**
-     * This is for clients authenticated as a GitHub App: when performing operations,
-     * the "installation" of the App must be specified.
-     * This returns a {@code GitHubClient} that has been scoped to the
-     * user's/organization's installation of the app, if any.
-     */
-    public CompletionStage<Optional<GitHubClient>> asAppScopedClient(final String owner) {
-        return Async.exceptionallyCompose(this
-                        .createOrganisationClient(owner)
-                        .createGithubAppClient()
-                        .getInstallation()
-                        .thenApply(Installation::id), e -> {
-                    if (e.getCause() instanceof RequestNotOkException && ((RequestNotOkException) e.getCause()).statusCode() == HTTP_NOT_FOUND) {
-                        return this
-                                .createUserClient(owner)
-                                .createGithubAppClient()
-                                .getUserInstallation()
-                                .thenApply(Installation::id);
-                    }
-                    return CompletableFuture.failedFuture(e);
-                })
-                .thenApply(id -> Optional.of(this.withScopeForInstallationId(id)))
-                .exceptionally(
-                        e -> {
-                            if (e.getCause() instanceof RequestNotOkException && ((RequestNotOkException) e.getCause()).statusCode() == HTTP_NOT_FOUND) {
-                                return Optional.empty();
-                            }
-                            throw new RuntimeException(e);
-                        });
-    }
-
-    public GitHubClient withTracer(final Tracer tracer) {
-        this.tracer = tracer;
-        return this;
-    }
-
-    public Optional<byte[]> getPrivateKey() {
-        return Optional.ofNullable(privateKey);
-    }
-
-    public Optional<String> getAccessToken() {
-        return Optional.ofNullable(token);
-    }
-
-    /**
-     * Create a repository API client
-     *
-     * @param owner repository owner
-     * @param repo  repository name
-     * @return repository API client
-     */
-    public RepositoryClient createRepositoryClient(final String owner, final String repo) {
-        return RepositoryClient.create(this, owner, repo);
-    }
-
-    /**
-     * Create a GitData API client
-     *
-     * @param owner repository owner
-     * @param repo  repository name
-     * @return GitData API client
-     */
-    public GitDataClient createGitDataClient(final String owner, final String repo) {
-        return GitDataClient.create(this, owner, repo);
-    }
-
-    /**
-     * Create search API client
-     *
-     * @return search API client
-     */
-    public SearchClient createSearchClient() {
-        return SearchClient.create(this);
-    }
-
-    /**
-     * Create a checks API client
-     *
-     * @param owner repository owner
-     * @param repo  repository name
-     * @return checks API client
-     */
-    public ChecksClient createChecksClient(final String owner, final String repo) {
-        return ChecksClient.create(this, owner, repo);
-    }
-
-    /**
-     * Create organisation API client
-     *
-     * @return organisation API client
-     */
-    public OrganisationClient createOrganisationClient(final String org) {
-        return OrganisationClient.create(this, org);
-    }
-
-    /**
-     * Create user API client
-     *
-     * @return user API client
-     */
-    public UserClient createUserClient(final String owner) {
-        return UserClient.create(this, owner);
-    }
-
-    Json json() {
-        return json;
-    }
-
-    /**
-     * Make an http GET request for the given path on the server
-     *
-     * @param path relative to the Github base url
-     * @return response body as a String
-     */
-    CompletableFuture<Response> request(final String path) {
-        final Request request = requestBuilder(path).build();
-        log.debug("Making request to {}", request.url().toString());
-        return call(request);
-    }
-
-    /**
-     * Make an http GET request for the given path on the server
-     *
-     * @param path         relative to the Github base url
-     * @param extraHeaders extra github headers to be added to the call
-     * @return a reader of response body
-     */
-    CompletableFuture<Response> request(final String path, final Map<String, String> extraHeaders) {
-        final Request.Builder builder = requestBuilder(path);
-        extraHeaders.forEach(builder::addHeader);
-        final Request request = builder.build();
-        log.debug("Making request to {}", request.url().toString());
-        return call(request);
-    }
-
-    /**
-     * Make an http GET request for the given path on the server
-     *
-     * @param path relative to the Github base url
-     * @return body deserialized as provided type
-     */
-    <T> CompletableFuture<T> request(final String path, final Class<T> clazz) {
-        final Request request = requestBuilder(path).build();
-        log.debug("Making request to {}", request.url().toString());
-        return call(request)
-                .thenApply(body -> json().fromJsonUncheckedNotNull(responseBodyUnchecked(body), clazz));
-    }
-
-    /**
-     * Make an http GET request for the given path on the server
-     *
-     * @param path         relative to the Github base url
-     * @param extraHeaders extra github headers to be added to the call
-     * @return body deserialized as provided type
-     */
-    <T> CompletableFuture<T> request(
-            final String path, final Class<T> clazz, final Map<String, String> extraHeaders) {
-        final Request.Builder builder = requestBuilder(path);
-        extraHeaders.forEach(builder::addHeader);
-        final Request request = builder.build();
-        log.debug("Making request to {}", request.url().toString());
-        return call(request)
-                .thenApply(body -> json().fromJsonUncheckedNotNull(responseBodyUnchecked(body), clazz));
-    }
-
-    /**
-     * Make an http request for the given path on the Github server.
-     *
-     * @param path         relative to the Github base url
-     * @param extraHeaders extra github headers to be added to the call
-     * @return body deserialized as provided type
-     */
-    <T> CompletableFuture<T> request(
-            final String path,
-            final TypeReference<T> typeReference,
-            final Map<String, String> extraHeaders) {
-        final Request.Builder builder = requestBuilder(path);
-        extraHeaders.forEach(builder::addHeader);
-        final Request request = builder.build();
-        log.debug("Making request to {}", request.url().toString());
-        return call(request)
-                .thenApply(
-                        response ->
-                                json().fromJsonUncheckedNotNull(responseBodyUnchecked(response), typeReference));
-    }
-
-    /**
-     * Make an http request for the given path on the Github server.
-     *
-     * @param path relative to the Github base url
-     * @return body deserialized as provided type
-     */
-    <T> CompletableFuture<T> request(final String path, final TypeReference<T> typeReference) {
-        final Request request = requestBuilder(path).build();
-        log.debug("Making request to {}", request.url().toString());
-        return call(request)
-                .thenApply(
-                        response ->
-                                json().fromJsonUncheckedNotNull(responseBodyUnchecked(response), typeReference));
-    }
-
-    /**
-     * Make an http POST request for the given path with provided JSON body.
-     *
-     * @param path relative to the Github base url
-     * @param data request body as stringified JSON
-     * @return response body as String
-     */
-    CompletableFuture<Response> post(final String path, final String data) {
-        final Request request =
-                requestBuilder(path)
-                        .method("POST", RequestBody.create(parse(MediaType.APPLICATION_JSON), data))
-                        .build();
-        log.debug("Making POST request to {}", request.url().toString());
-        return call(request);
-    }
-
-    /**
-     * Make an http POST request for the given path with provided JSON body.
-     *
-     * @param path         relative to the Github base url
-     * @param data         request body as stringified JSON
-     * @param extraHeaders
-     * @return response body as String
-     */
-    CompletableFuture<Response> post(
-            final String path, final String data, final Map<String, String> extraHeaders) {
-        final Request.Builder builder =
-                requestBuilder(path)
-                        .method("POST", RequestBody.create(parse(MediaType.APPLICATION_JSON), data));
-        extraHeaders.forEach(builder::addHeader);
-        final Request request = builder.build();
-        log.debug("Making POST request to {}", request.url().toString());
-        return call(request);
-    }
-
-    /**
-     * Make an http POST request for the given path with provided JSON body.
-     *
-     * @param path         relative to the Github base url
-     * @param data         request body as stringified JSON
-     * @param clazz        class to cast response as
-     * @param extraHeaders
-     * @return response body deserialized as provided class
-     */
-    <T> CompletableFuture<T> post(
-            final String path,
-            final String data,
-            final Class<T> clazz,
-            final Map<String, String> extraHeaders) {
-        return post(path, data, extraHeaders)
-                .thenApply(
-                        response -> json().fromJsonUncheckedNotNull(responseBodyUnchecked(response), clazz));
-    }
-
-    /**
-     * Make an http POST request for the given path with provided JSON body.
-     *
-     * @param path  relative to the Github base url
-     * @param data  request body as stringified JSON
-     * @param clazz class to cast response as
-     * @return response body deserialized as provided class
-     */
-    <T> CompletableFuture<T> post(final String path, final String data, final Class<T> clazz) {
-        return post(path, data)
-                .thenApply(
-                        response -> json().fromJsonUncheckedNotNull(responseBodyUnchecked(response), clazz));
-    }
-
-    /**
-     * Make a POST request to the graphql endpoint of Github
-     *
-     * @param data request body as stringified JSON
-     * @return response
-     * @see "https://docs.github.com/en/enterprise-server@3.9/graphql/guides/forming-calls-with-graphql#communicating-with-graphql"
-     */
-    public CompletableFuture<Response> postGraphql(final String data) {
-        final Request request =
-                graphqlRequestBuilder()
-                        .method("POST", RequestBody.create(parse(MediaType.APPLICATION_JSON), data))
-                        .build();
-        log.info("Making POST request to {}", request.url());
-        return call(request);
-    }
-
-    /**
-     * Make an http PUT request for the given path with provided JSON body.
-     *
-     * @param path relative to the Github base url
-     * @param data request body as stringified JSON
-     * @return response body as String
-     */
-    CompletableFuture<Response> put(final String path, final String data) {
-        final Request request =
-                requestBuilder(path)
-                        .method("PUT", RequestBody.create(parse(MediaType.APPLICATION_JSON), data))
-                        .build();
-        log.debug("Making POST request to {}", request.url().toString());
-        return call(request);
-    }
-
-    /**
-     * Make a HTTP PUT request for the given path with provided JSON body.
-     *
-     * @param path  relative to the Github base url
-     * @param data  request body as stringified JSON
-     * @param clazz class to cast response as
-     * @return response body deserialized as provided class
-     */
-    <T> CompletableFuture<T> put(final String path, final String data, final Class<T> clazz) {
-        return put(path, data)
-                .thenApply(
-                        response -> json().fromJsonUncheckedNotNull(responseBodyUnchecked(response), clazz));
-    }
-
-    /**
-     * Make an http PATCH request for the given path with provided JSON body.
-     *
-     * @param path relative to the Github base url
-     * @param data request body as stringified JSON
-     * @return response body as String
-     */
-    CompletableFuture<Response> patch(final String path, final String data) {
-        final Request request =
-                requestBuilder(path)
-                        .method("PATCH", RequestBody.create(parse(MediaType.APPLICATION_JSON), data))
-                        .build();
-        log.debug("Making PATCH request to {}", request.url().toString());
-        return call(request);
-    }
-
-    /**
-     * Make an http PATCH request for the given path with provided JSON body.
-     *
-     * @param path  relative to the Github base url
-     * @param data  request body as stringified JSON
-     * @param clazz class to cast response as
-     * @return response body deserialized as provided class
-     */
-    <T> CompletableFuture<T> patch(final String path, final String data, final Class<T> clazz) {
-        return patch(path, data)
-                .thenApply(
-                        response -> json().fromJsonUncheckedNotNull(responseBodyUnchecked(response), clazz));
-    }
-
-    /**
-     * Make an http PATCH request for the given path with provided JSON body
-     *
-     * @param path  relative to the Github base url
-     * @param data  request body as stringified JSON
-     * @param clazz class to cast response as
-     * @return response body deserialized as provided class
-     */
-    <T> CompletableFuture<T> patch(
-            final String path,
-            final String data,
-            final Class<T> clazz,
-            final Map<String, String> extraHeaders) {
-        final Request.Builder builder =
-                requestBuilder(path)
-                        .method("PATCH", RequestBody.create(parse(MediaType.APPLICATION_JSON), data));
-        extraHeaders.forEach(builder::addHeader);
-        final Request request = builder.build();
-        log.debug("Making PATCH request to {}", request.url().toString());
-        return call(request)
-                .thenApply(
-                        response -> json().fromJsonUncheckedNotNull(responseBodyUnchecked(response), clazz));
-    }
-
-    /**
-     * Make an http DELETE request for the given path.
-     *
-     * @param path relative to the Github base url
-     * @return response body as String
-     */
-    CompletableFuture<Response> delete(final String path) {
-        final Request request = requestBuilder(path).delete().build();
-        log.debug("Making DELETE request to {}", request.url().toString());
-        return call(request);
-    }
-
-    /**
-     * Make an http DELETE request for the given path.
-     *
-     * @param path relative to the Github base url
-     * @param data request body as stringified JSON
-     * @return response body as String
-     */
-    CompletableFuture<Response> delete(final String path, final String data) {
-        final Request request =
-                requestBuilder(path)
-                        .method("DELETE", RequestBody.create(parse(MediaType.APPLICATION_JSON), data))
-                        .build();
-        log.debug("Making DELETE request to {}", request.url().toString());
-        return call(request);
-    }
-
-    /**
-     * Create a URL for a given path to this Github server.
-     *
-     * @param path relative URI
-     * @return URL to path on this server
-     */
-    String urlFor(final String path) {
-        return baseUrl.toString().replaceAll("/+$", "") + "/" + path.replaceAll("^/+", "");
-    }
-
-    private Request.Builder requestBuilder(final String path) {
-        final Request.Builder builder =
-                new Request.Builder()
-                        .url(urlFor(path))
-                        .addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
-                        .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        builder.addHeader(HttpHeaders.AUTHORIZATION, getAuthorizationHeader(path));
-
-        return builder;
-    }
-
-    private Request.Builder graphqlRequestBuilder() {
-        URI url = graphqlUrl.orElseThrow(() -> new IllegalStateException("No graphql url set"));
-        final Request.Builder builder =
-                new Request.Builder()
-                        .url(url.toString())
-                        .addHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON)
-                        .addHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        builder.addHeader(HttpHeaders.AUTHORIZATION, getAuthorizationHeader("/graphql"));
-        return builder;
-    }
-
-    public boolean isGraphqlEnabled() {
-        return graphqlUrl.isPresent();
-    }
-
-
-    /*
-     Generates the Authentication header, given the API endpoint and the credentials provided.
-
-     <p>Github Requests can be authenticated in 3 different ways.
-     (1) Regular, static access token;
-     (2) JWT Token, generated from a private key. Used in Github Apps;
-     (3) Installation Token, generated from the JWT token. Also used in Github Apps.
-    */
-    private String getAuthorizationHeader(final String path) {
-        if (isJwtRequest(path) && getPrivateKey().isEmpty()) {
-            throw new IllegalStateException("This endpoint needs a client with a private key for an App");
-        }
-        if (getAccessToken().isPresent()) {
-            return String.format("token %s", token);
-        } else if (getPrivateKey().isPresent()) {
-            final String jwtToken;
-            try {
-                jwtToken = JwtTokenIssuer.fromPrivateKey(privateKey).getToken(appId);
-            } catch (Exception e) {
-                throw new RuntimeException("There was an error generating JWT token", e);
-            }
-            if (isJwtRequest(path)) {
-                return String.format("Bearer %s", jwtToken);
-            }
-            if (installationId == null) {
-                throw new RuntimeException("This endpoint needs a client with an installation ID");
-            }
-            try {
-                return String.format("token %s", getInstallationToken(jwtToken, installationId));
-            } catch (Exception e) {
-                throw new RuntimeException("Could not generate access token for github app", e);
-            }
-        }
-        throw new RuntimeException("Not possible to authenticate. ");
-    }
-
-    private boolean isJwtRequest(final String path) {
-        return path.startsWith("/app/installation") || path.endsWith("installation");
-    }
-
-    private String getInstallationToken(final String jwtToken, final int installationId)
-            throws Exception {
-
-        AccessToken installationToken = installationTokens.get(installationId);
-
-        if (installationToken == null || isExpired(installationToken)) {
-            log.info(
-                    "Github token for installation {} is either expired or null. Trying to get a new one.",
-                    installationId);
-            installationToken = generateInstallationToken(jwtToken, installationId);
-            installationTokens.put(installationId, installationToken);
-        }
-        return installationToken.token();
-    }
-
-    private boolean isExpired(final AccessToken token) {
-        // Adds a few minutes to avoid making calls with an expired token due to clock differences
-        return token.expiresAt().isBefore(ZonedDateTime.now().plusMinutes(EXPIRY_MARGIN_IN_MINUTES));
-    }
-
-    private AccessToken generateInstallationToken(final String jwtToken, final int installationId)
-            throws Exception {
-        log.info("Got JWT Token. Now getting Github access_token for installation {}", installationId);
-        final String url = String.format(urlFor(GET_ACCESS_TOKEN_URL), installationId);
-        final Request request =
-                new Request.Builder()
-                        .addHeader("Accept", "application/vnd.github.machine-man-preview+json")
-                        .addHeader("Authorization", "Bearer " + jwtToken)
-                        .url(url)
-                        .method("POST", RequestBody.create(parse(MediaType.APPLICATION_JSON), ""))
-                        .build();
-
-        final Response response = client.newCall(request).execute();
-
-        if (!response.isSuccessful()) {
-            throw new Exception(
-                    String.format(
-                            "Got non-2xx status %s when getting an access token from GitHub: %s",
-                            response.code(), response.message()));
-        }
-
-        if (response.body() == null) {
-            throw new Exception(
-                    String.format(
-                            "Got empty response body when getting an access token from GitHub, HTTP status was: %s",
-                            response.message()));
-        }
-        final String text = response.body().string();
-        response.body().close();
-        return Json.create().fromJson(text, AccessToken.class);
-    }
-
-    private CompletableFuture<Response> call(final Request request) {
-        try (Span span = tracer.span(request)) {
-            if (this.callFactory == null) {
-                this.callFactory = this.tracer.createTracedClient(this.client);
-            }
-            final Call call = this.callFactory.newCall(request);
-
-            final CompletableFuture<Response> future = new CompletableFuture<>();
-
-            // avoid multiple redirects
-            final AtomicBoolean redirected = new AtomicBoolean(false);
-
-            call.enqueue(
-                    new Callback() {
-                        @Override
-                        public void onFailure(@NotNull final Call call, final IOException e) {
-                            future.completeExceptionally(e);
-                        }
-
-                        @Override
-                        public void onResponse(@NotNull final Call call, final Response response) {
-                            processPossibleRedirects(response, redirected)
-                                    .handle(
-                                            (res, ex) -> {
-                                                if (Objects.nonNull(ex)) {
-                                                    future.completeExceptionally(ex);
-                                                } else if (!res.isSuccessful()) {
-                                                    try {
-                                                        future.completeExceptionally(mapException(res, request));
-                                                    } catch (final Throwable e) {
-                                                        future.completeExceptionally(e);
-                                                    } finally {
-                                                        if (res.body() != null) {
-                                                            res.body().close();
-                                                        }
-                                                    }
-                                                } else {
-                                                    future.complete(res);
-                                                }
-                                                return res;
-                                            });
-                        }
-                    });
-            tracer.attachSpanToFuture(span, future);
-            return future;
-        }
-    }
-
-    private RequestNotOkException mapException(final Response res, final Request request)
-            throws IOException {
-        String bodyString = res.body() != null ? res.body().string() : "";
-        Map<String, List<String>> headersMap = res.headers().toMultimap();
-
-        if (res.code() == FORBIDDEN) {
-            if (bodyString.contains("Repository was archived so is read-only")) {
-                return new ReadOnlyRepositoryException(request.method(), request.url().encodedPath(), res.code(), bodyString, headersMap);
-            }
-        }
-
-        return new RequestNotOkException(request.method(), request.url().encodedPath(), res.code(), bodyString, headersMap);
-    }
-
-    CompletableFuture<Response> processPossibleRedirects(
-            final Response response, final AtomicBoolean redirected) {
-        if (response.code() >= PERMANENT_REDIRECT
-                && response.code() <= TEMPORARY_REDIRECT
-                && !redirected.get()) {
-            redirected.set(true);
-            // redo the same request with a new URL
-            final String newLocation = response.header("Location");
-            final Request request =
-                    requestBuilder(newLocation)
-                            .url(newLocation)
-                            .method(response.request().method(), response.request().body())
-                            .build();
-            // Do the new call and complete the original future when the new call completes
-            return call(request);
-        }
-
-        return completedFuture(response);
-    }
-
-    /**
-     * Wrapper to Constructors that expose File object for the privateKey argument
-     */
-    private static GitHubClient createOrThrow(final OkHttpClient httpClient, final URI baseUrl, final URI graphqlUrl, final File privateKey, final Integer appId, final Integer installationId) {
-        try {
-            return new GitHubClient(httpClient, baseUrl, graphqlUrl, null, FileUtils.readFileToByteArray(privateKey), appId, installationId);
-        } catch (IOException e) {
-            throw new RuntimeException("There was an error generating JWT token", e);
-        }
-    }
+  }
 }

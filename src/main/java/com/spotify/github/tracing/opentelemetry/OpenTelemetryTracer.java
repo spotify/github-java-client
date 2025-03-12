@@ -53,6 +53,10 @@ public class OpenTelemetryTracer extends BaseTracer {
     this(GlobalOpenTelemetry.get());
   }
 
+  public OpenTelemetry getOpenTelemetry() {
+    return openTelemetry;
+  }
+
   /**
    * Create a new span for the given path and method.
    *
