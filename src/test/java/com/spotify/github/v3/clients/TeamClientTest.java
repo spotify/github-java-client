@@ -24,7 +24,7 @@ import static com.google.common.io.Resources.getResource;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_PENDING_TEAM_INVITATIONS;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAMS;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAM_MEMBERS;
-import static com.spotify.github.v3.clients.MockHelper.createMockResponse;
+import static com.spotify.github.MockHelper.createMockResponse;
 import static java.nio.charset.Charset.defaultCharset;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.stream.Collectors.toList;
@@ -49,7 +49,7 @@ import com.spotify.github.v3.orgs.requests.TeamUpdate;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import okhttp3.Response;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;

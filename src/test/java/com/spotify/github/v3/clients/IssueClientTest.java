@@ -23,7 +23,7 @@ package com.spotify.github.v3.clients;
 import static com.google.common.io.Resources.getResource;
 import static com.spotify.github.FixtureHelper.loadFixture;
 import static com.spotify.github.v3.clients.IssueClient.*;
-import static com.spotify.github.v3.clients.MockHelper.createMockResponse;
+import static com.spotify.github.MockHelper.createMockResponse;
 import static java.lang.String.format;
 import static java.nio.charset.Charset.defaultCharset;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -57,7 +57,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import okhttp3.Response;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

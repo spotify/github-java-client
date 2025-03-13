@@ -34,7 +34,10 @@ import javax.annotation.Nullable;
 @JsonSerialize(as = ImmutableHttpRequest.class)
 @JsonDeserialize(as = ImmutableHttpRequest.class)
 public interface HttpRequest {
-  String method();
+  @Value.Default
+  default String method() {
+    return "GET";
+  }
 
   String url();
 
@@ -42,7 +45,7 @@ public interface HttpRequest {
   String body();
 
   @Value.Default
-  default Map<String, List<String>> headers(){
+  default Map<String, List<String>> headers() {
     return Map.of();
   }
 

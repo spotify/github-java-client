@@ -18,7 +18,7 @@
  * -/-/-
  */
 
-package com.spotify.github.v3.clients;
+package com.spotify.github;
 
 import com.spotify.github.http.BaseHttpResponse;
 import com.spotify.github.http.HttpRequest;
@@ -48,11 +48,7 @@ public class MockHelper {
       final int statusCode,
       final String body,
       final Map<String, List<String>> headers) {
-    HttpRequest httpRequest = ImmutableHttpRequest.builder()
-            .method("GET")
-            .body(null)
-            .headers(Map.of())
-            .url(url).build();
+    HttpRequest httpRequest = ImmutableHttpRequest.builder().url(url).build();
     return new BaseHttpResponse(httpRequest, statusCode, "", headers) {
       @Override
       public InputStream body() {
