@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -36,7 +36,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
 
 /**
  * Async page implementation for github resources
@@ -145,9 +144,7 @@ public class GithubPage<T> implements AsyncPage<T> {
         .request(path)
         .thenApply(
             response ->
-                github
-                    .json()
-                    .fromJsonUncheckedNotNull(response.bodyString(), typeReference))
+                github.json().fromJsonUncheckedNotNull(response.bodyString(), typeReference))
         .join()
         .iterator();
   }
@@ -157,12 +154,12 @@ public class GithubPage<T> implements AsyncPage<T> {
         .request(path)
         .thenApply(
             response -> {
-                return Optional.ofNullable(response.headers().get("Link").get(0))
-                    .map(linkHeader -> stream(linkHeader.split(",")))
-                    .orElseGet(Stream::empty)
-                    .map(linkString -> Link.from(linkString.split(";")))
-                    .filter(link -> link.rel().isPresent())
-                    .collect(toMap(link -> link.rel().get(), identity()));
+              return Optional.ofNullable(response.header("Link"))
+                  .stream()
+                  .flatMap(linkHeader -> stream(linkHeader.split(",")))
+                  .map(linkString -> Link.from(linkString.split(";")))
+                  .filter(link -> link.rel().isPresent())
+                  .collect(toMap(link -> link.rel().get(), identity()));
             });
   }
 

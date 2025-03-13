@@ -20,54 +20,28 @@
 
 package com.spotify.github.http.okhttp;
 
+import com.spotify.github.http.BaseHttpResponse;
 import com.spotify.github.http.HttpRequest;
-import com.spotify.github.http.HttpResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.lang.invoke.MethodHandles;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class OkHttpHttpResponse implements HttpResponse {
+public class OkHttpHttpResponse extends BaseHttpResponse {
   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-  private static final int HTTP_OK = 200;
-  private static final int HTTP_BAD_REQUEST = 400;
-
-  private final HttpRequest request;
+  
   private final Response response;
-  private final int statusCode;
-  private final String statusMessage;
   private InputStream body;
-  private final Map<String, List<String>> headers;
   private String bodyString;
 
   public OkHttpHttpResponse(final HttpRequest request, final Response response) {
-    this.request = request;
-    this.statusCode = response.code();
-    this.statusMessage = response.message();
-    this.headers = response.headers().toMultimap();
+    super(request, response.code(), response.message(), response.headers().toMultimap());
     this.response = response;
-  }
-
-  @Override
-  public HttpRequest request() {
-    return request;
-  }
-
-  public int statusCode() {
-    return statusCode;
-  }
-
-  @Override
-  public String statusMessage() {
-    return statusMessage;
   }
 
   @Override
@@ -85,16 +59,6 @@ public class OkHttpHttpResponse implements HttpResponse {
       }
     }
     return bodyString;
-  }
-
-  @Override
-  public Map<String, List<String>> headers() {
-    return this.headers;
-  }
-
-  @Override
-  public boolean isSuccessful() {
-    return this.statusCode() >= HTTP_OK && this.statusCode() < HTTP_BAD_REQUEST;
   }
 
   @Override

@@ -20,10 +20,10 @@
 
 package com.spotify.github.v3.clients;
 
+import com.spotify.github.http.BaseHttpResponse;
 import com.spotify.github.http.HttpRequest;
 import com.spotify.github.http.HttpResponse;
 import com.spotify.github.http.ImmutableHttpRequest;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,22 +48,12 @@ public class MockHelper {
       final int statusCode,
       final String body,
       final Map<String, List<String>> headers) {
-    return new HttpResponse() {
-      @Override
-      public HttpRequest request() {
-        return ImmutableHttpRequest.builder().url(url).build();
-      }
-
-      @Override
-      public int statusCode() {
-        return statusCode;
-      }
-
-      @Override
-      public String statusMessage() {
-        return "";
-      }
-
+    HttpRequest httpRequest = ImmutableHttpRequest.builder()
+            .method("GET")
+            .body(null)
+            .headers(Map.of())
+            .url(url).build();
+    return new BaseHttpResponse(httpRequest, statusCode, "", headers) {
       @Override
       public InputStream body() {
         if (body != null) {
@@ -78,21 +68,7 @@ public class MockHelper {
       }
 
       @Override
-      public Map<String, List<String>> headers() {
-        return Optional.ofNullable(headers).orElse(Map.of());
-      }
-
-      @Override
-      public boolean isSuccessful() {
-        return MockHelper.isSuccessful(statusCode);
-      }
-
-      @Override
       public void close() {}
     };
-  }
-
-  private static boolean isSuccessful(final int statusCode) {
-    return statusCode >= HTTP_OK && statusCode < HTTP_BAD_REQUEST;
   }
 }

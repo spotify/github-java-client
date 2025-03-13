@@ -25,12 +25,24 @@ import java.util.List;
 import java.util.Map;
 
 public interface HttpResponse {
+    // Returns the request that was sent to the server
     HttpRequest request();
+    // Returns the HTTP status code
     int statusCode();
+    // Returns the HTTP status message
     String statusMessage();
+    // Returns the response body as an InputStream
     InputStream body();
+    // Returns the response body as a String
     String bodyString();
+    // Returns the response headers as a Map
     Map<String, List<String>> headers();
+    // Returns the response headers for a specific header name as a list of Strings
+    List<String> headers(String headerName);
+    // Returns the response headers for a specific header name as a single String
+    String header(String headerName);
+    // Returns true if the response was successful
     boolean isSuccessful();
+    // Closes the response
     void close();
 }

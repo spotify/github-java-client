@@ -118,11 +118,7 @@ public class OpenTelemetryTracer extends BaseTracer {
                     if (carrier == null) {
                       return null;
                     }
-                    if (carrier.headers().containsKey(key)
-                        && !carrier.headers().get(key).isEmpty()) {
-                      return carrier.headers().get(key).get(0);
-                    }
-                    return null;
+                    return carrier.header(key);
                   }
                 });
     context.makeCurrent();

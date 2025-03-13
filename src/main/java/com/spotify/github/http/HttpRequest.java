@@ -23,10 +23,11 @@ package com.spotify.github.http;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.spotify.github.GithubStyle;
-import org.immutables.value.Value;
-
 import java.util.List;
 import java.util.Map;
+import org.immutables.value.Value;
+
+import javax.annotation.Nullable;
 
 @Value.Immutable
 @GithubStyle
@@ -37,7 +38,27 @@ public interface HttpRequest {
 
   String url();
 
+  @Nullable
   String body();
 
-  Map<String, List<String>> headers();
+  @Value.Default
+  default Map<String, List<String>> headers(){
+    return Map.of();
+  }
+
+  default List<String> headers(String headerName) {
+    return headers().get(headerName);
+  }
+
+  default String header(String headerName) {
+    List<String> headerValues = this.headers(headerName);
+    if (headerValues == null || headerValues.isEmpty()) {
+      return null;
+    }
+    if (headerValues.size() == 1) {
+      return headerValues.get(0);
+    } else {
+      return String.join(",", headerValues);
+    }
+  }
 }
