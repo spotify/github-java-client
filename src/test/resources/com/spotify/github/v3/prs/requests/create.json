@@ -1,6 +1,0 @@
-{
-  "title": "Amazing new feature",
-  "body": "Please pull this in!",
-  "head": "octocat:new-feature",
-  "base": "master"
-}
