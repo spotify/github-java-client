@@ -1,0 +1,12 @@
+{
+  "commit_id": "some_commit_id",
+  "body": "some_approval_comment",
+  "event": "APPROVE",
+  "comments": [
+    {
+      "path": "some_file.txt",
+      "position": 2,
+      "body": "some_comment_on_file.txt"
+    }
+  ]
+}

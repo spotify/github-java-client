@@ -1,0 +1,9 @@
+{
+  "name": "unescaped-percent-sign-%",
+  "commit": {
+    "sha": "6dcb09b5b57875f334f61aebed695e2e4193db5e",
+    "url": "https://api.github.com/repos/octocat/Hello-World/commits/c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc"
+  },
+  "protected": true,
+  "protection_url": "https://api.github.com/api/v3/repos/octocat/Hello-World/branches/branch-name-with-slashes/unescaped-percent-sign-%/protection"
+}
