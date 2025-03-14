@@ -35,6 +35,8 @@ import com.spotify.github.v3.prs.requests.PullRequestCreate;
 import com.spotify.github.v3.prs.requests.PullRequestParameters;
 import com.spotify.github.v3.prs.requests.PullRequestUpdate;
 import com.spotify.github.v3.repos.CommitItem;
+
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.invoke.MethodHandles;
 import java.util.Iterator;
@@ -53,7 +55,8 @@ public class PullRequestClient {
   private static final String PR_NUMBER_TEMPLATE = "/repos/%s/%s/pulls/%s";
   private static final String PR_COMMITS_TEMPLATE = "/repos/%s/%s/pulls/%s/commits";
   private static final String PR_REVIEWS_TEMPLATE = "/repos/%s/%s/pulls/%s/reviews";
-  private static final String PR_REVIEW_REQUESTS_TEMPLATE = "/repos/%s/%s/pulls/%s/requested_reviewers";
+  private static final String PR_REVIEW_REQUESTS_TEMPLATE =
+      "/repos/%s/%s/pulls/%s/requested_reviewers";
 
   private final GitHubClient github;
   private final String owner;
@@ -144,10 +147,10 @@ public class PullRequestClient {
    * @param number pull request number
    * @return list of reviews
    */
-   public CompletableFuture<List<Review>> listReviews(final int number) {
-   final String path = String.format(PR_REVIEWS_TEMPLATE, owner, repo, number);
-   log.debug("Fetching pull request reviews from " + path);
-   return github.request(path, LIST_REVIEW_TYPE_REFERENCE);
+  public CompletableFuture<List<Review>> listReviews(final int number) {
+    final String path = String.format(PR_REVIEWS_TEMPLATE, owner, repo, number);
+    log.debug("Fetching pull request reviews from " + path);
+    return github.request(path, LIST_REVIEW_TYPE_REFERENCE);
   }
 
   /**
@@ -171,7 +174,8 @@ public class PullRequestClient {
    * @param properties properties for reviewing the PR, such as sha, body and event
    * @see "https://developer.github.com/v3/pulls/reviews/#create-a-review-for-a-pull-request"
    */
-  public CompletableFuture<Review> createReview(final int number, final ReviewParameters properties) {
+  public CompletableFuture<Review> createReview(
+      final int number, final ReviewParameters properties) {
     final String path = String.format(PR_REVIEWS_TEMPLATE, owner, repo, number);
     final String jsonPayload = github.json().toJsonUnchecked(properties);
     log.debug("Creating review for PR: " + path);
@@ -197,7 +201,8 @@ public class PullRequestClient {
    * @param properties properties for reviewing the PR, such as reviewers and team_reviewers.
    * @see "https://docs.github.com/en/rest/reference/pulls#request-reviewers-for-a-pull-request"
    */
-  public CompletableFuture<PullRequest> requestReview(final int number, final RequestReviewParameters properties) {
+  public CompletableFuture<PullRequest> requestReview(
+      final int number, final RequestReviewParameters properties) {
     final String path = String.format(PR_REVIEW_REQUESTS_TEMPLATE, owner, repo, number);
     final String jsonPayload = github.json().toJsonUnchecked(properties);
     log.debug("Requesting reviews for PR: " + path);
@@ -211,7 +216,8 @@ public class PullRequestClient {
    * @param properties properties for reviewing the PR, such as reviewers and team_reviewers.
    * @see "https://docs.github.com/en/rest/reference/pulls#request-reviewers-for-a-pull-request"
    */
-  public CompletableFuture<Void> removeRequestedReview(final int number, final RequestReviewParameters properties) {
+  public CompletableFuture<Void> removeRequestedReview(
+      final int number, final RequestReviewParameters properties) {
     final String path = String.format(PR_REVIEW_REQUESTS_TEMPLATE, owner, repo, number);
     final String jsonPayload = github.json().toJsonUnchecked(properties);
     log.debug("Removing requested reviews for PR: " + path);
@@ -234,34 +240,36 @@ public class PullRequestClient {
 
   public CompletableFuture<Reader> patch(final int number) {
     final String path = String.format(PR_NUMBER_TEMPLATE, owner, repo, number);
-    final Map<String, String> extraHeaders = ImmutableMap.of(
-        HttpHeaders.ACCEPT, "application/vnd.github.patch"
-    );
+    final Map<String, String> extraHeaders =
+        ImmutableMap.of(HttpHeaders.ACCEPT, "application/vnd.github.patch");
     log.debug("Fetching pull request patch from " + path);
-    return github.request(path, extraHeaders)
-        .thenApply(response -> {
-          final var body = response.body();
-          if (isNull(body)) {
-            return Reader.nullReader();
-          }
-          return body.charStream();
-        });
+    return github
+        .request(path, extraHeaders)
+        .thenApply(
+            response -> {
+              final var body = response.body();
+              if (isNull(body)) {
+                return Reader.nullReader();
+              }
+              return new InputStreamReader(body);
+            });
   }
 
   public CompletableFuture<Reader> diff(final int number) {
     final String path = String.format(PR_NUMBER_TEMPLATE, owner, repo, number);
-    final Map<String, String> extraHeaders = ImmutableMap.of(
-        HttpHeaders.ACCEPT, "application/vnd.github.diff"
-    );
+    final Map<String, String> extraHeaders =
+        ImmutableMap.of(HttpHeaders.ACCEPT, "application/vnd.github.diff");
     log.debug("Fetching pull diff from " + path);
-    return github.request(path, extraHeaders)
-        .thenApply(response -> {
-          final var body = response.body();
-          if (isNull(body)) {
-            return Reader.nullReader();
-          }
-          return body.charStream();
-        });
+    return github
+        .request(path, extraHeaders)
+        .thenApply(
+            response -> {
+              final var body = response.body();
+              if (isNull(body)) {
+                return Reader.nullReader();
+              }
+              return new InputStreamReader(body);
+            });
   }
 
   private CompletableFuture<List<PullRequestItem>> list(final String parameterPath) {

@@ -20,6 +20,7 @@
 
 package com.spotify.github.tracing;
 
+import com.spotify.github.http.HttpRequest;
 import com.spotify.github.tracing.opencensus.OpenCensusTracer;
 import io.grpc.Context;
 import io.opencensus.trace.Span;
@@ -119,9 +120,8 @@ public class OpenCensusTracerTest {
     io.opencensus.trace.Span rootSpan = startRootSpan();
     OpenCensusTracer tracer = new OpenCensusTracer();
     final CompletableFuture<String> future = new CompletableFuture<>();
-    Request mockRequest = mock(Request.class);
-    when(mockRequest.url())
-        .thenReturn(HttpUrl.parse("https://api.github.com/repos/spotify/github-java-client"));
+    HttpRequest mockRequest = mock(HttpRequest.class);
+    when(mockRequest.url()).thenReturn("https://api.github.com/repos/spotify/github-java-client");
     when(mockRequest.method()).thenReturn(requestMethod);
 
     try (com.spotify.github.tracing.Span span = tracer.span(mockRequest)) {
@@ -146,14 +146,6 @@ public class OpenCensusTracerTest {
         attributes.get("http.url"));
     assertEquals(stringAttributeValue(requestMethod), attributes.get("method"));
     assertEquals(Status.OK, inner.getStatus());
-  }
-
-  @Test
-  public void createTracedClient() {
-    OpenCensusTracer tracer = new OpenCensusTracer();
-    OkHttpClient client = new OkHttpClient.Builder().build();
-    Call.Factory callFactory = tracer.createTracedClient(client);
-    assertNotNull(callFactory);
   }
 
   @SuppressWarnings("deprecation")

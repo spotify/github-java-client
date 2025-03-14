@@ -55,7 +55,7 @@ public class UserClient {
     final String path = String.format(SUSPEND_USER_TEMPLATE, username);
     return github
         .put(path, github.json().toJsonUnchecked(reason))
-        .thenApply(resp -> resp.code() == NO_CONTENT);
+        .thenApply(resp -> resp.statusCode() == NO_CONTENT);
   }
 
   /**
@@ -69,6 +69,6 @@ public class UserClient {
     final String path = String.format(SUSPEND_USER_TEMPLATE, username);
     return github
         .delete(path, github.json().toJsonUnchecked(reason))
-        .thenApply(resp -> resp.code() == NO_CONTENT);
+        .thenApply(resp -> resp.statusCode() == NO_CONTENT);
   }
 }

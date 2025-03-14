@@ -18,21 +18,12 @@
  * -/-/-
  */
 
-package com.spotify.github.tracing;
+package com.spotify.github.http;
 
-import com.spotify.github.http.HttpRequest;
-import java.util.concurrent.CompletionStage;
+import com.spotify.github.tracing.Tracer;
+import java.util.concurrent.CompletableFuture;
 
-public interface Tracer {
-
-  /** Create scoped span. Span will be closed when future completes. */
-  Span span(String path, String method, CompletionStage<?> future);
-
-  Span span(String path, String method);
-
-  Span span(HttpRequest request);
-
-  Span span(HttpRequest request, CompletionStage<?> future);
-
-  void attachSpanToFuture(Span span, CompletionStage<?> future);
+public interface HttpClient {
+  CompletableFuture<HttpResponse> send(HttpRequest request);
+  void setTracer(Tracer tracer);
 }

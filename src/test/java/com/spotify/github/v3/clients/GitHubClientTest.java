@@ -33,6 +33,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import com.google.common.io.Resources;
+import com.spotify.github.http.HttpRequest;
 import com.spotify.github.tracing.Span;
 import com.spotify.github.tracing.Tracer;
 import com.spotify.github.v3.checks.CheckSuiteResponseList;
@@ -129,21 +130,12 @@ public class GitHubClientTest {
             .build();
 
     when(client.newCall(any())).thenReturn(call);
-    when(tracer.createTracedClient(client))
-        .thenReturn(
-            new Call.Factory() {
-              @NotNull
-              @Override
-              public Call newCall(@NotNull final Request request) {
-                return call;
-              }
-            });
     IssueClient issueClient =
         github.withTracer(tracer).createRepositoryClient("testorg", "testrepo").createIssueClient();
 
     CompletableFuture<Void> maybeSucceeded = issueClient.editComment(1, "some comment");
     capture.getValue().onResponse(call, response);
-    verify(tracer, times(1)).span(any(Request.class));
+    verify(tracer, times(1)).span(any(HttpRequest.class));
 
     Exception exception = assertThrows(ExecutionException.class, maybeSucceeded::get);
     Assertions.assertEquals(ReadOnlyRepositoryException.class, exception.getCause().getClass());
@@ -266,16 +258,6 @@ public class GitHubClientTest {
             .protocol(Protocol.HTTP_1_1)
             .request(new Request.Builder().url("http://localhost/").build())
             .build();
-
-    when(tracer.createTracedClient(any(OkHttpClient.class)))
-        .thenReturn(
-            new Call.Factory() {
-              @NotNull
-              @Override
-              public Call newCall(@NotNull final Request request) {
-                return call;
-              }
-            });
 
     when(client.newCall(any())).thenReturn(call);
     WorkflowsClient client =

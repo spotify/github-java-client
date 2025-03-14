@@ -32,7 +32,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.prs.ImmutableRequestReviewParameters;
-import com.spotify.github.v3.prs.MergeMethod;
 import com.spotify.github.v3.prs.PullRequest;
 import com.spotify.github.v3.prs.ReviewRequests;
 import com.spotify.github.v3.prs.requests.ImmutablePullRequestCreate;
@@ -44,9 +43,7 @@ import java.io.Reader;
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-
 import okhttp3.*;
-import okio.Buffer;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -20,50 +20,54 @@
 
 package com.spotify.github.tracing;
 
-import okhttp3.Request;
+import static java.util.Objects.requireNonNull;
 
+import com.spotify.github.http.HttpRequest;
 import java.util.concurrent.CompletionStage;
 
 public abstract class BaseTracer implements Tracer {
-    @Override
-    public Span span(final String name, final String method, final CompletionStage<?> future) {
-        return internalSpan(name, method, future);
-    }
+  @Override
+  public Span span(final String name, final String method, final CompletionStage<?> future) {
+    return internalSpan(name, method, future);
+  }
 
-    @Override
-    public Span span(final String path, final String method) {
-        return internalSpan(path, method, null);
-    }
+  @Override
+  public Span span(final String path, final String method) {
+    return internalSpan(path, method, null);
+  }
 
-    @Override
-    public Span span(final Request request) {
-        return internalSpan(request, null);
-    }
+  @Override
+  public Span span(final HttpRequest request) {
+    requireNonNull(request);
+    return internalSpan(request, null);
+  }
 
-    @Override
-    public Span span(final Request request, final CompletionStage<?> future) {
-        return internalSpan(request, future);
-    }
+  @Override
+  public Span span(final HttpRequest request, final CompletionStage<?> future) {
+    return internalSpan(request, future);
+  }
 
-    protected abstract Span internalSpan(
-            String path,
-            String method,
-            CompletionStage<?> future);
+  protected abstract Span internalSpan(String path, String method, CompletionStage<?> future);
 
-    protected abstract Span internalSpan(
-            Request request,
-            CompletionStage<?> future);
+  protected abstract Span internalSpan(HttpRequest request, CompletionStage<?> future);
 
-    @Override
-    public void attachSpanToFuture(final Span span, final CompletionStage<?> future) {
-        future.whenComplete(
-                (result, t) -> {
-                    if (t == null) {
-                        span.success();
-                    } else {
-                        span.failure(t);
-                    }
-                    span.close();
-                });
-    }
+  @Override
+  public void attachSpanToFuture(final Span span, final CompletionStage<?> future) {
+    future
+        .whenComplete(
+            (result, t) -> {
+              if (t == null) {
+                span.success();
+              } else {
+                span.failure(t);
+              }
+              span.close();
+            })
+        .exceptionally(
+            t -> {
+              span.failure(t);
+              span.close();
+              return null;
+            });
+  }
 }

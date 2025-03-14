@@ -24,6 +24,7 @@ import static com.spotify.github.v3.clients.GitHubClient.*;
 
 import com.google.common.collect.ImmutableMap;
 import com.spotify.github.async.AsyncPage;
+import com.spotify.github.http.HttpResponse;
 import com.spotify.github.v3.comment.Comment;
 import com.spotify.github.v3.comment.CommentReaction;
 import com.spotify.github.v3.comment.CommentReactionContent;
@@ -31,7 +32,6 @@ import com.spotify.github.v3.issues.Issue;
 import java.lang.invoke.MethodHandles;
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
-import okhttp3.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -167,7 +167,7 @@ public class IssueClient {
    * @param issueNumber issue number
    * @param reactionId reaction id
    */
-  public CompletableFuture<Response> deleteCommentReaction(
+  public CompletableFuture<HttpResponse> deleteCommentReaction(
       final long issueNumber, final long reactionId) {
     final String path =
         String.format(COMMENTS_REACTION_ID_TEMPLATE, owner, repo, issueNumber, reactionId);
