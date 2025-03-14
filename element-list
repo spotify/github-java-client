@@ -1,7 +1,6 @@
 com.spotify.github
 com.spotify.github.async
 com.spotify.github.http
-com.spotify.github.http.okhttp
 com.spotify.github.jackson
 com.spotify.github.opencensus
 com.spotify.github.tracing
