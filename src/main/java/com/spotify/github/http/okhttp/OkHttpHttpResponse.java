@@ -32,9 +32,10 @@ import okhttp3.ResponseBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** OkHttpHttpResponse is the implementation of HttpResponse using OkHttp. */
 public class OkHttpHttpResponse extends BaseHttpResponse {
   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-  
+
   private final Response response;
   private InputStream body;
   private String bodyString;
@@ -52,6 +53,7 @@ public class OkHttpHttpResponse extends BaseHttpResponse {
     return body;
   }
 
+  @Override
   public String bodyString() {
     if (bodyString == null) {
       if (response != null) {
@@ -75,6 +77,12 @@ public class OkHttpHttpResponse extends BaseHttpResponse {
     }
   }
 
+  /**
+   * Get the response body as a string.
+   *
+   * @param response the response
+   * @return the response body as a string
+   */
   private static String responseBodyUnchecked(final Response response) {
     if (response.body() == null) {
       return null;

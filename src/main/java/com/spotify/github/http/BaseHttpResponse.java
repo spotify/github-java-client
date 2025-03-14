@@ -23,6 +23,7 @@ package com.spotify.github.http;
 import java.util.List;
 import java.util.Map;
 
+/** BaseHttpResponse is the base implementation of HttpResponse. */
 public abstract class BaseHttpResponse implements HttpResponse {
   private static final int HTTP_OK = 200;
   private static final int HTTP_BAD_REQUEST = 400;
@@ -43,30 +44,66 @@ public abstract class BaseHttpResponse implements HttpResponse {
     this.headers = headers;
   }
 
+  /**
+   * Returns the request that generated this response.
+   *
+   * @return HttpRequest the request that generated this response
+   */
   @Override
   public HttpRequest request() {
     return request;
   }
 
+  /**
+   * Returns the HTTP status code of the response.
+   *
+   * @return the status code of the response
+   */
+  @Override
   public int statusCode() {
     return statusCode;
   }
 
+  /**
+   * Returns the HTTP status message of the response.
+   *
+   * @return the status message of the response
+   */
   @Override
   public String statusMessage() {
     return statusMessage;
   }
 
+  /**
+   * Returns the headers of the response.
+   *
+   * @return the headers of the response as a Map of strings
+   */
   @Override
   public Map<String, List<String>> headers() {
     return this.headers;
   }
 
+  /**
+   * Returns the values of the header with the given name. If the header is not present, this method
+   * returns null.
+   *
+   * @param headerName the name of the header
+   * @return the values of the header with the given name as a List of strings, or null if the
+   *     header is not present
+   */
   @Override
   public List<String> headers(final String headerName) {
     return this.headers.get(headerName);
   }
 
+  /**
+   * Returns the first value of the header with the given name. If the header is not present, this
+   * method returns null.
+   *
+   * @param headerName the name of the header
+   * @return the first value of the header with the given name, or null if the header is not present
+   */
   @Override
   public String header(final String headerName) {
     List<String> headerValues = this.headers(headerName);
@@ -80,6 +117,11 @@ public abstract class BaseHttpResponse implements HttpResponse {
     }
   }
 
+  /**
+   * Was the request successful?
+   *
+   * @return true if the status code is in the range [200, 400)
+   */
   @Override
   public boolean isSuccessful() {
     return this.statusCode() >= HTTP_OK && this.statusCode() < HTTP_BAD_REQUEST;

@@ -39,6 +39,11 @@ import java.util.concurrent.CompletableFuture;
 import okhttp3.*;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * OkHttpHttpClient is the implementation of HttpClient using OkHttp. This also serves as an example
+ * of how to create a custom HttpClient. This HttpClient is also capable of tracing the requests
+ * using OpenCensus or OpenTelemetry.
+ */
 public class OkHttpHttpClient implements HttpClient {
   private final OkHttpClient client;
   private Tracer tracer;
@@ -56,9 +61,15 @@ public class OkHttpHttpClient implements HttpClient {
     this.callFactory = createTracedClient();
   }
 
+  /**
+   * Send a request and return a future with the response.
+   *
+   * @param httpRequest the request to send
+   * @return a future with the response
+   */
   @Override
   public CompletableFuture<HttpResponse> send(final HttpRequest httpRequest) {
-    Request request = buildRequest(httpRequest);
+    Request request = buildOkHttpRequest(httpRequest);
     CompletableFuture<HttpResponse> future = new CompletableFuture<>();
     try (Span span = tracer.span(httpRequest)) {
       if (this.callFactory == null) {
@@ -91,7 +102,13 @@ public class OkHttpHttpClient implements HttpClient {
     this.callFactory = createTracedClient();
   }
 
-  private Request buildRequest(final HttpRequest request) {
+  /**
+   * Build an OkHttp Request from an HttpRequest.
+   *
+   * @param request the HttpRequest
+   * @return the OkHttp Request
+   */
+  private Request buildOkHttpRequest(final HttpRequest request) {
     Request.Builder requestBuilder = new Request.Builder().url(request.url());
     request
         .headers()
@@ -109,6 +126,12 @@ public class OkHttpHttpClient implements HttpClient {
     return requestBuilder.build();
   }
 
+  /**
+   * Build an HttpRequest from an OkHttp Request.
+   *
+   * @param request the OkHttp Request
+   * @return the HttpRequest
+   */
   private HttpRequest buildHttpRequest(final Request request) {
     return ImmutableHttpRequest.builder()
         .url(request.url().toString())
@@ -118,6 +141,11 @@ public class OkHttpHttpClient implements HttpClient {
         .build();
   }
 
+  /**
+   * Create a traced client based on the tracer.
+   *
+   * @return the traced client
+   */
   private Call.Factory createTracedClient() {
     if (this.tracer == null || this.tracer instanceof NoopTracer) {
       return createTracedClientNoopTracer();
@@ -131,6 +159,11 @@ public class OkHttpHttpClient implements HttpClient {
     return createTracedClientNoopTracer();
   }
 
+  /**
+   * Create a traced client with a NoopTracer.
+   *
+   * @return the traced client
+   */
   private Call.Factory createTracedClientNoopTracer() {
     return new Call.Factory() {
       @NotNull
@@ -141,12 +174,23 @@ public class OkHttpHttpClient implements HttpClient {
     };
   }
 
+  /**
+   * Create a traced client with OpenTelemetry.
+   *
+   * @return the traced client
+   */
   private Call.Factory createTracedClientOpenTelemetry() {
+    // OkHttpTelemetry is a helper class that provides a Call.Factory that can be used to trace
     return OkHttpTelemetry.builder(((OpenTelemetryTracer) this.tracer).getOpenTelemetry())
         .build()
         .newCallFactory(client);
   }
 
+  /**
+   * Create a traced client with OpenCensus.
+   *
+   * @return the traced client
+   */
   private Call.Factory createTracedClientOpenCensus() {
     return new Call.Factory() {
       @NotNull
@@ -159,6 +203,7 @@ public class OkHttpHttpClient implements HttpClient {
                 .span(buildHttpRequest(request))
                 .addTag(TraceHelper.TraceTags.HTTP_URL, request.url().toString());
         OkHttpClient.Builder okBuilder = client.newBuilder();
+        // Add a network interceptor to trace the request
         okBuilder
             .networkInterceptors()
             .add(
