@@ -20,12 +20,11 @@
 
 package com.spotify.github.tracing;
 
-import static java.util.Objects.requireNonNull;
 
 import com.spotify.github.http.HttpRequest;
 import java.util.concurrent.CompletionStage;
 
-public class NoopTracer implements Tracer {
+public class NoopTracer extends BaseTracer {
 
   public static final NoopTracer INSTANCE = new NoopTracer();
   private static final Span SPAN =
@@ -72,37 +71,12 @@ public class NoopTracer implements Tracer {
   private NoopTracer() {}
 
   @Override
-  public Span span(final String path, final String method, final CompletionStage<?> future) {
+  protected Span internalSpan(final String path, final String method, final CompletionStage<?> future) {
     return SPAN;
   }
 
   @Override
-  public Span span(final String path, final String method) {
+  protected Span internalSpan(final HttpRequest request, final CompletionStage<?> future) {
     return SPAN;
-  }
-
-  @Override
-  public Span span(final HttpRequest request) {
-    return SPAN;
-  }
-
-  @Override
-  public Span span(final HttpRequest request, final CompletionStage<?> future) {
-    return SPAN;
-  }
-
-  @Override
-  public void attachSpanToFuture(final Span span, final CompletionStage<?> future) {
-    requireNonNull(span);
-    requireNonNull(future);
-    future.whenComplete(
-        (result, t) -> {
-          if (t == null) {
-            span.success();
-          } else {
-            span.failure(t);
-          }
-          span.close();
-        });
   }
 }

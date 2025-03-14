@@ -22,6 +22,7 @@ package com.spotify.github.http.okhttp;
 
 import static okhttp3.MediaType.parse;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.spotify.github.http.HttpClient;
 import com.spotify.github.http.HttpRequest;
 import com.spotify.github.http.HttpResponse;
@@ -75,23 +76,27 @@ public class OkHttpHttpClient implements HttpClient {
       if (this.callFactory == null) {
         this.callFactory = createTracedClient();
       }
-      this.callFactory
-          .newCall(request)
-          .enqueue(
-              new Callback() {
-
-                @Override
-                public void onResponse(@NotNull final Call call, @NotNull final Response response)
-                    throws IOException {
-                  future.complete(new OkHttpHttpResponse(httpRequest, response));
-                }
-
-                @Override
-                public void onFailure(@NotNull final Call call, @NotNull final IOException e) {
-                  future.completeExceptionally(e);
-                }
-              });
       tracer.attachSpanToFuture(span, future);
+      try {
+        this.callFactory
+            .newCall(request)
+            .enqueue(
+                new Callback() {
+
+                  @Override
+                  public void onResponse(@NotNull final Call call, @NotNull final Response response)
+                      throws IOException {
+                    future.complete(new OkHttpHttpResponse(httpRequest, response));
+                  }
+
+                  @Override
+                  public void onFailure(@NotNull final Call call, @NotNull final IOException e) {
+                    future.completeExceptionally(e);
+                  }
+                });
+      } catch (Exception e) {
+        future.completeExceptionally(e);
+      }
     }
     return future;
   }
@@ -164,7 +169,7 @@ public class OkHttpHttpClient implements HttpClient {
    *
    * @return the traced client
    */
-  private Call.Factory createTracedClientNoopTracer() {
+  protected Call.Factory createTracedClientNoopTracer() {
     return new Call.Factory() {
       @NotNull
       @Override
@@ -179,7 +184,8 @@ public class OkHttpHttpClient implements HttpClient {
    *
    * @return the traced client
    */
-  private Call.Factory createTracedClientOpenTelemetry() {
+  @VisibleForTesting
+  protected Call.Factory createTracedClientOpenTelemetry() {
     // OkHttpTelemetry is a helper class that provides a Call.Factory that can be used to trace
     return OkHttpTelemetry.builder(((OpenTelemetryTracer) this.tracer).getOpenTelemetry())
         .build()
@@ -191,7 +197,7 @@ public class OkHttpHttpClient implements HttpClient {
    *
    * @return the traced client
    */
-  private Call.Factory createTracedClientOpenCensus() {
+  protected Call.Factory createTracedClientOpenCensus() {
     return new Call.Factory() {
       @NotNull
       @Override

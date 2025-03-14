@@ -20,43 +20,76 @@
 
 package com.spotify.github.http.okhttp;
 
-import com.spotify.github.http.HttpRequest;
-import com.spotify.github.http.HttpResponse;
-import com.spotify.github.http.ImmutableHttpRequest;
-import com.spotify.github.tracing.Tracer;
-import okhttp3.*;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-
-import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import com.spotify.github.http.HttpRequest;
+import com.spotify.github.http.HttpResponse;
+import com.spotify.github.http.ImmutableHttpRequest;
+import com.spotify.github.tracing.NoopTracer;
+import com.spotify.github.tracing.Span;
+import com.spotify.github.tracing.TraceHelper;
+import com.spotify.github.tracing.Tracer;
+import com.spotify.github.tracing.opencensus.OpenCensusTracer;
+import com.spotify.github.tracing.opentelemetry.OpenTelemetryTracer;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.stream.Stream;
+import okhttp3.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
+
 class OkHttpHttpClientTest {
-  private static OkHttpClient okHttpClient;
+  private static final OkHttpClient okHttpClient = mock(OkHttpClient.class);
+  private static final OkHttpClient.Builder mockOkHttpClientBuilder =
+      mock(OkHttpClient.Builder.class);
+  private static final Tracer noopTracer = mock(NoopTracer.class);
+  private static final Tracer ocTracer = mock(OpenCensusTracer.class);
+  private static final Tracer otTracer = mock(OpenTelemetryTracer.class);
+  private static final Span mockSpan = mock(Span.class);
+  private static final Call.Factory mockCallFactory = mock(Call.Factory.class);
+
   private static OkHttpHttpClient httpClient;
-  private static Tracer tracer;
+
+  static Stream<Tracer> tracers() {
+    return Stream.of(noopTracer, ocTracer, otTracer);
+  }
 
   @BeforeAll
   static void setUp() {
-    okHttpClient = mock(OkHttpClient.class);
-    tracer = mock(Tracer.class);
-    httpClient = new OkHttpHttpClient(okHttpClient, tracer);
+    httpClient =
+        new OkHttpHttpClient(okHttpClient, noopTracer) {
+          @Override
+          protected Call.Factory createTracedClientOpenTelemetry() {
+            return mockCallFactory;
+          }
+        };
+  }
+
+  @BeforeEach
+  void setUpEach() {
+    List<Interceptor> interceptors = new ArrayList<>();
+    when(okHttpClient.newBuilder()).thenReturn(mockOkHttpClientBuilder);
+    when(mockOkHttpClientBuilder.networkInterceptors()).thenReturn(interceptors);
+    when(mockOkHttpClientBuilder.build()).thenReturn(okHttpClient);
   }
 
   @AfterEach
   void tearDown() {
-    reset(okHttpClient, tracer);
+    reset(okHttpClient, noopTracer, ocTracer, otTracer, mockSpan);
   }
 
-  @Test
-  void sendSuccessfully() throws IOException {
+  @ParameterizedTest
+  @MethodSource("tracers")
+  void sendSuccessfully(Tracer tracer) throws IOException {
     // Given
     final Call call = mock(Call.class);
     final ArgumentCaptor<Callback> capture = ArgumentCaptor.forClass(Callback.class);
@@ -72,8 +105,12 @@ class OkHttpHttpClientTest {
 
     HttpRequest httpRequest = ImmutableHttpRequest.builder().url("https://example.com").build();
     when(okHttpClient.newCall(any())).thenReturn(call);
+    when(mockCallFactory.newCall(any())).thenReturn(call);
+
+    when(tracer.span(any())).thenReturn(mockSpan);
 
     // When
+    httpClient.setTracer(tracer);
     CompletableFuture<HttpResponse> futureResponse = httpClient.send(httpRequest);
     capture.getValue().onResponse(call, response);
     HttpResponse httpResponse = futureResponse.join();
@@ -84,11 +121,19 @@ class OkHttpHttpClientTest {
     assertEquals(200, httpResponse.statusCode());
     assertEquals("foo", httpResponse.statusMessage());
     assertTrue(httpResponse.isSuccessful());
-    verify(tracer, times(1)).span(any(HttpRequest.class));
+    if (tracer instanceof NoopTracer || tracer instanceof OpenTelemetryTracer) {
+      verify(tracer, times(1)).span(any(HttpRequest.class));
+
+    } else if (tracer instanceof OpenCensusTracer) {
+      verify(tracer, times(2)).span(any(HttpRequest.class));
+      verify(mockSpan).addTag(TraceHelper.TraceTags.HTTP_URL, "https://example.com/");
+    }
+    verify(mockSpan, times(1)).close();
   }
 
-  @Test
-  void sendWithException() {
+  @ParameterizedTest
+  @MethodSource("tracers")
+  void sendWithException(Tracer tracer) {
     // Given
     final Call call = mock(Call.class);
     final ArgumentCaptor<Callback> capture = ArgumentCaptor.forClass(Callback.class);
@@ -97,18 +142,29 @@ class OkHttpHttpClientTest {
 
     HttpRequest httpRequest = ImmutableHttpRequest.builder().url("https://example.com").build();
     when(okHttpClient.newCall(any())).thenReturn(call);
+    when(mockCallFactory.newCall(any())).thenReturn(call);
+    when(tracer.span(any())).thenReturn(mockSpan);
 
     // When
+    httpClient.setTracer(tracer);
     CompletableFuture<HttpResponse> futureResponse = httpClient.send(httpRequest);
     capture.getValue().onFailure(call, exception);
 
     // Then
     assertThrows(CompletionException.class, futureResponse::join);
-    verify(tracer, times(1)).span(any(HttpRequest.class));
+    if (tracer instanceof NoopTracer || tracer instanceof OpenTelemetryTracer) {
+      verify(tracer, times(1)).span(any(HttpRequest.class));
+
+    } else if (tracer instanceof OpenCensusTracer) {
+      verify(tracer, times(2)).span(any(HttpRequest.class));
+      verify(mockSpan).addTag(TraceHelper.TraceTags.HTTP_URL, "https://example.com/");
+    }
+    verify(mockSpan, times(1)).close();
   }
 
-  @Test
-  void sendWithClientError() throws IOException {
+  @ParameterizedTest
+  @MethodSource("tracers")
+  void sendWithClientError(Tracer tracer) throws IOException {
     // Given
     final Call call = mock(Call.class);
     final ArgumentCaptor<Callback> capture = ArgumentCaptor.forClass(Callback.class);
@@ -125,8 +181,11 @@ class OkHttpHttpClientTest {
 
     HttpRequest httpRequest = ImmutableHttpRequest.builder().url("https://example.com").build();
     when(okHttpClient.newCall(any())).thenReturn(call);
+    when(mockCallFactory.newCall(any())).thenReturn(call);
+    when(tracer.span(any())).thenReturn(mockSpan);
 
     // When
+    httpClient.setTracer(tracer);
     CompletableFuture<HttpResponse> futureResponse = httpClient.send(httpRequest);
     capture.getValue().onResponse(call, response);
     HttpResponse httpResponse = futureResponse.join();
@@ -137,6 +196,13 @@ class OkHttpHttpClientTest {
     assertEquals(404, httpResponse.statusCode());
     assertEquals("Not Found", httpResponse.statusMessage());
     assertFalse(httpResponse.isSuccessful());
-    verify(tracer, times(1)).span(any(HttpRequest.class));
+    if (tracer instanceof NoopTracer || tracer instanceof OpenTelemetryTracer) {
+      verify(tracer, times(1)).span(any(HttpRequest.class));
+
+    } else if (tracer instanceof OpenCensusTracer) {
+      verify(tracer, times(2)).span(any(HttpRequest.class));
+      verify(mockSpan).addTag(TraceHelper.TraceTags.HTTP_URL, "https://example.com/");
+    }
+    verify(mockSpan, times(1)).close();
   }
 }

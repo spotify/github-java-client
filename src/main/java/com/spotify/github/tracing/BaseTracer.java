@@ -53,14 +53,21 @@ public abstract class BaseTracer implements Tracer {
 
   @Override
   public void attachSpanToFuture(final Span span, final CompletionStage<?> future) {
-    future.whenComplete(
-        (result, t) -> {
-          if (t == null) {
-            span.success();
-          } else {
-            span.failure(t);
-          }
-          span.close();
-        });
+    future
+        .whenComplete(
+            (result, t) -> {
+              if (t == null) {
+                span.success();
+              } else {
+                span.failure(t);
+              }
+              span.close();
+            })
+        .exceptionally(
+            t -> {
+              span.failure(t);
+              span.close();
+              return null;
+            });
   }
 }
