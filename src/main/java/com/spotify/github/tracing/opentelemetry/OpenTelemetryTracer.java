@@ -20,6 +20,9 @@
 
 package com.spotify.github.tracing.opentelemetry;
 
+import static java.util.Objects.requireNonNull;
+
+import com.spotify.github.http.HttpRequest;
 import com.spotify.github.tracing.BaseTracer;
 import com.spotify.github.tracing.Span;
 import io.opentelemetry.api.GlobalOpenTelemetry;
@@ -28,16 +31,9 @@ import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.propagation.TextMapGetter;
-import io.opentelemetry.instrumentation.okhttp.v3_0.OkHttpTelemetry;
-import okhttp3.Call;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
+import java.util.concurrent.CompletionStage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.concurrent.CompletionStage;
-
-import static java.util.Objects.requireNonNull;
 
 /** Tracer implementation using OpenTelemetry. */
 public class OpenTelemetryTracer extends BaseTracer {
@@ -51,6 +47,10 @@ public class OpenTelemetryTracer extends BaseTracer {
 
   public OpenTelemetryTracer() {
     this(GlobalOpenTelemetry.get());
+  }
+
+  public OpenTelemetry getOpenTelemetry() {
+    return openTelemetry;
   }
 
   /**
@@ -97,7 +97,7 @@ public class OpenTelemetryTracer extends BaseTracer {
    * @return The created span.
    */
   @Override
-  protected Span internalSpan(final Request request, final CompletionStage<?> future) {
+  protected Span internalSpan(final HttpRequest request, final CompletionStage<?> future) {
     requireNonNull(request);
     // Extract the context from the request headers.
     Context context =
@@ -107,13 +107,14 @@ public class OpenTelemetryTracer extends BaseTracer {
                 request,
                 new TextMapGetter<>() {
                   @Override
-                  public Iterable<String> keys(@NotNull final Request carrier) {
-                    return carrier.headers().names();
+                  public Iterable<String> keys(@NotNull final HttpRequest carrier) {
+                    return carrier.headers().keySet();
                   }
 
                   @Nullable
                   @Override
-                  public String get(@Nullable final Request carrier, @NotNull final String key) {
+                  public String get(
+                      @Nullable final HttpRequest carrier, @NotNull final String key) {
                     if (carrier == null) {
                       return null;
                     }
@@ -121,11 +122,6 @@ public class OpenTelemetryTracer extends BaseTracer {
                   }
                 });
     context.makeCurrent();
-    return internalSpan(request.url().toString(), request.method(), future);
-  }
-
-  @Override
-  public Call.Factory createTracedClient(final OkHttpClient client) {
-    return OkHttpTelemetry.builder(openTelemetry).build().newCallFactory(client);
+    return internalSpan(request.url(), request.method(), future);
   }
 }

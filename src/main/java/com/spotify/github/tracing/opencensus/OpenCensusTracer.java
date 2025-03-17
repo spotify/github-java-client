@@ -23,15 +23,13 @@ package com.spotify.github.tracing.opencensus;
 import static io.opencensus.trace.Span.Kind.CLIENT;
 import static java.util.Objects.requireNonNull;
 
+import com.spotify.github.http.HttpRequest;
 import com.spotify.github.tracing.BaseTracer;
 import com.spotify.github.tracing.Span;
 import com.spotify.github.tracing.TraceHelper;
 import io.opencensus.trace.Tracing;
-import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import okhttp3.*;
-import org.jetbrains.annotations.NotNull;
 
 /** Tracer implementation using OpenCensus. */
 public class OpenCensusTracer extends BaseTracer {
@@ -61,49 +59,8 @@ public class OpenCensusTracer extends BaseTracer {
   }
 
   @Override
-  protected Span internalSpan(final Request request, final CompletionStage<?> future) {
+  protected Span internalSpan(final HttpRequest request, final CompletionStage<?> future) {
     requireNonNull(request);
-    return internalSpan(request.url().toString(), request.method(), future);
-  }
-
-  @Override
-  public Call.Factory createTracedClient(final OkHttpClient client) {
-    return new Call.Factory() {
-      @NotNull
-      @Override
-      public Call newCall(@NotNull final Request request) {
-        CompletableFuture<Response> future = new CompletableFuture<>();
-        Span span =
-            internalSpan(request, future)
-                .addTag(TraceHelper.TraceTags.HTTP_URL, request.url().toString());
-        OkHttpClient.Builder okBuilder = client.newBuilder();
-        okBuilder
-            .networkInterceptors()
-            .add(
-                0,
-                new Interceptor() {
-                  @NotNull
-                  @Override
-                  public Response intercept(@NotNull final Chain chain) throws IOException {
-                    try {
-                      Response response = chain.proceed(chain.request());
-                      span.addTag(TraceHelper.TraceTags.HTTP_STATUS_CODE, response.code())
-                          .addTag(TraceHelper.TraceTags.HTTP_STATUS_MESSAGE, response.message())
-                          .success();
-                      future.complete(response);
-                      return response;
-                    } catch (Exception ex) {
-                      span.failure(ex);
-                      future.completeExceptionally(ex);
-                      throw ex;
-                    } finally {
-                      span.close();
-                    }
-                  }
-                });
-
-        return okBuilder.build().newCall(request);
-      }
-    };
+    return internalSpan(request.url(), request.method(), future);
   }
 }

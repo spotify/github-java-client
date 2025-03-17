@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>github-client</artifactId>
-    <version>0.3.12-SNAPSHOT</version>
+    <version>0.4.0-SNAPSHOT</version>
 
     <parent>
         <groupId>com.spotify</groupId>
@@ -86,8 +86,6 @@
         <opencensus.version>0.31.1</opencensus.version>
         <okhttp.version>4.11.0</okhttp.version>
         <opentelemetry.version>1.42.1</opentelemetry.version>
-
-        <shade.id>${project.groupId}.githubclient.shade</shade.id>
     </properties>
 
     <dependencyManagement>
@@ -482,38 +480,6 @@
                         <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
                     </sourceDirectories>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.2.3</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <artifactSet>
-                                <includes>
-                                    <include>${project.groupId}:${project.artifactId}</include>
-                                    <include>com.squareup.okhttp3</include>
-                                    <include>com.squareup.okio</include>
-                                </includes>
-                            </artifactSet>
-                            <relocations>
-                                <relocation>
-                                    <pattern>okhttp3</pattern>
-                                    <shadedPattern>${shade.id}.okhttp3</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>okio</pattern>
-                                    <shadedPattern>${shade.id}.okio</shadedPattern>
-                                </relocation>
-                            </relocations>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

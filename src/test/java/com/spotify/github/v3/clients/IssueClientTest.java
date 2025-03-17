@@ -23,7 +23,7 @@ package com.spotify.github.v3.clients;
 import static com.google.common.io.Resources.getResource;
 import static com.spotify.github.FixtureHelper.loadFixture;
 import static com.spotify.github.v3.clients.IssueClient.*;
-import static com.spotify.github.v3.clients.MockHelper.createMockResponse;
+import static com.spotify.github.MockHelper.createMockResponse;
 import static java.lang.String.format;
 import static java.nio.charset.Charset.defaultCharset;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -43,6 +43,7 @@ import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import com.spotify.github.async.Async;
 import com.spotify.github.async.AsyncPage;
+import com.spotify.github.http.HttpResponse;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.ImmutableUser;
 import com.spotify.github.v3.comment.Comment;
@@ -56,7 +57,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import okhttp3.Response;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -83,13 +84,13 @@ public class IssueClientTest {
         "<https://github.com/api/v3/repos/someowner/somerepo/issues/123/comments?page=2>; rel=\"next\", <https://github.com/api/v3/repos/someowner/somerepo/issues/123/comments?page=2>; rel=\"last\"";
     final String firstPageBody =
         Resources.toString(getResource(this.getClass(), "comments_page1.json"), defaultCharset());
-    final Response firstPageResponse = createMockResponse(firstPageLink, firstPageBody);
+    final HttpResponse firstPageResponse = createMockResponse(firstPageLink, firstPageBody);
 
     final String lastPageLink =
         "<https://github.com/api/v3/repos/someowner/somerepo/issues/123/comments>; rel=\"first\", <https://github.com/api/v3/repos/someowner/somerepo/issues/123/comments>; rel=\"prev\"";
     final String lastPageBody =
         Resources.toString(getResource(this.getClass(), "comments_page2.json"), defaultCharset());
-    final Response lastPageResponse = createMockResponse(lastPageLink, lastPageBody);
+    final HttpResponse lastPageResponse = createMockResponse(lastPageLink, lastPageBody);
 
     when(github.request(format(COMMENTS_URI_NUMBER_TEMPLATE, "someowner", "somerepo", "123")))
         .thenReturn(completedFuture(firstPageResponse));
@@ -112,13 +113,13 @@ public class IssueClientTest {
         "<https://github.com/api/v3/repos/someowner/somerepo/issues/123/comments?page=2>; rel=\"next\", <https://github.com/api/v3/repos/someowner/somerepo/issues/123/comments?page=2>; rel=\"last\"";
     final String firstPageBody =
         Resources.toString(getResource(this.getClass(), "comments_page1.json"), defaultCharset());
-    final Response firstPageResponse = createMockResponse(firstPageLink, firstPageBody);
+    final HttpResponse firstPageResponse = createMockResponse(firstPageLink, firstPageBody);
 
     final String lastPageLink =
         "<https://github.com/api/v3/repos/someowner/somerepo/issues/123/comments>; rel=\"first\", <https://github.com/api/v3/repos/someowner/somerepo/issues/123/comments>; rel=\"prev\"";
     final String lastPageBody =
         Resources.toString(getResource(this.getClass(), "comments_page2.json"), defaultCharset());
-    final Response lastPageResponse = createMockResponse(lastPageLink, lastPageBody);
+    final HttpResponse lastPageResponse = createMockResponse(lastPageLink, lastPageBody);
 
     when(github.request(format(COMMENTS_URI_NUMBER_TEMPLATE, "someowner", "somerepo", "123")))
         .thenReturn(completedFuture(firstPageResponse));
@@ -142,7 +143,7 @@ public class IssueClientTest {
   @Test
   public void testCommentCreated() throws IOException {
     final String fixture = loadFixture("clients/comment_created.json");
-    final Response response = createMockResponse("", fixture);
+    final HttpResponse response = createMockResponse("", fixture);
     final String path = format(COMMENTS_URI_NUMBER_TEMPLATE, "someowner", "somerepo", 10);
     when(github.post(anyString(), anyString(), eq(Comment.class))).thenCallRealMethod();
     when(github.post(eq(path), anyString())).thenReturn(completedFuture(response));
@@ -154,7 +155,7 @@ public class IssueClientTest {
   @Test
   public void testCommentCreatedWithLargeId() throws IOException {
     final String fixture = loadFixture("clients/comment_created_long_id.json");
-    final Response response = createMockResponse("", fixture);
+    final HttpResponse response = createMockResponse("", fixture);
     final String path = format(COMMENTS_URI_NUMBER_TEMPLATE, "someowner", "somerepo", 10);
     when(github.post(anyString(), anyString(), eq(Comment.class))).thenCallRealMethod();
     when(github.post(eq(path), anyString())).thenReturn(completedFuture(response));
@@ -210,13 +211,13 @@ public class IssueClientTest {
     long reactionId = 385825;
     final String path =
         format(COMMENTS_REACTION_ID_TEMPLATE, "someowner", "somerepo", issueNumber, reactionId);
-    Response mockResponse = mock(Response.class);
-    when(mockResponse.code()).thenReturn(204);
+    HttpResponse mockResponse = mock(HttpResponse.class);
+    when(mockResponse.statusCode()).thenReturn(204);
     when(github.delete(eq(path))).thenReturn(completedFuture(mockResponse));
 
     final var response = issueClient.deleteCommentReaction(issueNumber, reactionId).join();
 
-    assertThat(response.code(), is(204));
+    assertThat(response.statusCode(), is(204));
     assertThat(response, is(mockResponse));
     verify(github, times(1)).delete(eq(path));
   }
@@ -239,7 +240,7 @@ public class IssueClientTest {
             "<https://github.com/api/v3/repos/someowner/somerepo/comments/%s/reactions?page=1>; rel=\"last\"",
             commentId);
     final String firstPageBody = github.json().toJsonUnchecked(listResponse.join().toArray());
-    final Response firstPageResponse = createMockResponse(firstPageLink, firstPageBody);
+    final HttpResponse firstPageResponse = createMockResponse(firstPageLink, firstPageBody);
 
     when(github.request(eq(path))).thenReturn(completedFuture(firstPageResponse));
     final List<CommentReaction> listCommentReactions = Lists.newArrayList();

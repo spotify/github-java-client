@@ -29,7 +29,8 @@ import static com.spotify.github.v3.clients.GitHubClient.LIST_FOLDERCONTENT_TYPE
 import static com.spotify.github.v3.clients.GitHubClient.LIST_PR_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_REPOSITORY;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_REPOSITORY_INVITATION;
-import static com.spotify.github.v3.clients.MockHelper.createMockResponse;
+import static com.spotify.github.MockHelper.createMockHttpResponse;
+import static com.spotify.github.MockHelper.createMockResponse;
 import static com.spotify.github.v3.clients.RepositoryClient.STATUS_URI_TEMPLATE;
 import static java.lang.String.format;
 import static java.nio.charset.Charset.defaultCharset;
@@ -49,6 +50,7 @@ import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import com.spotify.github.async.Async;
 import com.spotify.github.async.AsyncPage;
+import com.spotify.github.http.HttpResponse;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.comment.Comment;
 import com.spotify.github.v3.prs.PullRequestItem;
@@ -71,15 +73,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
-import okhttp3.MediaType;
-import okhttp3.Protocol;
-import okhttp3.Request;
-import okhttp3.Response;
-import okhttp3.ResponseBody;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -122,7 +120,10 @@ public class RepositoryClientTest {
   public void updateRepository() throws Exception {
     final CompletableFuture<Repository> fixture =
         completedFuture(json.fromJson(getFixture("repository_get.json"), Repository.class));
-    when(github.patch(eq("/repos/someowner/somerepo"), eq("{\"allow_auto_merge\":true}"), eq(Repository.class)))
+    when(github.patch(
+            eq("/repos/someowner/somerepo"),
+            eq("{\"allow_auto_merge\":true}"),
+            eq(Repository.class)))
         .thenReturn(fixture);
     RepositoryUpdate request =
         ImmutableRepositoryUpdate.builder().allowAutoMerge(Optional.of(true)).build();
@@ -150,7 +151,7 @@ public class RepositoryClientTest {
   public void listAuthenticatedUserRepositories() throws Exception {
     final String pageLink = "<https://github.com/api/v3/user/repos>; rel=\"first\"";
     final String pageBody = getFixture("list_of_repos_for_authenticated_user.json");
-    final Response pageResponse = createMockResponse(pageLink, pageBody);
+    final HttpResponse pageResponse = createMockResponse(pageLink, pageBody);
 
     when(github.request("/user/repos")).thenReturn(completedFuture(pageResponse));
 
@@ -167,8 +168,8 @@ public class RepositoryClientTest {
 
   @Test
   public void isCollaborator() throws Exception {
-    final Response response = mock(Response.class);
-    when(response.code()).thenReturn(204);
+    final HttpResponse response = mock(HttpResponse.class);
+    when(response.statusCode()).thenReturn(204);
     when(github.request("/repos/someowner/somerepo/collaborators/user"))
         .thenReturn(completedFuture(response));
     boolean isCollaborator = repoClient.isCollaborator("user").get();
@@ -177,8 +178,8 @@ public class RepositoryClientTest {
 
   @Test
   public void isNotCollaborator() throws Exception {
-    final Response response = mock(Response.class);
-    when(response.code()).thenReturn(404);
+    final HttpResponse response = mock(HttpResponse.class);
+    when(response.statusCode()).thenReturn(404);
     when(github.request("/repos/someowner/somerepo/collaborators/user"))
         .thenReturn(completedFuture(response));
     boolean isCollaborator = repoClient.isCollaborator("user").get();
@@ -187,7 +188,7 @@ public class RepositoryClientTest {
 
   @Test
   public void addCollaborator() throws Exception {
-    final Response response = createMockResponse("", getFixture("repository_invitation.json"));
+    final HttpResponse response = createMockResponse("", getFixture("repository_invitation.json"));
     when(github.put("/repos/someowner/somerepo/collaborators/user", "{\"permission\":\"pull\"}"))
         .thenReturn(completedFuture(response));
 
@@ -207,8 +208,8 @@ public class RepositoryClientTest {
 
   @Test
   public void addCollaboratorUserExists() throws Exception {
-    final Response response = mock(Response.class);
-    when(response.code()).thenReturn(204);
+    final HttpResponse response = mock(HttpResponse.class);
+    when(response.statusCode()).thenReturn(204);
     when(github.put("/repos/someowner/somerepo/collaborators/user", "{\"permission\":\"pull\"}"))
         .thenReturn(completedFuture(response));
 
@@ -220,7 +221,7 @@ public class RepositoryClientTest {
 
   @Test
   public void removeCollaborator() throws Exception {
-    CompletableFuture<Response> response = completedFuture(mock(Response.class));
+    CompletableFuture<HttpResponse> response = completedFuture(mock(HttpResponse.class));
     final ArgumentCaptor<String> capture = ArgumentCaptor.forClass(String.class);
     when(github.delete(capture.capture())).thenReturn(response);
 
@@ -232,7 +233,7 @@ public class RepositoryClientTest {
 
   @Test
   public void removeInvite() throws Exception {
-    CompletableFuture<Response> response = completedFuture(mock(Response.class));
+    CompletableFuture<HttpResponse> response = completedFuture(mock(HttpResponse.class));
     final ArgumentCaptor<String> capture = ArgumentCaptor.forClass(String.class);
     when(github.delete(capture.capture())).thenReturn(response);
 
@@ -515,7 +516,7 @@ public class RepositoryClientTest {
   void listAllBranches() throws Exception {
     final String link =
         "<https://github.com/api/v3/repos/someowner/somerepo/branches>; rel=\"last\"";
-    final Response response = createMockResponse(link, getFixture("list_branches.json"));
+    final HttpResponse response = createMockResponse(link, getFixture("list_branches.json"));
 
     when(github.request("/repos/someowner/somerepo/branches"))
         .thenReturn(completedFuture(response));
@@ -561,12 +562,12 @@ public class RepositoryClientTest {
         "<https://github.com/api/v3/repos/someowner/somerepo/statuses/553c2077f0edc3d5dc5d17262f6aa498e69d6f8e?page=2>; rel=\"next\", <https://github.com/api/v3/repos/someowner/somerepo/statuses/553c2077f0edc3d5dc5d17262f6aa498e69d6f8e?page=2>; rel=\"last\"";
     final String firstPageBody = loadFixture("clients/statuses_page1.json");
 
-    final Response firstPageResponse = createMockResponse(firstPageLink, firstPageBody);
+    final HttpResponse firstPageResponse = createMockResponse(firstPageLink, firstPageBody);
 
     final String lastPageLink =
         "<https://github.com/api/v3/repos/someowner/somerepo/statuses/553c2077f0edc3d5dc5d17262f6aa498e69d6f8e>; rel=\"first\", <https://github.com/api/v3/repos/someowner/somerepo/statuses/553c2077f0edc3d5dc5d17262f6aa498e69d6f8e>; rel=\"prev\"";
     final String lastPageBody = loadFixture("clients/statuses_page2.json");
-    final Response lastPageResponse = createMockResponse(lastPageLink, lastPageBody);
+    final HttpResponse lastPageResponse = createMockResponse(lastPageLink, lastPageBody);
 
     when(github.urlFor("")).thenReturn("https://github.com/api/v3");
 
@@ -597,17 +598,13 @@ public class RepositoryClientTest {
 
   @Test
   public void merge() throws IOException {
-    CompletableFuture<Response> okResponse =
+    CompletableFuture<HttpResponse> okResponse =
         completedFuture(
-            new Response.Builder()
-                .request(new Request.Builder().url("http://example.com/whatever").build())
-                .protocol(Protocol.HTTP_1_1)
-                .message("")
-                .code(201)
-                .body(
-                    ResponseBody.create(
-                        MediaType.get("application/json"), getFixture("merge_commit_item.json")))
-                .build());
+            createMockHttpResponse(
+                "http://example.com/whatever",
+                201,
+                getFixture("merge_commit_item.json"),
+                Map.of()));
     final String expectedRequestBody =
         json.toJsonUnchecked(
             ImmutableMap.of(
@@ -624,17 +621,10 @@ public class RepositoryClientTest {
 
   @Test
   public void createFork() throws IOException {
-    CompletableFuture<Response> okResponse =
+    CompletableFuture<HttpResponse> okResponse =
         completedFuture(
-            new Response.Builder()
-                .request(new Request.Builder().url("http://example.com/whatever").build())
-                .protocol(Protocol.HTTP_1_1)
-                .message("")
-                .code(202)
-                .body(
-                    ResponseBody.create(
-                        MediaType.get("application/json"), getFixture("fork_create_item.json")))
-                .build());
+            createMockHttpResponse(
+                "http://example.com/whatever", 202, getFixture("fork_create_item.json"), Map.of()));
     final String expectedRequestBody = json.toJsonUnchecked(ImmutableMap.of());
     when(github.post("/repos/someowner/somerepo/forks", expectedRequestBody))
         .thenReturn(okResponse);
@@ -645,14 +635,8 @@ public class RepositoryClientTest {
 
   @Test
   public void mergeNoop() {
-    CompletableFuture<Response> okResponse =
-        completedFuture(
-            new Response.Builder()
-                .request(new Request.Builder().url("http://example.com/whatever").build())
-                .protocol(Protocol.HTTP_1_1)
-                .message("")
-                .code(204) // No Content
-                .build());
+    CompletableFuture<HttpResponse> okResponse =
+        completedFuture(createMockHttpResponse("http://example.com/whatever", 204, null, Map.of()));
     when(github.post(any(), any())).thenReturn(okResponse);
     final Optional<CommitItem> maybeCommit = repoClient.merge("basebranch", "headbranch").join();
     assertThat(maybeCommit, is(Optional.empty()));
@@ -660,18 +644,13 @@ public class RepositoryClientTest {
 
   @Test
   public void shouldDownloadTarball() throws Exception {
-    CompletableFuture<Response> fixture =
+    CompletableFuture<HttpResponse> fixture =
         completedFuture(
-            new Response.Builder()
-                .request(new Request.Builder().url("https://example.com/whatever").build())
-                .protocol(Protocol.HTTP_1_1)
-                .message("")
-                .code(200)
-                .body(
-                    ResponseBody.create(
-                        "some bytes".getBytes(StandardCharsets.UTF_8),
-                        MediaType.get("application/gzip")))
-                .build());
+            createMockHttpResponse(
+                "http://example.com/whatever",
+                200,
+                "some bytes",
+                Map.of()));
     when(github.request("/repos/someowner/somerepo/tarball/")).thenReturn(fixture);
 
     try (InputStream response = repoClient.downloadTarball().get().orElseThrow()) {
@@ -682,18 +661,13 @@ public class RepositoryClientTest {
 
   @Test
   public void shouldDownloadZipball() throws Exception {
-    CompletableFuture<Response> fixture =
+    CompletableFuture<HttpResponse> fixture =
         completedFuture(
-            new Response.Builder()
-                .request(new Request.Builder().url("https://example.com/whatever").build())
-                .protocol(Protocol.HTTP_1_1)
-                .message("")
-                .code(200)
-                .body(
-                    ResponseBody.create(
-                        "some bytes".getBytes(StandardCharsets.UTF_8),
-                        MediaType.get("application/gzip")))
-                .build());
+            createMockHttpResponse(
+                "http://example.com/whatever",
+                200,
+                "some bytes",
+                Map.of()));
     when(github.request("/repos/someowner/somerepo/zipball/")).thenReturn(fixture);
 
     try (InputStream response = repoClient.downloadZipball().get().orElseThrow()) {
@@ -704,14 +678,8 @@ public class RepositoryClientTest {
 
   @Test
   public void shouldReturnEmptyOptionalWhenResponseBodyNotPresent() throws Exception {
-    CompletableFuture<Response> fixture =
-        completedFuture(
-            new Response.Builder()
-                .request(new Request.Builder().url("https://example.com/whatever").build())
-                .protocol(Protocol.HTTP_1_1)
-                .message("")
-                .code(204) // No Content
-                .build());
+    CompletableFuture<HttpResponse> fixture =
+        completedFuture(createMockHttpResponse("http://example.com/whatever", 204, null, Map.of()));
     when(github.request("/repos/someowner/somerepo/zipball/master")).thenReturn(fixture);
 
     Optional<InputStream> response = repoClient.downloadZipball("master").get();
@@ -720,23 +688,27 @@ public class RepositoryClientTest {
 
   @Test
   public void shouldReturnEmptyResponseWhenRepositoryDispatchEndpointTriggered() throws Exception {
-    final Response response = mock(Response.class);
-    when(response.code()).thenReturn(204);
+    final HttpResponse response = mock(HttpResponse.class);
+    when(response.statusCode()).thenReturn(204);
 
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode clientPayload = mapper.createObjectNode();
-    clientPayload.put("my-custom-true-property","true");
+    clientPayload.put("my-custom-true-property", "true");
     clientPayload.put("my-custom-false-property", "false");
 
-    RepositoryDispatch repositoryDispatchRequest = ImmutableRepositoryDispatch.builder()
-        .eventType("my-custom-event")
-        .clientPayload(clientPayload)
-        .build();
+    RepositoryDispatch repositoryDispatchRequest =
+        ImmutableRepositoryDispatch.builder()
+            .eventType("my-custom-event")
+            .clientPayload(clientPayload)
+            .build();
 
-    when(github.post("/repos/someowner/somerepo/dispatches", json.toJsonUnchecked(repositoryDispatchRequest))).thenReturn(completedFuture(response));
+    when(github.post(
+            "/repos/someowner/somerepo/dispatches",
+            json.toJsonUnchecked(repositoryDispatchRequest)))
+        .thenReturn(completedFuture(response));
 
-    boolean repoDispatchResult = repoClient.createRepositoryDispatchEvent(repositoryDispatchRequest).get();
+    boolean repoDispatchResult =
+        repoClient.createRepositoryDispatchEvent(repositoryDispatchRequest).get();
     assertTrue(repoDispatchResult);
   }
-
 }

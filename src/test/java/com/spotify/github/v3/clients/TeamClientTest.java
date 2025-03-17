@@ -24,7 +24,7 @@ import static com.google.common.io.Resources.getResource;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_PENDING_TEAM_INVITATIONS;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAMS;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_TEAM_MEMBERS;
-import static com.spotify.github.v3.clients.MockHelper.createMockResponse;
+import static com.spotify.github.MockHelper.createMockResponse;
 import static java.nio.charset.Charset.defaultCharset;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.stream.Collectors.toList;
@@ -37,6 +37,7 @@ import static org.mockito.Mockito.*;
 import com.google.common.io.Resources;
 import com.spotify.github.async.Async;
 import com.spotify.github.async.AsyncPage;
+import com.spotify.github.http.HttpResponse;
 import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.Team;
 import com.spotify.github.v3.User;
@@ -48,7 +49,7 @@ import com.spotify.github.v3.orgs.requests.TeamUpdate;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import okhttp3.Response;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -97,7 +98,7 @@ public class TeamClientTest {
 
   @Test
   public void deleteTeam() throws Exception {
-    final CompletableFuture<Response> response = completedFuture(mock(Response.class));
+    final CompletableFuture<HttpResponse> response = completedFuture(mock(HttpResponse.class));
     final ArgumentCaptor<String> capture = ArgumentCaptor.forClass(String.class);
     when(github.delete(capture.capture())).thenReturn(response);
 
@@ -167,14 +168,14 @@ public class TeamClientTest {
             "<https://github.com/api/v3/orgs/github/teams/1/members?page=2>; rel=\"next\", <https://github.com/api/v3/orgs/github/teams/1/members?page=2>; rel=\"last\"";
     final String firstPageBody =
             Resources.toString(getResource(this.getClass(), "list_members_page1.json"), defaultCharset());
-    final Response firstPageResponse = createMockResponse(firstPageLink, firstPageBody);
+    final HttpResponse firstPageResponse = createMockResponse(firstPageLink, firstPageBody);
 
     final String lastPageLink =
             "<https://github.com/api/v3/orgs/github/teams/1/members>; rel=\"first\", <https://github.com/api/v3/orgs/github/teams/1/members>; rel=\"prev\"";
     final String lastPageBody =
             Resources.toString(getResource(this.getClass(), "list_members_page2.json"), defaultCharset());
 
-    final Response lastPageResponse = createMockResponse(lastPageLink, lastPageBody);
+    final HttpResponse lastPageResponse = createMockResponse(lastPageLink, lastPageBody);
 
     when(github.request(endsWith("/orgs/github/teams/1/members?per_page=1")))
             .thenReturn(completedFuture(firstPageResponse));
@@ -206,7 +207,7 @@ public class TeamClientTest {
 
   @Test
   public void deleteMembership() throws Exception {
-    final CompletableFuture<Response> response = completedFuture(mock(Response.class));
+    final CompletableFuture<HttpResponse> response = completedFuture(mock(HttpResponse.class));
     final ArgumentCaptor<String> capture = ArgumentCaptor.forClass(String.class);
     when(github.delete(capture.capture())).thenReturn(response);
 

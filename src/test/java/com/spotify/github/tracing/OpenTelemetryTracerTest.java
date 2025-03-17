@@ -20,6 +20,8 @@
 
 package com.spotify.github.tracing;
 
+import com.spotify.github.http.HttpRequest;
+import com.spotify.github.http.ImmutableHttpRequest;
 import com.spotify.github.tracing.opentelemetry.OpenTelemetryTracer;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
@@ -44,6 +46,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -123,10 +126,13 @@ public class OpenTelemetryTracerTest {
     Span rootSpan = startRootSpan();
     final CompletableFuture<String> future = new CompletableFuture<>();
     OpenTelemetryTracer tracer = new OpenTelemetryTracer();
-    Request mockRequest = mock(Request.class);
-    when(mockRequest.url())
-        .thenReturn(HttpUrl.parse("https://api.github.com/repos/spotify/github-java-client"));
-    when(mockRequest.method()).thenReturn(requestMethod);
+    HttpRequest mockRequest =
+        ImmutableHttpRequest.builder()
+            .url("https://api.github.com/repos/spotify/github-java-client")
+            .method(requestMethod)
+            .body("")
+            .headers(Map.of())
+            .build();
 
     try (com.spotify.github.tracing.Span span = tracer.span(mockRequest)) {
       tracer.attachSpanToFuture(span, future);
@@ -150,24 +156,6 @@ public class OpenTelemetryTracerTest {
         attributes.get(AttributeKey.stringKey("http.url")));
     assertEquals(requestMethod, attributes.get(AttributeKey.stringKey("method")));
     assertEquals(StatusCode.OK, inner.getStatus().getStatusCode());
-  }
-
-  @Test
-  public void createTracedClient() throws IOException {
-    OpenTelemetryTracer tracer = new OpenTelemetryTracer(openTelemetry);
-    OkHttpClient.Builder mockBuilder = mock(OkHttpClient.Builder.class);
-    OkHttpClient mockClient = mock(OkHttpClient.class);
-    LinkedList<Interceptor> interceptors = new LinkedList<>();
-    when(mockClient.newBuilder()).thenReturn(mockBuilder);
-    when(mockBuilder.build()).thenReturn(mockClient);
-    when(mockBuilder.interceptors()).thenReturn(interceptors);
-    when(mockBuilder.networkInterceptors()).thenReturn(interceptors);
-    Call.Factory callFactory = tracer.createTracedClient(mockClient);
-    assertNotNull(callFactory);
-    assertEquals(
-        "class io.opentelemetry.instrumentation.okhttp.v3_0.TracingCallFactory",
-        callFactory.getClass().toString());
-    assertEquals(3, interceptors.size());
   }
 
   private Span startRootSpan() {
