@@ -391,6 +391,15 @@
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-compile</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
                     <source>11</source>
                     <target>11</target>
@@ -475,6 +484,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.3.1</version>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
@@ -486,6 +496,16 @@
                 <configuration>
                     <release>11</release>
                     <doclint>none</doclint>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-scm-publish-plugin</artifactId>
+                <version>1.0</version>
+                <configuration>
+                    <content>target/site/apidocs</content>
+                    <pubScmUrl>scm:git:git@github.com:spotify/github-java-client.git</pubScmUrl>
+                    <scmBranch>gh-pages</scmBranch>
                 </configuration>
             </plugin>
         </plugins>
