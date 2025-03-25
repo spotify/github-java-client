@@ -2,6 +2,7 @@
 [![codecov](https://codecov.io/gh/spotify/github-java-client/branch/master/graph/badge.svg?token=ADHNCIESSL)](https://codecov.io/gh/spotify/github-java-client)[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![lifecycle: beta](https://img.shields.io/badge/lifecycle-beta-509bf5.svg)
 [![Maven Central](https://img.shields.io/maven-central/v/com.spotify/github-client)](https://mvnrepository.com/artifact/com.spotify/github-client)
+[![libs.tech recommends](https://libs.tech/project/254401089/badge.svg)](https://libs.tech/project/254401089/github-java-client)
 
 # github-java-client
 
