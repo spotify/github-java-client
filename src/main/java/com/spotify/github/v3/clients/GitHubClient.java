@@ -57,6 +57,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import javax.annotation.Nullable;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import okhttp3.*;
@@ -587,65 +588,55 @@ public class GitHubClient {
   }
 
   /**
-   * Make an http GET request for the given path on the server
+   * Make a http GET request for the given path on the server
    *
-   * @param path relative to the Github base url
+   * @param path relative to the GitHub base url
    * @return response body as a String
    */
   CompletableFuture<HttpResponse> request(final String path) {
-    final HttpRequest request = requestBuilder(path).build();
-    log.debug("Making request to {}", request.url().toString());
-    return call(request);
+    return call("GET", path);
   }
 
   /**
-   * Make an http GET request for the given path on the server
+   * Make a http GET request for the given path on the server
    *
-   * @param path relative to the Github base url
+   * @param path relative to the GitHub base url
    * @param extraHeaders extra github headers to be added to the call
    * @return a reader of response body
    */
   CompletableFuture<HttpResponse> request(
       final String path, final Map<String, String> extraHeaders) {
-    final ImmutableHttpRequest.Builder builder = requestBuilder(path);
-    final HttpRequest request = toHttpRequestHeaders(builder, extraHeaders).build();
-    log.debug("Making request to {}", request.url().toString());
-    return call(request);
+    return call("GET", path, extraHeaders);
   }
 
   /**
-   * Make an http GET request for the given path on the server
+   * Make a http GET request for the given path on the server
    *
-   * @param path relative to the Github base url
+   * @param path relative to the GitHub base url
    * @return body deserialized as provided type
    */
   <T> CompletableFuture<T> request(final String path, final Class<T> clazz) {
-    final HttpRequest request = requestBuilder(path).build();
-    log.debug("Making request to {}", request.url().toString());
-    return call(request)
+    return call(path)
         .thenApply(response -> json().fromJsonUncheckedNotNull(response.bodyString(), clazz));
   }
 
   /**
-   * Make an http GET request for the given path on the server
+   * Make a http GET request for the given path on the server
    *
-   * @param path relative to the Github base url
+   * @param path relative to the GitHub base url
    * @param extraHeaders extra github headers to be added to the call
    * @return body deserialized as provided type
    */
   <T> CompletableFuture<T> request(
       final String path, final Class<T> clazz, final Map<String, String> extraHeaders) {
-    final ImmutableHttpRequest.Builder builder = requestBuilder(path);
-    final HttpRequest request = toHttpRequestHeaders(builder, extraHeaders).build();
-    log.debug("Making request to {}", request.url().toString());
-    return call(request)
+    return call("GET", path, null, extraHeaders)
         .thenApply(response -> json().fromJsonUncheckedNotNull(response.bodyString(), clazz));
   }
 
   /**
-   * Make an http request for the given path on the Github server.
+   * Make a http request for the given path on the GitHub server.
    *
-   * @param path relative to the Github base url
+   * @param path relative to the GitHub base url
    * @param extraHeaders extra github headers to be added to the call
    * @return body deserialized as provided type
    */
@@ -653,61 +644,51 @@ public class GitHubClient {
       final String path,
       final TypeReference<T> typeReference,
       final Map<String, String> extraHeaders) {
-    final ImmutableHttpRequest.Builder builder = requestBuilder(path);
-    final HttpRequest request = toHttpRequestHeaders(builder, extraHeaders).build();
-    log.debug("Making request to {}", request.url().toString());
-    return call(request)
+    return call("GET", path, null, extraHeaders)
         .thenApply(
             response -> json().fromJsonUncheckedNotNull(response.bodyString(), typeReference));
   }
 
   /**
-   * Make an http request for the given path on the Github server.
+   * Make a http request for the given path on the GitHub server.
    *
-   * @param path relative to the Github base url
+   * @param path relative to the GitHub base url
    * @return body deserialized as provided type
    */
   <T> CompletableFuture<T> request(final String path, final TypeReference<T> typeReference) {
-    final HttpRequest request = requestBuilder(path).build();
-    log.debug("Making request to {}", request.url().toString());
-    return call(request)
+    return call(path)
         .thenApply(
             response -> json().fromJsonUncheckedNotNull(response.bodyString(), typeReference));
   }
 
   /**
-   * Make an http POST request for the given path with provided JSON body.
+   * Make a http POST request for the given path with provided JSON body.
    *
-   * @param path relative to the Github base url
+   * @param path relative to the GitHub base url
    * @param data request body as stringified JSON
    * @return response body as String
    */
   CompletableFuture<HttpResponse> post(final String path, final String data) {
-    final HttpRequest request = requestBuilder(path).method("POST").body(data).build();
-    log.debug("Making POST request to {}", request.url().toString());
-    return call(request);
+    return call("POST", path, data);
   }
 
   /**
-   * Make an http POST request for the given path with provided JSON body.
+   * Make a http POST request for the given path with provided JSON body.
    *
-   * @param path relative to the Github base url
+   * @param path relative to the GitHub base url
    * @param data request body as stringified JSON
    * @param extraHeaders
    * @return response body as String
    */
   CompletableFuture<HttpResponse> post(
       final String path, final String data, final Map<String, String> extraHeaders) {
-    final ImmutableHttpRequest.Builder builder = requestBuilder(path).method("POST").body(data);
-    final HttpRequest request = toHttpRequestHeaders(builder, extraHeaders).build();
-    log.debug("Making POST request to {}", request.url().toString());
-    return call(request);
+    return call("POST", path, data, extraHeaders);
   }
 
   /**
-   * Make an http POST request for the given path with provided JSON body.
+   * Make a http POST request for the given path with provided JSON body.
    *
-   * @param path relative to the Github base url
+   * @param path relative to the GitHub base url
    * @param data request body as stringified JSON
    * @param clazz class to cast response as
    * @param extraHeaders
@@ -723,9 +704,9 @@ public class GitHubClient {
   }
 
   /**
-   * Make an http POST request for the given path with provided JSON body.
+   * Make a http POST request for the given path with provided JSON body.
    *
-   * @param path relative to the Github base url
+   * @param path relative to the GitHub base url
    * @param data request body as stringified JSON
    * @param clazz class to cast response as
    * @return response body deserialized as provided class
@@ -736,7 +717,7 @@ public class GitHubClient {
   }
 
   /**
-   * Make a POST request to the graphql endpoint of Github
+   * Make a POST request to the graphql endpoint of GitHub
    *
    * @param data request body as stringified JSON
    * @return response
@@ -744,28 +725,30 @@ public class GitHubClient {
    *     "https://docs.github.com/en/enterprise-server@3.9/graphql/guides/forming-calls-with-graphql#communicating-with-graphql"
    */
   public CompletableFuture<HttpResponse> postGraphql(final String data) {
-    final HttpRequest request = graphqlRequestBuilder().method("POST").body(data).build();
-    log.info("Making POST request to {}", request.url());
-    return call(request);
+    return graphqlRequestBuilder()
+        .thenCompose(
+            requestBuilder -> {
+              final HttpRequest request = requestBuilder.method("POST").body(data).build();
+              log.info("Making POST request to {}", request.url());
+              return call(request);
+            });
   }
 
   /**
-   * Make an http PUT request for the given path with provided JSON body.
+   * Make a http PUT request for the given path with provided JSON body.
    *
-   * @param path relative to the Github base url
+   * @param path relative to the GitHub base url
    * @param data request body as stringified JSON
    * @return response body as String
    */
   CompletableFuture<HttpResponse> put(final String path, final String data) {
-    final HttpRequest request = requestBuilder(path).method("PUT").body(data).build();
-    log.debug("Making POST request to {}", request.url().toString());
-    return call(request);
+    return call("PUT", path, data);
   }
 
   /**
    * Make a HTTP PUT request for the given path with provided JSON body.
    *
-   * @param path relative to the Github base url
+   * @param path relative to the GitHub base url
    * @param data request body as stringified JSON
    * @param clazz class to cast response as
    * @return response body deserialized as provided class
@@ -776,22 +759,20 @@ public class GitHubClient {
   }
 
   /**
-   * Make an http PATCH request for the given path with provided JSON body.
+   * Make a http PATCH request for the given path with provided JSON body.
    *
-   * @param path relative to the Github base url
+   * @param path relative to the GitHub base url
    * @param data request body as stringified JSON
    * @return response body as String
    */
   CompletableFuture<HttpResponse> patch(final String path, final String data) {
-    final HttpRequest request = requestBuilder(path).method("PATCH").body(data).build();
-    log.debug("Making PATCH request to {}", request.url().toString());
-    return call(request);
+    return call("PATCH", path, data);
   }
 
   /**
-   * Make an http PATCH request for the given path with provided JSON body.
+   * Make a http PATCH request for the given path with provided JSON body.
    *
-   * @param path relative to the Github base url
+   * @param path relative to the GitHub base url
    * @param data request body as stringified JSON
    * @param clazz class to cast response as
    * @return response body deserialized as provided class
@@ -802,9 +783,9 @@ public class GitHubClient {
   }
 
   /**
-   * Make an http PATCH request for the given path with provided JSON body
+   * Make a http PATCH request for the given path with provided JSON body
    *
-   * @param path relative to the Github base url
+   * @param path relative to the GitHub base url
    * @param data request body as stringified JSON
    * @param clazz class to cast response as
    * @return response body deserialized as provided class
@@ -814,40 +795,110 @@ public class GitHubClient {
       final String data,
       final Class<T> clazz,
       final Map<String, String> extraHeaders) {
-    final ImmutableHttpRequest.Builder builder = requestBuilder(path).method("PATCH").body(data);
-    final HttpRequest request = toHttpRequestHeaders(builder, extraHeaders).build();
-    log.debug("Making PATCH request to {}", request.url().toString());
-    return call(request)
+    return call("PATCH", path, data, extraHeaders)
         .thenApply(response -> json().fromJsonUncheckedNotNull(response.bodyString(), clazz));
   }
 
   /**
-   * Make an http DELETE request for the given path.
+   * Make a http DELETE request for the given path.
    *
-   * @param path relative to the Github base url
+   * @param path relative to the GitHub base url
    * @return response body as String
    */
   CompletableFuture<HttpResponse> delete(final String path) {
-    final HttpRequest request = requestBuilder(path).method("DELETE").build();
-    log.debug("Making DELETE request to {}", request.url().toString());
-    return call(request);
+    return call("DELETE", path);
   }
 
   /**
-   * Make an http DELETE request for the given path.
+   * Make a http DELETE request for the given path.
    *
-   * @param path relative to the Github base url
+   * @param path relative to the GitHub base url
    * @param data request body as stringified JSON
    * @return response body as String
    */
   CompletableFuture<HttpResponse> delete(final String path, final String data) {
-    final HttpRequest request = requestBuilder(path).method("DELETE").body(data).build();
-    log.debug("Making DELETE request to {}", request.url().toString());
-    return call(request);
+    return call("DELETE", path, data);
   }
 
   /**
-   * Create a URL for a given path to this Github server.
+   * Make a http DELETE request for the given path.
+   *
+   * @param path relative to the GitHub base url
+   * @return response body as String
+   */
+  private CompletableFuture<HttpResponse> call(final String path) {
+    return call("GET", path, null, null);
+  }
+
+  /**
+   * Make a http request for the given path on the GitHub server.
+   *
+   * @param method HTTP method
+   * @param path relative to the GitHub base url
+   * @return response body as String
+   */
+  private CompletableFuture<HttpResponse> call(final String method, final String path) {
+    return call(method, path, null, null);
+  }
+
+  /**
+   * Make a http request for the given path on the GitHub server.
+   *
+   * @param method HTTP method
+   * @param path relative to the GitHub base url
+   * @param extraHeaders extra github headers to be added to the call
+   * @return response body as String
+   */
+  private CompletableFuture<HttpResponse> call(
+      final String method, final String path, final Map<String, String> extraHeaders) {
+    return call(method, path, null, extraHeaders);
+  }
+
+  /*
+   * Make a http request for the given path on the GitHub server.
+   *
+   * @param method HTTP method
+   * @param path relative to the GitHub base url
+   * @param data request body as stringified JSON
+   * @return response body as String
+   */
+  private CompletableFuture<HttpResponse> call(
+      final String method, final String path, final String data) {
+    return call(method, path, data, null);
+  }
+
+  /**
+   * Make a http request for the given path on the GitHub server.
+   *
+   * @param method HTTP method
+   * @param path relative to the GitHub base url
+   * @param data request body as stringified JSON
+   * @param extraHeaders extra github headers to be added to the call
+   * @return response body as String
+   */
+  private CompletableFuture<HttpResponse> call(
+      final String method,
+      final String path,
+      @Nullable final String data,
+      @Nullable final Map<String, String> extraHeaders) {
+    return requestBuilder(path)
+        .thenCompose(
+            requestBuilder -> {
+              final ImmutableHttpRequest.Builder builder = requestBuilder.method(method);
+              if (data != null) {
+                builder.body(data);
+              }
+              final HttpRequest request =
+                  extraHeaders == null || extraHeaders.isEmpty()
+                      ? builder.build()
+                      : toHttpRequestHeaders(builder, extraHeaders).build();
+              log.debug("Making {} request to {}", method, request.url().toString());
+              return call(request);
+            });
+  }
+
+  /**
+   * Create a URL for a given path to this GitHub server.
    *
    * @param path relative URI
    * @return URL to path on this server
@@ -856,6 +907,13 @@ public class GitHubClient {
     return baseUrl.toString().replaceAll("/+$", "") + "/" + path.replaceAll("^/+", "");
   }
 
+  /**
+   * Adds extra headers to the Request Builder
+   *
+   * @param builder the request builder
+   * @param extraHeaders the extra headers to be added
+   * @return the request builder with the extra headers
+   */
   private ImmutableHttpRequest.Builder toHttpRequestHeaders(
       final ImmutableHttpRequest.Builder builder, final Map<String, String> extraHeaders) {
     HttpRequest request = builder.build();
@@ -873,26 +931,41 @@ public class GitHubClient {
     return builder;
   }
 
-  private ImmutableHttpRequest.Builder requestBuilder(final String path) {
-
-    return ImmutableHttpRequest.builder()
-        .url(urlFor(path))
-        .method("GET")
-        .body("")
-        .putHeaders(HttpHeaders.ACCEPT, List.of(MediaType.APPLICATION_JSON))
-        .putHeaders(HttpHeaders.CONTENT_TYPE, List.of(MediaType.APPLICATION_JSON))
-        .putHeaders(HttpHeaders.AUTHORIZATION, List.of(getAuthorizationHeader(path)));
-  }
-
-  private ImmutableHttpRequest.Builder graphqlRequestBuilder() {
+  /*
+   * Create a Request Builder for this GitHub GraphQL server.
+   *
+   * @return GraphQL Request Builder
+   */
+  private CompletableFuture<ImmutableHttpRequest.Builder> graphqlRequestBuilder() {
     URI url = graphqlUrl.orElseThrow(() -> new IllegalStateException("No graphql url set"));
-    return ImmutableHttpRequest.builder()
-        .url(url.toString())
-        .putHeaders(HttpHeaders.ACCEPT, List.of(MediaType.APPLICATION_JSON))
-        .putHeaders(HttpHeaders.CONTENT_TYPE, List.of(MediaType.APPLICATION_JSON))
-        .putHeaders(HttpHeaders.AUTHORIZATION, List.of(getAuthorizationHeader("/graphql")));
+    return requestBuilder("/graphql")
+        .thenApply(requestBuilder -> requestBuilder.url(url.toString()));
   }
 
+  /*
+   * Create a Request Builder for this GitHub server.
+   *
+   * @param path relative URI
+   * @return Request Builder
+   */
+  private CompletableFuture<ImmutableHttpRequest.Builder> requestBuilder(final String path) {
+    return getAuthorizationHeader(path)
+        .thenApply(
+            authHeader ->
+                ImmutableHttpRequest.builder()
+                    .url(urlFor(path))
+                    .method("GET")
+                    .body("")
+                    .putHeaders(HttpHeaders.ACCEPT, List.of(MediaType.APPLICATION_JSON))
+                    .putHeaders(HttpHeaders.CONTENT_TYPE, List.of(MediaType.APPLICATION_JSON))
+                    .putHeaders(HttpHeaders.AUTHORIZATION, List.of(authHeader)));
+  }
+
+  /*
+   * Check if the GraphQL API is enabled for this client.
+   *
+   * @return true if the GraphQL API is enabled, false otherwise
+   */
   public boolean isGraphqlEnabled() {
     return graphqlUrl.isPresent();
   }
@@ -905,12 +978,12 @@ public class GitHubClient {
    (2) JWT Token, generated from a private key. Used in GitHub Apps;
    (3) Installation Token, generated from the JWT token. Also used in GitHub Apps.
   */
-  private String getAuthorizationHeader(final String path) {
+  private CompletableFuture<String> getAuthorizationHeader(final String path) {
     if (isJwtRequest(path) && getPrivateKey().isEmpty()) {
       throw new IllegalStateException("This endpoint needs a client with a private key for an App");
     }
     if (getAccessToken().isPresent()) {
-      return String.format("token %s", token);
+      return completedFuture(String.format("token %s", token));
     } else if (getPrivateKey().isPresent()) {
       final String jwtToken;
       try {
@@ -919,13 +992,18 @@ public class GitHubClient {
         throw new RuntimeException("There was an error generating JWT token", e);
       }
       if (isJwtRequest(path)) {
-        return String.format("Bearer %s", jwtToken);
+        return completedFuture(String.format("Bearer %s", jwtToken));
       }
       if (installationId == null) {
         throw new RuntimeException("This endpoint needs a client with an installation ID");
       }
       try {
-        return String.format("token %s", getInstallationToken(jwtToken, installationId));
+        return getInstallationToken(jwtToken, installationId)
+            .thenApply(token -> String.format("token %s", token))
+            .exceptionally(
+                ex -> {
+                  throw new RuntimeException("Could not generate access token for github app", ex);
+                });
       } catch (Exception e) {
         throw new RuntimeException("Could not generate access token for github app", e);
       }
@@ -937,29 +1015,53 @@ public class GitHubClient {
     return path.startsWith("/app/installation") || path.endsWith("installation");
   }
 
-  private String getInstallationToken(final String jwtToken, final int installationId)
-      throws Exception {
+  /**
+   * Fetches installation token from the cache or from the server if it is expired.
+   *
+   * @param jwtToken the JWT token
+   * @param installationId the installation ID
+   * @return a CompletableFuture with the installation token
+   */
+  private CompletableFuture<String> getInstallationToken(
+      final String jwtToken, final int installationId) {
 
     AccessToken installationToken = installationTokens.get(installationId);
 
     if (installationToken == null || isExpired(installationToken)) {
       log.info(
-          "Github token for installation {} is either expired or null. Trying to get a new one.",
+          "GitHub token for installation {} is either expired or null. Trying to get a new one.",
           installationId);
-      installationToken = generateInstallationToken(jwtToken, installationId);
-      installationTokens.put(installationId, installationToken);
+      return generateInstallationToken(jwtToken, installationId)
+          .thenApply(
+              accessToken -> {
+                installationTokens.put(installationId, accessToken);
+                return accessToken.token();
+              });
     }
-    return installationToken.token();
+    return completedFuture(installationToken.token());
   }
 
+  /**
+   * Check if the token is expired.
+   *
+   * @param token the access token
+   * @return true if the token is expired, false otherwise
+   */
   private boolean isExpired(final AccessToken token) {
     // Adds a few minutes to avoid making calls with an expired token due to clock differences
     return token.expiresAt().isBefore(ZonedDateTime.now().plusMinutes(EXPIRY_MARGIN_IN_MINUTES));
   }
 
-  private AccessToken generateInstallationToken(final String jwtToken, final int installationId)
-      throws Exception {
-    log.info("Got JWT Token. Now getting Github access_token for installation {}", installationId);
+  /**
+   * Generates the installation token for a given installation ID.
+   *
+   * @param jwtToken the JWT token
+   * @param installationId the installation ID
+   * @return a CompletableFuture with the access token
+   */
+  private CompletableFuture<AccessToken> generateInstallationToken(
+      final String jwtToken, final int installationId) {
+    log.info("Got JWT Token. Now getting GitHub access_token for installation {}", installationId);
     final String url = String.format(urlFor(GET_ACCESS_TOKEN_URL), installationId);
     final HttpRequest request =
         ImmutableHttpRequest.builder()
@@ -970,23 +1072,31 @@ public class GitHubClient {
             .body("")
             .build();
 
-    final HttpResponse response = this.client.send(request).toCompletableFuture().join();
+    return this.client
+        .send(request)
+        .thenApply(
+            response -> {
+              if (!response.isSuccessful()) {
+                throw new RuntimeException(
+                    String.format(
+                        "Got non-2xx status %s when getting an access token from GitHub: %s",
+                        response.statusCode(), response.statusMessage()));
+              }
 
-    if (!response.isSuccessful()) {
-      throw new Exception(
-          String.format(
-              "Got non-2xx status %s when getting an access token from GitHub: %s",
-              response.statusCode(), response.statusMessage()));
-    }
-
-    if (response.bodyString() == null) {
-      throw new Exception(
-          String.format(
-              "Got empty response body when getting an access token from GitHub, HTTP status was: %s",
-              response.statusMessage()));
-    }
-    final String text = response.bodyString();
-    return Json.create().fromJson(text, AccessToken.class);
+              if (response.bodyString() == null) {
+                throw new RuntimeException(
+                    String.format(
+                        "Got empty response body when getting an access token from GitHub, HTTP status was: %s",
+                        response.statusMessage()));
+              }
+              final String text = response.bodyString();
+              try {
+                return Json.create().fromJson(text, AccessToken.class);
+              } catch (IOException e) {
+                throw new RuntimeException(e);
+              }
+            })
+        .toCompletableFuture();
   }
 
   private CompletableFuture<HttpResponse> call(final HttpRequest httpRequest) {
@@ -995,6 +1105,14 @@ public class GitHubClient {
         .thenCompose(httpResponse -> handleResponse(httpRequest, httpResponse));
   }
 
+  /**
+   * Handle the response from the server. If the response is a redirect, redo the request with the
+   * new URL.
+   *
+   * @param httpRequest the original request
+   * @param httpResponse the response from the server
+   * @return a CompletableFuture with the processed response
+   */
   private CompletableFuture<HttpResponse> handleResponse(
       final HttpRequest httpRequest, final HttpResponse httpResponse) {
     final CompletableFuture<HttpResponse> future = new CompletableFuture<>();
@@ -1020,6 +1138,13 @@ public class GitHubClient {
     return future;
   }
 
+  /**
+   * Map the exception to a specific type based on the response status code.
+   *
+   * @param httpRequest the original request
+   * @param httpResponse the response from the server
+   * @return a RequestNotOkException with the appropriate type
+   */
   private RequestNotOkException mapException(
       final HttpRequest httpRequest, final HttpResponse httpResponse) throws IOException {
     String bodyString = Optional.ofNullable(httpResponse.bodyString()).orElse("");
@@ -1044,6 +1169,13 @@ public class GitHubClient {
         headersMap);
   }
 
+  /**
+   * Process possible redirects. If the response is a redirect, redo the request with the new URL.
+   *
+   * @param response the response to process
+   * @param redirected a flag to indicate if a redirect has already occurred
+   * @return a CompletableFuture with the processed response
+   */
   CompletableFuture<HttpResponse> processPossibleRedirects(
       final HttpResponse response, final AtomicBoolean redirected) {
     if (response.statusCode() >= PERMANENT_REDIRECT
@@ -1052,14 +1184,18 @@ public class GitHubClient {
       redirected.set(true);
       // redo the same request with a new URL
       final String newLocation = response.headers().get("Location").get(0);
-      final HttpRequest request =
-          requestBuilder(newLocation)
-              .url(newLocation)
-              .method(response.request().method())
-              .body(response.request().body())
-              .build();
-      // Do the new call and complete the original future when the new call completes
-      return call(request);
+      return requestBuilder(newLocation)
+          .thenCompose(
+              requestBuilder -> {
+                HttpRequest request =
+                    requestBuilder
+                        .url(newLocation)
+                        .method(response.request().method())
+                        .body(response.request().body())
+                        .build();
+                // Do the new call and complete the original future when the new call completes
+                return call(request);
+              });
     }
 
     return completedFuture(response);
