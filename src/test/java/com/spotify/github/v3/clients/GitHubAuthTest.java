@@ -180,10 +180,10 @@ public class GitHubAuthTest {
     RuntimeException ex =
         assertThrows(RuntimeException.class, () -> checksClient.getCheckRun(123).join());
 
-    assertThat(ex.getMessage(), is("Could not generate access token for github app"));
+    assertThat(ex.getCause().getMessage(), is("Could not generate access token for github app"));
 
-    assertThat(ex.getCause(), is(notNullValue()));
-    assertThat(ex.getCause().getMessage(), startsWith("Got non-2xx status 500 when getting an access token from GitHub"));
+    assertThat(ex.getCause().getCause(), is(notNullValue()));
+    assertThat(ex.getCause().getCause().getCause().getMessage(), startsWith("Got non-2xx status 500 when getting an access token from GitHub"));
 
     RecordedRequest recordedRequest = mockServer.takeRequest(1, TimeUnit.MILLISECONDS);
     // make sure it was the expected request that threw
