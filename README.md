@@ -45,7 +45,7 @@ To authenticate as a GitHub App, you must provide a private key and the App ID, 
 final GitHubClient githubClient =
   GitHubClient.create(
     URI.create("https://api.github.com/"),
-    new File("/path-to-the/private-key.pem"),
+    new File("/path-to-the/private-key.pem").toURI(),
     APP_ID);
 ```
 
