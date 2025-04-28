@@ -22,7 +22,11 @@ package com.spotify.github.v3.checks;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.spotify.github.GithubStyle;
+
+import java.util.List;
 import java.util.Optional;
+
+import com.spotify.github.v3.prs.PartialPullRequestItem;
 import org.immutables.value.Value;
 
 /** The CheckRun response resource. */
@@ -73,4 +77,10 @@ public interface CheckRunResponse extends CheckRunBase {
    * @return the optional
    */
   Optional<App> app();
+
+  /**
+   * Pull Requests where this check is applied.
+   * @return the list of pull requests
+   */
+  List<PartialPullRequestItem> pullRequests();
 }

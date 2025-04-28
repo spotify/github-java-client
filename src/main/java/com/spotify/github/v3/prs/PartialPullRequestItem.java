@@ -17,39 +17,36 @@
  * limitations under the License.
  * -/-/-
  */
-
-package com.spotify.github.v3.checks;
+package com.spotify.github.v3.prs;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.spotify.github.CloseTracking;
 import com.spotify.github.GithubStyle;
-
-import java.util.List;
-import java.util.Optional;
-
-import com.spotify.github.v3.prs.PartialPullRequestItem;
 import org.immutables.value.Value;
 
-/** GitHub CheckSuite */
+import javax.annotation.Nullable;
+import java.net.URI;
+
 @Value.Immutable
 @GithubStyle
-@JsonDeserialize(as = ImmutableCheckSuite.class)
-public interface CheckSuite {
-
-  /**
-   * The Check Suite id.
-   *
-   * @return the long id
-   */
+@JsonSerialize(as = ImmutablePartialPullRequestItem.class)
+@JsonDeserialize(as = ImmutablePartialPullRequestItem.class)
+public interface PartialPullRequestItem extends CloseTracking {
+  /** ID. */
   Long id();
 
-  Optional<App> app();
+  /** URL. */
+  URI url();
 
-  Optional<String> headBranch();
+  /** Number. */
+  Long number();
 
-  /**
-   * Pull Requests where this check suite is applied.
-   *
-   * @return the list of pull requests
-   */
-  List<PartialPullRequestItem> pullRequests();
+  /** Head reference. */
+  @Nullable
+  PullRequestRef head();
+
+  /** Base reference. */
+  @Nullable
+  PullRequestRef base();
 }
