@@ -23,7 +23,6 @@ package com.spotify.github.v3.prs;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.spotify.github.CloseTracking;
 import com.spotify.github.GitHubInstant;
 import com.spotify.github.GithubStyle;
 import com.spotify.github.v3.Milestone;
@@ -39,15 +38,7 @@ import org.immutables.value.Value;
 @GithubStyle
 @JsonSerialize(as = ImmutablePullRequestItem.class)
 @JsonDeserialize(as = ImmutablePullRequestItem.class)
-public interface PullRequestItem extends CloseTracking {
-
-  /** ID. */
-  @Nullable
-  Long id();
-
-  /** URL. */
-  @Nullable
-  URI url();
+public interface PullRequestItem extends PartialPullRequestItem {
 
   /** HTML URL. */
   @Nullable
@@ -68,10 +59,6 @@ public interface PullRequestItem extends CloseTracking {
   /** Commits URL. */
   @Nullable
   URI commitsUrl();
-
-  /** Number. */
-  @Nullable
-  Integer number();
 
   /** Either open, closed, or all to filter by state. Default: open. */
   @Nullable
@@ -99,14 +86,6 @@ public interface PullRequestItem extends CloseTracking {
 
   /** Merged date. */
   Optional<GitHubInstant> mergedAt();
-
-  /** Head reference. */
-  @Nullable
-  PullRequestRef head();
-
-  /** Base reference. */
-  @Nullable
-  PullRequestRef base();
 
   /** User. */
   @Nullable

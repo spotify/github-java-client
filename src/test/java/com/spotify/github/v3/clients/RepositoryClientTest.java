@@ -286,7 +286,7 @@ public class RepositoryClientTest {
         .thenReturn(fixture);
     final List<PullRequestItem> prs = repoClient.listPullRequestsForCommit("thesha").get();
     assertThat(prs.size(), is(1));
-    assertThat(prs.get(0).number(), is(1347));
+    assertThat(prs.get(0).number(), is(1347L));
   }
 
   @Test
