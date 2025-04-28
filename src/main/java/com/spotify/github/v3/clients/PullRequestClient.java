@@ -97,11 +97,23 @@ public class PullRequestClient {
   /**
    * Get a specific pull request.
    *
-   * @param number pull request number
+   * @deprecated Use {@link #get(long)} instead
+   * @param prNumber pull request number
    * @return pull request
    */
-  public CompletableFuture<PullRequest> get(final int number) {
-    final String path = String.format(PR_NUMBER_TEMPLATE, owner, repo, number);
+  @Deprecated
+  public CompletableFuture<PullRequest> get(final int prNumber) {
+    return get((long) prNumber);
+  }
+
+  /**
+   * Get a specific pull request.
+   *
+   * @param prNumber pull request number
+   * @return pull request
+   */
+  public CompletableFuture<PullRequest> get(final long prNumber) {
+    final String path = String.format(PR_NUMBER_TEMPLATE, owner, repo, prNumber);
     log.debug("Fetching pull request from " + path);
     return github.request(path, PullRequest.class);
   }
@@ -120,23 +132,50 @@ public class PullRequestClient {
   /**
    * Update given pull request.
    *
-   * @param number pull request number
+   * @deprecated Use {@link #update(long, PullRequestUpdate)} instead
+   * @param prNumber pull request number
    * @param request update request
    * @return pull request
    */
-  public CompletableFuture<PullRequest> update(final int number, final PullRequestUpdate request) {
-    final String path = String.format(PR_NUMBER_TEMPLATE, owner, repo, number);
+  @Deprecated
+  public CompletableFuture<PullRequest> update(
+      final int prNumber, final PullRequestUpdate request) {
+    return update((long) prNumber, request);
+  }
+
+  /**
+   * Update given pull request.
+   *
+   * @param prNumber pull request number
+   * @param request update request
+   * @return pull request
+   */
+  public CompletableFuture<PullRequest> update(
+      final long prNumber, final PullRequestUpdate request) {
+    final String path = String.format(PR_NUMBER_TEMPLATE, owner, repo, prNumber);
     return github.patch(path, github.json().toJsonUnchecked(request), PullRequest.class);
   }
 
   /**
    * List pull request commits.
    *
-   * @param number pull request number
+   * @deprecated Use {@link #listCommits(long)} instead
+   * @param prNumber pull request number
    * @return commits
    */
-  public CompletableFuture<List<CommitItem>> listCommits(final int number) {
-    final String path = String.format(PR_COMMITS_TEMPLATE, owner, repo, number);
+  @Deprecated
+  public CompletableFuture<List<CommitItem>> listCommits(final int prNumber) {
+    return listCommits((long) prNumber);
+  }
+
+  /**
+   * List pull request commits.
+   *
+   * @param prNumber pull request number
+   * @return commits
+   */
+  public CompletableFuture<List<CommitItem>> listCommits(final long prNumber) {
+    final String path = String.format(PR_COMMITS_TEMPLATE, owner, repo, prNumber);
     log.debug("Fetching pull request commits from " + path);
     return github.request(path, LIST_COMMIT_TYPE_REFERENCE);
   }
@@ -144,11 +183,23 @@ public class PullRequestClient {
   /**
    * List pull request reviews. Reviews are returned in chronological order.
    *
-   * @param number pull request number
+   * @deprecated Use {@link #listReviews(long)} instead
+   * @param prNumber pull request number
    * @return list of reviews
    */
-  public CompletableFuture<List<Review>> listReviews(final int number) {
-    final String path = String.format(PR_REVIEWS_TEMPLATE, owner, repo, number);
+  @Deprecated
+  public CompletableFuture<List<Review>> listReviews(final int prNumber) {
+    return listReviews((long) prNumber);
+  }
+
+  /**
+   * List pull request reviews. Reviews are returned in chronological order.
+   *
+   * @param prNumber pull request number
+   * @return list of reviews
+   */
+  public CompletableFuture<List<Review>> listReviews(final long prNumber) {
+    final String path = String.format(PR_REVIEWS_TEMPLATE, owner, repo, prNumber);
     log.debug("Fetching pull request reviews from " + path);
     return github.request(path, LIST_REVIEW_TYPE_REFERENCE);
   }
@@ -156,13 +207,26 @@ public class PullRequestClient {
   /**
    * List pull request reviews paginated. Reviews are returned in chronological order.
    *
-   * @param number pull request number
-   * @param itemsPerPage number of items per page
+   * @deprecated Use {@link #listReviews(long,long)} instead
+   * @param prNumber pull request number
+   * @param itemsPerPage prNumber of items per page
    * @return iterator of reviews
    */
-  public Iterator<AsyncPage<Review>> listReviews(final int number, final int itemsPerPage) {
+  @Deprecated
+  public Iterator<AsyncPage<Review>> listReviews(final int prNumber, final int itemsPerPage) {
+    return listReviews((long) prNumber, itemsPerPage);
+  }
+
+  /**
+   * List pull request reviews paginated. Reviews are returned in chronological order.
+   *
+   * @param prNumber pull request number
+   * @param itemsPerPage prNumber of items per page
+   * @return iterator of reviews
+   */
+  public Iterator<AsyncPage<Review>> listReviews(final long prNumber, final long itemsPerPage) {
     // FIXME Use itemsPerPage property
-    final String path = String.format(PR_REVIEWS_TEMPLATE, owner, repo, number);
+    final String path = String.format(PR_REVIEWS_TEMPLATE, owner, repo, prNumber);
     log.debug("Fetching pull request reviews from " + path);
     return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_REVIEW_TYPE_REFERENCE));
   }
@@ -170,13 +234,27 @@ public class PullRequestClient {
   /**
    * Creates a review for a pull request.
    *
-   * @param number pull request number
+   * @deprecated Use {@link #createReview(long,ReviewParameters)} instead
+   * @param prNumber pull request number
+   * @param properties properties for reviewing the PR, such as sha, body and event
+   * @see "https://developer.github.com/v3/pulls/reviews/#create-a-review-for-a-pull-request"
+   */
+  @Deprecated
+  public CompletableFuture<Review> createReview(
+      final int prNumber, final ReviewParameters properties) {
+    return createReview((long) prNumber, properties);
+  }
+
+  /**
+   * Creates a review for a pull request.
+   *
+   * @param prNumber pull request number
    * @param properties properties for reviewing the PR, such as sha, body and event
    * @see "https://developer.github.com/v3/pulls/reviews/#create-a-review-for-a-pull-request"
    */
   public CompletableFuture<Review> createReview(
-      final int number, final ReviewParameters properties) {
-    final String path = String.format(PR_REVIEWS_TEMPLATE, owner, repo, number);
+      final long prNumber, final ReviewParameters properties) {
+    final String path = String.format(PR_REVIEWS_TEMPLATE, owner, repo, prNumber);
     final String jsonPayload = github.json().toJsonUnchecked(properties);
     log.debug("Creating review for PR: " + path);
     return github.post(path, jsonPayload, Review.class);
@@ -185,11 +263,23 @@ public class PullRequestClient {
   /**
    * List pull request requested reviews.
    *
-   * @param number pull request number
+   * @deprecated Use {@link #listReviewRequests(long)} instead
+   * @param prNumber pull request number
    * @return list of reviews
    */
-  public CompletableFuture<ReviewRequests> listReviewRequests(final int number) {
-    final String path = String.format(PR_REVIEW_REQUESTS_TEMPLATE, owner, repo, number);
+  @Deprecated
+  public CompletableFuture<ReviewRequests> listReviewRequests(final int prNumber) {
+    return listReviewRequests((long) prNumber);
+  }
+
+  /**
+   * List pull request requested reviews.
+   *
+   * @param prNumber pull request number
+   * @return list of reviews
+   */
+  public CompletableFuture<ReviewRequests> listReviewRequests(final long prNumber) {
+    final String path = String.format(PR_REVIEW_REQUESTS_TEMPLATE, owner, repo, prNumber);
     log.debug("Fetching pull request requested reviews from " + path);
     return github.request(path, LIST_REVIEW_REQUEST_TYPE_REFERENCE);
   }
@@ -197,13 +287,27 @@ public class PullRequestClient {
   /**
    * Requests a review for a pull request.
    *
-   * @param number pull request number
+   * @deprecated Use {@link #requestReview(long,RequestReviewParameters)} instead
+   * @param prNumber pull request number
+   * @param properties properties for reviewing the PR, such as reviewers and team_reviewers.
+   * @see "https://docs.github.com/en/rest/reference/pulls#request-reviewers-for-a-pull-request"
+   */
+  @Deprecated
+  public CompletableFuture<PullRequest> requestReview(
+      final int prNumber, final RequestReviewParameters properties) {
+    return requestReview((long) prNumber, properties);
+  }
+
+  /**
+   * Requests a review for a pull request.
+   *
+   * @param prNumber pull request number
    * @param properties properties for reviewing the PR, such as reviewers and team_reviewers.
    * @see "https://docs.github.com/en/rest/reference/pulls#request-reviewers-for-a-pull-request"
    */
   public CompletableFuture<PullRequest> requestReview(
-      final int number, final RequestReviewParameters properties) {
-    final String path = String.format(PR_REVIEW_REQUESTS_TEMPLATE, owner, repo, number);
+      final long prNumber, final RequestReviewParameters properties) {
+    final String path = String.format(PR_REVIEW_REQUESTS_TEMPLATE, owner, repo, prNumber);
     final String jsonPayload = github.json().toJsonUnchecked(properties);
     log.debug("Requesting reviews for PR: " + path);
     return github.post(path, jsonPayload, PullRequest.class);
@@ -212,13 +316,27 @@ public class PullRequestClient {
   /**
    * Remove a request for review for a pull request.
    *
-   * @param number pull request number
+   * @deprecated Use {@link #removeRequestedReview(long,RequestReviewParameters)} instead
+   * @param prNumber pull request number
+   * @param properties properties for reviewing the PR, such as reviewers and team_reviewers.
+   * @see "https://docs.github.com/en/rest/reference/pulls#request-reviewers-for-a-pull-request"
+   */
+  @Deprecated
+  public CompletableFuture<Void> removeRequestedReview(
+      final int prNumber, final RequestReviewParameters properties) {
+    return removeRequestedReview((long) prNumber, properties);
+  }
+
+  /**
+   * Remove a request for review for a pull request.
+   *
+   * @param prNumber pull request number
    * @param properties properties for reviewing the PR, such as reviewers and team_reviewers.
    * @see "https://docs.github.com/en/rest/reference/pulls#request-reviewers-for-a-pull-request"
    */
   public CompletableFuture<Void> removeRequestedReview(
-      final int number, final RequestReviewParameters properties) {
-    final String path = String.format(PR_REVIEW_REQUESTS_TEMPLATE, owner, repo, number);
+      final long prNumber, final RequestReviewParameters properties) {
+    final String path = String.format(PR_REVIEW_REQUESTS_TEMPLATE, owner, repo, prNumber);
     final String jsonPayload = github.json().toJsonUnchecked(properties);
     log.debug("Removing requested reviews for PR: " + path);
     return github.delete(path, jsonPayload).thenAccept(IGNORE_RESPONSE_CONSUMER);
@@ -227,19 +345,50 @@ public class PullRequestClient {
   /**
    * Merges a pull request.
    *
-   * @param number pull request number
+   * @deprecated Use {@link #merge(long,MergeParameters)} instead
+   * @param prNumber pull request number
    * @param properties the properties on merging the PR, such as title, message and sha
    * @see "https://developer.github.com/v3/pulls/#merge-a-pull-request-merge-button"
    */
-  public CompletableFuture<Void> merge(final int number, final MergeParameters properties) {
-    final String path = String.format(PR_NUMBER_TEMPLATE + "/merge", owner, repo, number);
+  @Deprecated
+  public CompletableFuture<Void> merge(final int prNumber, final MergeParameters properties) {
+    return merge((long) prNumber, properties);
+  }
+
+  /**
+   * Merges a pull request.
+   *
+   * @param prNumber pull request number
+   * @param properties the properties on merging the PR, such as title, message and sha
+   * @see "https://developer.github.com/v3/pulls/#merge-a-pull-request-merge-button"
+   */
+  public CompletableFuture<Void> merge(final long prNumber, final MergeParameters properties) {
+    final String path = String.format(PR_NUMBER_TEMPLATE + "/merge", owner, repo, prNumber);
     final String jsonPayload = github.json().toJsonUnchecked(properties);
     log.debug("Merging pr, running: {}", path);
     return github.put(path, jsonPayload).thenAccept(IGNORE_RESPONSE_CONSUMER);
   }
 
-  public CompletableFuture<Reader> patch(final int number) {
-    final String path = String.format(PR_NUMBER_TEMPLATE, owner, repo, number);
+  /**
+   * Fetches a pull request patch.
+   *
+   * @deprecated Use {@link #patch(long)} instead
+   * @param prNumber pull request number
+   * @return reader for the patch
+   */
+  @Deprecated
+  public CompletableFuture<Reader> patch(final int prNumber) {
+    return patch((long) prNumber);
+  }
+
+  /**
+   * Fetches a pull request patch.
+   *
+   * @param prNumber pull request number
+   * @return reader for the patch
+   */
+  public CompletableFuture<Reader> patch(final long prNumber) {
+    final String path = String.format(PR_NUMBER_TEMPLATE, owner, repo, prNumber);
     final Map<String, String> extraHeaders =
         ImmutableMap.of(HttpHeaders.ACCEPT, "application/vnd.github.patch");
     log.debug("Fetching pull request patch from " + path);
@@ -255,8 +404,26 @@ public class PullRequestClient {
             });
   }
 
-  public CompletableFuture<Reader> diff(final int number) {
-    final String path = String.format(PR_NUMBER_TEMPLATE, owner, repo, number);
+  /**
+   * Fetches a pull request diff.
+   *
+   * @deprecated Use {@link #diff(long)} instead
+   * @param prNumber pull request number
+   * @return reader for the diff
+   */
+  @Deprecated
+  public CompletableFuture<Reader> diff(final int prNumber) {
+    return diff((long) prNumber);
+  }
+
+  /**
+   * Fetches a pull request diff.
+   *
+   * @param prNumber pull request number
+   * @return reader for the diff
+   */
+  public CompletableFuture<Reader> diff(final long prNumber) {
+    final String path = String.format(PR_NUMBER_TEMPLATE, owner, repo, prNumber);
     final Map<String, String> extraHeaders =
         ImmutableMap.of(HttpHeaders.ACCEPT, "application/vnd.github.diff");
     log.debug("Fetching pull diff from " + path);
@@ -272,6 +439,12 @@ public class PullRequestClient {
             });
   }
 
+  /**
+   * List pull requests using given parameters.
+   *
+   * @param parameterPath request parameters
+   * @return pull requests
+   */
   private CompletableFuture<List<PullRequestItem>> list(final String parameterPath) {
     final String path = String.format(PR_TEMPLATE + parameterPath, owner, repo);
     log.debug("Fetching pull requests from " + path);

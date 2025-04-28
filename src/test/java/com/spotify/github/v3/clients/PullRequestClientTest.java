@@ -136,7 +136,7 @@ public class PullRequestClientTest {
     final PullRequestUpdate request = ImmutablePullRequestUpdate.builder().title(title).body(body)
         .build();
 
-    final CompletableFuture<PullRequest> result = pullRequestClient.update(1, request);
+    final CompletableFuture<PullRequest> result = pullRequestClient.update(1L, request);
 
     capture.getValue().onResponse(call, response);
 
@@ -170,7 +170,7 @@ public class PullRequestClientTest {
         PullRequestClient.create(github, "owner", "repo");
 
     final CompletableFuture<ReviewRequests> result =
-        pullRequestClient.listReviewRequests(1);
+        pullRequestClient.listReviewRequests(1L);
 
     capture.getValue().onResponse(call, response);
 
@@ -203,7 +203,7 @@ public class PullRequestClientTest {
         PullRequestClient.create(github, "owner", "repo");
 
     CompletableFuture<Void> result =
-        pullRequestClient.removeRequestedReview(1, ImmutableRequestReviewParameters.builder()
+        pullRequestClient.removeRequestedReview(1L, ImmutableRequestReviewParameters.builder()
             .reviewers(ImmutableList.of("user1", "user2"))
             .build());
 
@@ -234,7 +234,7 @@ public class PullRequestClientTest {
         PullRequestClient.create(github, "owner", "repo");
 
     CompletableFuture<Void> result =
-        pullRequestClient.removeRequestedReview(1, ImmutableRequestReviewParameters.builder()
+        pullRequestClient.removeRequestedReview(1L, ImmutableRequestReviewParameters.builder()
             .reviewers(ImmutableList.of("user1", "user2"))
             .build());
 
@@ -268,7 +268,7 @@ public class PullRequestClientTest {
         PullRequestClient.create(github, "owner", "repo");
 
     final CompletableFuture<Reader> result =
-        pullRequestClient.patch(1);
+        pullRequestClient.patch(1L);
 
     capture.getValue().onResponse(call, response);
 
@@ -301,7 +301,7 @@ public class PullRequestClientTest {
         PullRequestClient.create(github, "owner", "repo");
 
     final CompletableFuture<Reader> result =
-        pullRequestClient.diff(1);
+        pullRequestClient.diff(1L);
 
     capture.getValue().onResponse(call, response);
 
