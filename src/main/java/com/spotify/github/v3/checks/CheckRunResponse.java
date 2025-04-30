@@ -80,7 +80,7 @@ public interface CheckRunResponse extends CheckRunBase {
 
   /**
    * Pull Requests where this check is applied.
-   * @return the list of pull requests
+   * @return the optional of list of pull requests
    */
-  List<PartialPullRequestItem> pullRequests();
+  Optional<List<PartialPullRequestItem>> pullRequests();
 }
