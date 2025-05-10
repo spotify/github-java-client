@@ -73,18 +73,18 @@ final class PKCS1PEMKey {
    * @param isPKCS1 whether this is PKCS1 format (needs conversion to PKCS8)
    * @return an Optional containing the KeySpec if successful
    */
-  private static Optional<KeySpec> extractKeySpec(String base64Content, boolean isPKCS1) {
+  private static Optional<KeySpec> extractKeySpec(final String base64Content, final boolean isPKCS1) {
     try {
       // Remove all whitespace
-      base64Content = base64Content.replaceAll("\\s+", "");
+      String sanitizedContent = base64Content.replaceAll("\\s+", "");
 
       // Check if content is empty after whitespace removal
-      if (base64Content.isEmpty()) {
+      if (sanitizedContent.isEmpty()) {
         return Optional.empty();
       }
 
       // Decode the base64 content
-      byte[] decodedKey = Base64.getDecoder().decode(base64Content);
+      byte[] decodedKey = Base64.getDecoder().decode(sanitizedContent);
 
       // Convert to PKCS8 if necessary
       byte[] pkcs8Key = isPKCS1 ? toPkcs8(decodedKey) : decodedKey;
