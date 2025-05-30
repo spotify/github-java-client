@@ -3,6 +3,7 @@
   "comment": {
     "url": "https://api.github.com/repos/baxterthehacker/public-repo/pulls/comments/29724692",
     "id": 29724692,
+    "node_id": "abc234",
     "diff_hunk": "@@ -1 +1 @@\n-# public-repo",
     "path": "README.md",
     "position": 1,

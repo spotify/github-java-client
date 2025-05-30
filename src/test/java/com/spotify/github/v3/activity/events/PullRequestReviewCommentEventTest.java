@@ -20,15 +20,16 @@
 
 package com.spotify.github.v3.activity.events;
 
-import static com.google.common.io.Resources.getResource;
+import java.io.IOException;
 import static java.nio.charset.Charset.defaultCharset;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.io.Resources;
+import static com.google.common.io.Resources.getResource;
 import com.spotify.github.jackson.Json;
-import java.io.IOException;
-import org.junit.jupiter.api.Test;
 
 public class PullRequestReviewCommentEventTest {
   @Test
@@ -41,6 +42,7 @@ public class PullRequestReviewCommentEventTest {
         Json.create().fromJson(fixture, PullRequestReviewCommentEvent.class);
     assertThat(event.action(), is("created"));
     assertThat(event.comment().id(), is(29724692L));
+    assertThat(event.comment().nodeId(), is("abc234"));
     assertThat(event.pullRequest().nodeId(), is("abc123"));
     assertThat(event.comment().body(), is("Maybe you should use more emojji on this line."));
   }
