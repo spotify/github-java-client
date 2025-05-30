@@ -32,7 +32,9 @@
       {
         "url": "https://api.github.com/repos/baxterthehacker/public-repo/labels/bug",
         "name": "bug",
-        "color": "fc2929"
+        "color": "fc2929",
+        "default": false,
+        "id": 208045946
       }
     ],
     "state": "open",
@@ -50,6 +52,7 @@
     "html_url": "https://github.com/baxterthehacker/public-repo/issues/2#issuecomment-99262140",
     "issue_url": "https://api.github.com/repos/baxterthehacker/public-repo/issues/2",
     "id": 99262140,
+    "node_id": "asd123",
     "user": {
       "login": "baxterthehacker",
       "id": 6752317,
