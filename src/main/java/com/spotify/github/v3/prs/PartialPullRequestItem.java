@@ -34,12 +34,15 @@ import java.net.URI;
 @JsonDeserialize(as = ImmutablePartialPullRequestItem.class)
 public interface PartialPullRequestItem extends CloseTracking {
   /** ID. */
+  @Nullable
   Long id();
 
   /** URL. */
+  @Nullable
   URI url();
 
   /** Number. */
+  @Nullable
   Long number();
 
   /** Head reference. */
