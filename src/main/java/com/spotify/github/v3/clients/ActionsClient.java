@@ -43,4 +43,13 @@ public class ActionsClient {
   public WorkflowsClient createWorkflowsClient() {
     return WorkflowsClient.create(github, owner, repo);
   }
+
+  /**
+   * Workflow Jobs API client
+   *
+   * @return WorkflowJobs API client
+   */
+  public WorkflowJobsClient createWorkflowJobsClient() {
+    return WorkflowJobsClient.create(github, owner, repo);
+  }
 }
