@@ -371,5 +371,6 @@ public class PullRequestClientTest {
     assertThat(comment.line(), is(2));
     assertThat(comment.originalLine(), is(2));
     assertThat(comment.side(), is("RIGHT"));
+    assertThat(comment.pullRequestReviewId(), is(42L));
   }
 }

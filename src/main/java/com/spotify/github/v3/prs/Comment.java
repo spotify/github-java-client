@@ -129,4 +129,8 @@ public interface Comment extends UpdateTracking {
   /** Node ID */
   @Nullable
   String nodeId();
+
+  /** Pull request review ID. */
+  @Nullable
+  Long pullRequestReviewId();
 }
