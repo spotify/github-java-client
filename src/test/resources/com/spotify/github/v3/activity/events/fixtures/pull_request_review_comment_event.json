@@ -3,6 +3,7 @@
   "comment": {
     "url": "https://api.github.com/repos/baxterthehacker/public-repo/pulls/comments/29724692",
     "id": 29724692,
+    "node_id": "abc234",
     "diff_hunk": "@@ -1 +1 @@\n-# public-repo",
     "path": "README.md",
     "position": 1,
@@ -48,6 +49,7 @@
   "pull_request": {
     "url": "https://api.github.com/repos/baxterthehacker/public-repo/pulls/1",
     "id": 34778301,
+    "node_id": "abc123",
     "html_url": "https://github.com/baxterthehacker/public-repo/pull/1",
     "diff_url": "https://github.com/baxterthehacker/public-repo/pull/1.diff",
     "patch_url": "https://github.com/baxterthehacker/public-repo/pull/1.patch",
