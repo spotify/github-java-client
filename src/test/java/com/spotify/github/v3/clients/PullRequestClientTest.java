@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,17 +20,31 @@
 
 package com.spotify.github.v3.clients;
 
-import static com.google.common.io.Resources.getResource;
+import java.io.IOException;
+import java.io.Reader;
+import java.net.URI;
 import static java.nio.charset.Charset.defaultCharset;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
+import org.apache.commons.io.IOUtils;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
+import static com.google.common.io.Resources.getResource;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
+import com.spotify.github.v3.prs.Comment;
 import com.spotify.github.v3.prs.ImmutableRequestReviewParameters;
 import com.spotify.github.v3.prs.PullRequest;
 import com.spotify.github.v3.prs.ReviewRequests;
@@ -38,16 +52,15 @@ import com.spotify.github.v3.prs.requests.ImmutablePullRequestCreate;
 import com.spotify.github.v3.prs.requests.ImmutablePullRequestUpdate;
 import com.spotify.github.v3.prs.requests.PullRequestCreate;
 import com.spotify.github.v3.prs.requests.PullRequestUpdate;
-import java.io.IOException;
-import java.io.Reader;
-import java.net.URI;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import okhttp3.*;
-import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Protocol;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 public class PullRequestClientTest {
 
@@ -308,5 +321,55 @@ public class PullRequestClientTest {
     Reader diffReader = result.get();
 
     assertEquals(getFixture("diff.txt"), IOUtils.toString(diffReader));
+  }
+
+  @Test
+  public void testCreateCommentReply() throws Throwable {
+    final Call call = mock(Call.class);
+    final ArgumentCaptor<Callback> capture = ArgumentCaptor.forClass(Callback.class);
+    doNothing().when(call).enqueue(capture.capture());
+
+    final Response response =
+        new Response.Builder()
+            .code(201)
+            .protocol(Protocol.HTTP_1_1)
+            .message("Created")
+            .body(
+                ResponseBody.create(
+                    MediaType.get("application/json"),
+                    getFixture("pull_request_review_comment_reply.json")))
+            .request(new Request.Builder().url("http://localhost/").build())
+            .build();
+
+    when(client.newCall(any())).thenReturn(call);
+
+    final PullRequestClient pullRequestClient =
+        PullRequestClient.create(github, "owner", "repo");
+
+    final String replyBody = "Thanks for the feedback!";
+    final CompletableFuture<Comment> result =
+        pullRequestClient.createCommentReply(1L, 123L, replyBody);
+
+    capture.getValue().onResponse(call, response);
+
+    Comment comment = result.get();
+
+    assertThat(comment.body(), is("Great stuff!"));
+    assertThat(comment.id(), is(10L));
+    assertThat(comment.diffHunk(), is("@@ -16,33 +16,40 @@ public class Connection : IConnection..."));
+    assertThat(comment.path(), is("file1.txt"));
+    assertThat(comment.position(), is(1));
+    assertThat(comment.originalPosition(), is(4));
+    assertThat(comment.commitId(), is("6dcb09b5b57875f334f61aebed695e2e4193db5e"));
+    assertThat(comment.originalCommitId(), is("9c48853fa3dc5c1c3d6f1f1cd1f2743e72652840"));
+    assertThat(comment.inReplyToId(), is(426899381L));
+    assertThat(comment.authorAssociation(), is("NONE"));
+    assertThat(comment.user().login(), is("octocat"));
+    assertThat(comment.startLine(), is(1));
+    assertThat(comment.originalStartLine(), is(1));
+    assertThat(comment.startSide(), is("RIGHT"));
+    assertThat(comment.line(), is(2));
+    assertThat(comment.originalLine(), is(2));
+    assertThat(comment.side(), is("RIGHT"));
   }
 }

@@ -20,32 +20,40 @@
 
 package com.spotify.github.v3.clients;
 
-import static com.spotify.github.v3.clients.GitHubClient.IGNORE_RESPONSE_CONSUMER;
-import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERENCE;
-import static com.spotify.github.v3.clients.GitHubClient.LIST_PR_TYPE_REFERENCE;
-import static com.spotify.github.v3.clients.GitHubClient.LIST_REVIEW_REQUEST_TYPE_REFERENCE;
-import static com.spotify.github.v3.clients.GitHubClient.LIST_REVIEW_TYPE_REFERENCE;
-import static java.util.Objects.isNull;
-
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableMap;
-import com.spotify.github.async.AsyncPage;
-import com.spotify.github.v3.prs.*;
-import com.spotify.github.v3.prs.requests.PullRequestCreate;
-import com.spotify.github.v3.prs.requests.PullRequestParameters;
-import com.spotify.github.v3.prs.requests.PullRequestUpdate;
-import com.spotify.github.v3.repos.CommitItem;
-
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.invoke.MethodHandles;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import static java.util.Objects.isNull;
 import java.util.concurrent.CompletableFuture;
+
 import javax.ws.rs.core.HttpHeaders;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
+import com.spotify.github.async.AsyncPage;
+import static com.spotify.github.v3.clients.GitHubClient.IGNORE_RESPONSE_CONSUMER;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERENCE;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_PR_TYPE_REFERENCE;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_REVIEW_REQUEST_TYPE_REFERENCE;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_REVIEW_TYPE_REFERENCE;
+import com.spotify.github.v3.prs.Comment;
+import com.spotify.github.v3.prs.MergeParameters;
+import com.spotify.github.v3.prs.PullRequest;
+import com.spotify.github.v3.prs.PullRequestItem;
+import com.spotify.github.v3.prs.RequestReviewParameters;
+import com.spotify.github.v3.prs.Review;
+import com.spotify.github.v3.prs.ReviewParameters;
+import com.spotify.github.v3.prs.ReviewRequests;
+import com.spotify.github.v3.prs.requests.PullRequestCreate;
+import com.spotify.github.v3.prs.requests.PullRequestParameters;
+import com.spotify.github.v3.prs.requests.PullRequestUpdate;
+import com.spotify.github.v3.repos.CommitItem;
 
 /** Pull call API client */
 public class PullRequestClient {
@@ -57,6 +65,8 @@ public class PullRequestClient {
   private static final String PR_REVIEWS_TEMPLATE = "/repos/%s/%s/pulls/%s/reviews";
   private static final String PR_REVIEW_REQUESTS_TEMPLATE =
       "/repos/%s/%s/pulls/%s/requested_reviewers";
+  private static final String PR_COMMENT_REPLIES_TEMPLATE =
+      "/repos/%s/%s/pulls/%s/comments/%s/replies";
 
   private final GitHubClient github;
   private final String owner;
@@ -449,5 +459,24 @@ public class PullRequestClient {
     final String path = String.format(PR_TEMPLATE + parameterPath, owner, repo);
     log.debug("Fetching pull requests from " + path);
     return github.request(path, LIST_PR_TYPE_REFERENCE);
+  }
+
+  /**
+   * Creates a reply to a pull request review comment.
+   *
+   * @param prNumber pull request number
+   * @param commentId the ID of the comment to reply to
+   * @param body the reply message
+   * @return the created comment
+   * @see "https://docs.github.com/en/rest/pulls/comments#create-a-reply-for-a-review-comment"
+   */
+  public CompletableFuture<Comment> createCommentReply(
+      final long prNumber, final long commentId, final String body) {
+    final String path =
+        String.format(PR_COMMENT_REPLIES_TEMPLATE, owner, repo, prNumber, commentId);
+    final Map<String, String> payload = ImmutableMap.of("body", body);
+    final String jsonPayload = github.json().toJsonUnchecked(payload);
+    log.debug("Creating reply to PR comment: " + path);
+    return github.post(path, jsonPayload, Comment.class);
   }
 }
