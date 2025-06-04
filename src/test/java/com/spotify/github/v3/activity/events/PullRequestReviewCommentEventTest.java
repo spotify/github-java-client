@@ -45,5 +45,16 @@ public class PullRequestReviewCommentEventTest {
     assertThat(event.comment().nodeId(), is("abc234"));
     assertThat(event.pullRequest().nodeId(), is("abc123"));
     assertThat(event.comment().body(), is("Maybe you should use more emojji on this line."));
+    assertThat(event.comment().originalCommitId(), is("0d1a26e67d8f5eaf1f6ba5c57fc3c7d91ac0fd1c"));
+    assertThat(event.comment().originalLine(), is(1));
+    assertThat(event.comment().originalPosition(), is(1));
+    assertThat(event.comment().originalStartLine(), is(1));
+    assertThat(event.comment().line(), is(1));
+    assertThat(event.comment().side(), is("RIGHT"));
+    assertThat(event.comment().startLine(), is(1));
+    assertThat(event.comment().startSide(), is("RIGHT"));
+    assertThat(event.comment().authorAssociation(), is("NONE"));
+    assertThat(event.comment().pullRequestReviewId(), is(42L));
+    assertThat(event.comment().inReplyToId(), is(426899381L));
   }
 }

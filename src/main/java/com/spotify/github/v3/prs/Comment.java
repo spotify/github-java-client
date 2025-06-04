@@ -73,7 +73,6 @@ public interface Comment extends UpdateTracking {
   /** Base commit sha. */
   @Nullable
   String originalCommitId();
-
   /** Comment author. */
   @Nullable
   User user();
@@ -81,6 +80,38 @@ public interface Comment extends UpdateTracking {
   /** The text of the comment. */
   @Nullable
   String body();
+
+  /** The ID of the comment to reply to. */
+  @Nullable
+  Long inReplyToId();
+
+  /** The author association of the comment. */
+  @Nullable
+  String authorAssociation();
+
+  /** The starting line number in the diff. */
+  @Nullable
+  Integer startLine();
+
+  /** The starting line number in the original file. */
+  @Nullable
+  Integer originalStartLine();
+
+  /** The side of the diff where the starting line is from. */
+  @Nullable
+  String startSide();
+
+  /** The line number in the diff. */
+  @Nullable
+  Integer line();
+
+  /** The line number in the original file. */
+  @Nullable
+  Integer originalLine();
+
+  /** The side of the diff where the line is from. */
+  @Nullable
+  String side();
 
   /** Comment URL. */
   @Nullable
@@ -98,4 +129,8 @@ public interface Comment extends UpdateTracking {
   /** Node ID */
   @Nullable
   String nodeId();
+
+  /** Pull request review ID. */
+  @Nullable
+  Long pullRequestReviewId();
 }
