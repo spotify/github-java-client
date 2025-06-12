@@ -20,28 +20,18 @@
 
 package com.spotify.github.v3.clients;
 
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.lang.invoke.MethodHandles;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import static com.spotify.github.v3.clients.GitHubClient.IGNORE_RESPONSE_CONSUMER;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERENCE;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_FILE_ITEMS;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_PR_TYPE_REFERENCE;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_REVIEW_REQUEST_TYPE_REFERENCE;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_REVIEW_TYPE_REFERENCE;
 import static java.util.Objects.isNull;
-import java.util.concurrent.CompletableFuture;
-
-import javax.ws.rs.core.HttpHeaders;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.spotify.github.async.AsyncPage;
-import static com.spotify.github.v3.clients.GitHubClient.IGNORE_RESPONSE_CONSUMER;
-import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERENCE;
-import static com.spotify.github.v3.clients.GitHubClient.LIST_PR_TYPE_REFERENCE;
-import static com.spotify.github.v3.clients.GitHubClient.LIST_REVIEW_REQUEST_TYPE_REFERENCE;
-import static com.spotify.github.v3.clients.GitHubClient.LIST_REVIEW_TYPE_REFERENCE;
+import com.spotify.github.v3.git.FileItem;
 import com.spotify.github.v3.prs.Comment;
 import com.spotify.github.v3.prs.MergeParameters;
 import com.spotify.github.v3.prs.PullRequest;
@@ -54,6 +44,16 @@ import com.spotify.github.v3.prs.requests.PullRequestCreate;
 import com.spotify.github.v3.prs.requests.PullRequestParameters;
 import com.spotify.github.v3.prs.requests.PullRequestUpdate;
 import com.spotify.github.v3.repos.CommitItem;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.lang.invoke.MethodHandles;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import javax.ws.rs.core.HttpHeaders;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Pull call API client */
 public class PullRequestClient {
@@ -63,6 +63,7 @@ public class PullRequestClient {
   private static final String PR_NUMBER_TEMPLATE = "/repos/%s/%s/pulls/%s";
   private static final String PR_COMMITS_TEMPLATE = "/repos/%s/%s/pulls/%s/commits";
   private static final String PR_REVIEWS_TEMPLATE = "/repos/%s/%s/pulls/%s/reviews";
+  private static final String PR_CHANGED_FILES_TEMPLATE = "/repos/%s/%s/pulls/%s/files";
   private static final String PR_REVIEW_REQUESTS_TEMPLATE =
       "/repos/%s/%s/pulls/%s/requested_reviewers";
   private static final String PR_COMMENT_REPLIES_TEMPLATE =
@@ -447,6 +448,11 @@ public class PullRequestClient {
               }
               return new InputStreamReader(body);
             });
+  }
+
+  public Iterator<AsyncPage<FileItem>> changedFiles(final long prNumber) {
+    final String path = String.format(PR_CHANGED_FILES_TEMPLATE, owner, repo, prNumber);
+    return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_FILE_ITEMS));
   }
 
   /**
