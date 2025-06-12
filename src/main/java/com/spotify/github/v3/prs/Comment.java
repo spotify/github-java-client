@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -73,7 +73,6 @@ public interface Comment extends UpdateTracking {
   /** Base commit sha. */
   @Nullable
   String originalCommitId();
-
   /** Comment author. */
   @Nullable
   User user();
@@ -81,6 +80,38 @@ public interface Comment extends UpdateTracking {
   /** The text of the comment. */
   @Nullable
   String body();
+
+  /** The ID of the comment to reply to. */
+  @Nullable
+  Long inReplyToId();
+
+  /** The author association of the comment. */
+  @Nullable
+  String authorAssociation();
+
+  /** The starting line number in the diff. */
+  @Nullable
+  Integer startLine();
+
+  /** The starting line number in the original file. */
+  @Nullable
+  Integer originalStartLine();
+
+  /** The side of the diff where the starting line is from. */
+  @Nullable
+  String startSide();
+
+  /** The line number in the diff. */
+  @Nullable
+  Integer line();
+
+  /** The line number in the original file. */
+  @Nullable
+  Integer originalLine();
+
+  /** The side of the diff where the line is from. */
+  @Nullable
+  String side();
 
   /** Comment URL. */
   @Nullable
@@ -94,4 +125,12 @@ public interface Comment extends UpdateTracking {
   @Nullable
   @JsonProperty("_links")
   CommentLinks links();
+
+  /** Node ID */
+  @Nullable
+  String nodeId();
+
+  /** Pull request review ID. */
+  @Nullable
+  Long pullRequestReviewId();
 }
