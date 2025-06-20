@@ -28,6 +28,7 @@ import static org.hamcrest.core.Is.is;
 import com.google.common.io.Resources;
 import com.spotify.github.jackson.Json;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -47,6 +48,8 @@ public class PullRequestTest {
     assertThat(pr.deletions(), is(3));
     assertThat(pr.changedFiles(), is(5));
     assertThat(pr.draft(), is(Optional.of(false)));
+    assertThat(Objects.requireNonNull(pr.labels()).size(), is(1));
+    assertThat(Objects.requireNonNull(pr.labels()).get(0).name(), is("bug"));
   }
 
   @Test
