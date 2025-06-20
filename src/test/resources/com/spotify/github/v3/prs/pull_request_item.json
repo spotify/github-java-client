@@ -348,9 +348,13 @@
   },
   "labels": [
     {
+      "id": 600797884,
+      "node_id": "MDU6TGFiZWw2MDA3OTc4ODQ=",
       "url": "https://api.github.com/repos/octocat/Hello-World/labels/bug",
       "name": "bug",
-      "color": "f29513"
+      "color": "c5def5",
+      "default": true,
+      "description": null
     }
   ]
 }
