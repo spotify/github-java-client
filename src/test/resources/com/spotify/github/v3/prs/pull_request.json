@@ -349,6 +349,13 @@
     "type": "User",
     "site_admin": false
   },
+  "labels": [
+    {
+      "url": "https://api.github.com/repos/octocat/Hello-World/labels/bug",
+      "name": "bug",
+      "color": "f29513"
+    }
+  ],
   "merge_commit_sha": "e5bd3914e2e596debea16f433f57875b5b90bcd6",
   "merged": false,
   "mergeable": true,
