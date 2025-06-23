@@ -134,6 +134,10 @@ public interface PullRequestItem extends PartialPullRequestItem {
   @Nullable
   String nodeId();
 
+  /** Is Automerge Enabled */
+  @Nullable
+  AutoMerge autoMerge();
+
   /** Is it a draft PR? */
   Optional<Boolean> draft();
 
