@@ -32,6 +32,7 @@ import static java.util.Objects.isNull;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.spotify.github.async.AsyncPage;
+import com.spotify.github.jackson.Json;
 import com.spotify.github.v3.git.FileItem;
 import com.spotify.github.v3.prs.Comment;
 import com.spotify.github.v3.prs.MergeParameters;
@@ -190,7 +191,8 @@ public class PullRequestClient {
   public CompletableFuture<List<CommitItem>> listCommits(final long prNumber) {
     final String path = String.format(PR_COMMITS_TEMPLATE, owner, repo, prNumber);
     log.debug("Fetching pull request commits from " + path);
-    return github.request(path, LIST_COMMIT_TYPE_REFERENCE);
+    return github.request(path).thenApply(
+        response -> Json.create().fromJsonUncheckedNotNull(response.bodyString(), LIST_COMMIT_TYPE_REFERENCE));
   }
 
   /**

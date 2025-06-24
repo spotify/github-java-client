@@ -21,10 +21,14 @@
 package com.spotify.github.v3.clients;
 
 import static com.google.common.io.Resources.getResource;
+import static com.spotify.github.MockHelper.createMockHttpResponse;
 import static com.spotify.github.MockHelper.createMockResponse;
+import static com.spotify.github.v3.UserTest.assertUser;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERENCE;
 import static java.lang.String.format;
 import static java.nio.charset.Charset.defaultCharset;
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static java.util.concurrent.CompletableFuture.completedStage;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -51,11 +55,13 @@ import com.spotify.github.v3.prs.requests.ImmutablePullRequestCreate;
 import com.spotify.github.v3.prs.requests.ImmutablePullRequestUpdate;
 import com.spotify.github.v3.prs.requests.PullRequestCreate;
 import com.spotify.github.v3.prs.requests.PullRequestUpdate;
+import com.spotify.github.v3.repos.CommitItem;
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URI;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -463,5 +469,41 @@ public class PullRequestClientTest {
     assertThat(comments.get(0).body(), is("Great stuff!"));
     assertThat(comments.get(0).id(), is(10L));
     assertThat(comments.get(0).user().login(), is("octocat"));
+  }
+
+  @Test
+  public void listCommits() throws Exception {
+    // Given
+    final String firstPageLink =
+        "<https://api.github.com/repositories/10270250/pulls/20463/commits?page=2>; rel=\"next\", <https://api.github.com/repositories/10270250/pulls/20463/commits?page=4>; rel=\"last\"";
+    final String firstPageBody =
+        Resources.toString(getResource(this.getClass(), "pull_request_commits_page1.json"), defaultCharset());
+    final HttpResponse firstPageResponse = createMockResponse(firstPageLink, firstPageBody);
+
+    final String secondPageLink =
+        "<https://api.github.com/repositories/10270250/pulls/20463/commits?page=1>; rel=\"prev\", <https://api.github.com/repositories/10270250/pulls/20463/commits?page=3>; rel=\"next\", <https://api.github.com/repositories/10270250/pulls/20463/commits?page=3>; rel=\"last\", <https://api.github.com/repositories/10270250/pulls/20463/commits?page=1>; rel=\"first\"";
+    final String secondPageBody =
+        Resources.toString(getResource(this.getClass(), "pull_request_commits_page2.json"), defaultCharset());
+    final HttpResponse secondPageResponse = createMockResponse(secondPageLink, secondPageBody);
+
+    final String thirdPageLink =
+        "<https://api.github.com/repositories/10270250/pulls/20463/commits?page=2>; rel=\"prev\", <https://api.github.com/repositories/10270250/pulls/20463/commits?page=1>; rel=\"first\"";
+    final String thirdPageBody =
+        Resources.toString(getResource(this.getClass(), "pull_request_commits_page3.json"), defaultCharset());
+    final HttpResponse thirdPageResponse = createMockResponse(thirdPageLink, thirdPageBody);
+
+    when(mockGithub.request("/repos/owner/repo/pulls/1/commits"))
+        .thenReturn(completedFuture(firstPageResponse));
+    when(mockGithub.request("/repos/owner/repo/pulls/1/commits?page=1"))
+        .thenReturn(completedFuture(firstPageResponse));
+    when(mockGithub.request("/repos/owner/repo/pulls/1/commits?page=2"))
+        .thenReturn(completedFuture(secondPageResponse));
+    when(mockGithub.request("/repos/owner/repo/pulls/1/commits?page=3"))
+        .thenReturn(completedFuture(thirdPageResponse));
+
+    final PullRequestClient pullRequestClient = PullRequestClient.create(mockGithub, "owner", "repo");
+
+    final List<CommitItem> commits = pullRequestClient.listCommits(1L).get();
+    assertThat(commits.size(), is(1));
   }
 }
