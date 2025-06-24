@@ -77,6 +77,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 public class PullRequestClientTest {
+  private static final String MOCK_GITHUB_HOST = "bogus.host";
+  private static final URI MOCK_GITHUB_URI = URI.create(String.format("http://%s/", MOCK_GITHUB_HOST));
+  private static final URI MOCK_GITHUB_URI_GQL = MOCK_GITHUB_URI.resolve("/graphql");
 
   private static final String PR_CHANGED_FILES_TEMPLATE = "/repos/%s/%s/pulls/%s/files";
   private GitHubClient github;
@@ -92,7 +95,7 @@ public class PullRequestClientTest {
     client = mock(OkHttpClient.class);
     github =
         GitHubClient.create(
-            client, URI.create("http://bogus"), URI.create("https://bogus/graphql"), "token");
+            client,MOCK_GITHUB_URI, MOCK_GITHUB_URI_GQL, "token");
     mockGithub = mock(GitHubClient.class);
   }
 
@@ -472,8 +475,10 @@ public class PullRequestClientTest {
   }
 
   @Test
-  public void listCommits() throws Exception {
+  public void listCommitsWithoutSpecifyingPages() throws Exception {
     // Given
+    final int COMMIT_PER_PAGE = 30;
+
     final String firstPageLink =
         "<https://api.github.com/repositories/10270250/pulls/20463/commits?page=2>; rel=\"next\", <https://api.github.com/repositories/10270250/pulls/20463/commits?page=4>; rel=\"last\"";
     final String firstPageBody =
@@ -504,6 +509,11 @@ public class PullRequestClientTest {
     final PullRequestClient pullRequestClient = PullRequestClient.create(mockGithub, "owner", "repo");
 
     final List<CommitItem> commits = pullRequestClient.listCommits(1L).get();
-    assertThat(commits.size(), is(1));
+    assertThat(commits.size(), is(COMMIT_PER_PAGE));
+    assertThat(
+        commits.get(COMMIT_PER_PAGE - 1).commit().tree().sha(), is("219cb4c1ffada21259876d390df1a85767481617"));
+    // make this test works for the current situation
+    // make another test for a new method/signature that would return the full list
+    // code the logic to follow the links
   }
 }

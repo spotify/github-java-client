@@ -21,6 +21,7 @@
 package com.spotify.github.v3.clients;
 
 import static java.util.Arrays.stream;
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
@@ -30,12 +31,18 @@ import com.spotify.github.async.AsyncPage;
 import com.spotify.github.http.ImmutablePagination;
 import com.spotify.github.http.Link;
 import com.spotify.github.http.Pagination;
+import java.net.URI;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javax.ws.rs.core.UriBuilder;
+import okhttp3.HttpUrl;
 
 /**
  * Async page implementation for github resources
@@ -44,12 +51,32 @@ import java.util.concurrent.CompletableFuture;
  */
 public class GithubPage<T> implements AsyncPage<T> {
 
+  static final int ITEM_PER_PAGE_DEFAULT = 30;
   private final GitHubClient github;
   private final String path;
   private final TypeReference<List<T>> typeReference;
+  private final int itemsPerPage;
+
+  private String formatPath(String path) {
+    String fullURL = github.urlFor(path);
+    HttpUrl inputUrl = HttpUrl.parse(fullURL);
+
+    assert inputUrl != null;
+    if (isNull(inputUrl.queryParameter("per_page"))) {
+      return inputUrl
+          .newBuilder()
+          .addQueryParameter("per_page", Integer.toString(itemsPerPage))
+          .build()
+          .encodedPath();
+
+
+    }
+
+    return path;
+  }
 
   /**
-   * C'tor.
+   * Constructor.
    *
    * @param github github client
    * @param path resource page path
@@ -58,8 +85,27 @@ public class GithubPage<T> implements AsyncPage<T> {
   GithubPage(
       final GitHubClient github, final String path, final TypeReference<List<T>> typeReference) {
     this.github = github;
-    this.path = path;
+    this.path = formatPath(path);
     this.typeReference = typeReference;
+    this.itemsPerPage = ITEM_PER_PAGE_DEFAULT;
+  }
+
+  /**
+   * Constructor.
+   *
+   * @param github github client
+   * @param path resource page path
+   * @param typeReference type reference for deserialization
+   */
+  GithubPage(
+      final GitHubClient github,
+      final String path,
+      final TypeReference<List<T>> typeReference,
+      final int itemsPerPage) {
+    this.github = github;
+    this.path = formatPath(path);
+    this.typeReference = typeReference;
+    this.itemsPerPage = itemsPerPage;
   }
 
   /** {@inheritDoc} */
@@ -153,19 +199,21 @@ public class GithubPage<T> implements AsyncPage<T> {
     return github
         .request(path)
         .thenApply(
-            response -> {
-              return Optional.ofNullable(response.header("Link"))
-                  .stream()
-                  .flatMap(linkHeader -> stream(linkHeader.split(",")))
-                  .map(linkString -> Link.from(linkString.split(";")))
-                  .filter(link -> link.rel().isPresent())
-                  .collect(toMap(link -> link.rel().get(), identity()));
-            });
+            response ->
+                Optional.ofNullable(response.header("Link")).stream()
+                    .flatMap(linkHeader -> stream(linkHeader.split(",")))
+                    .map(linkString -> Link.from(linkString.split(";")))
+                    .filter(link -> link.rel().isPresent())
+                    .collect(toMap(link -> link.rel().get(), identity())));
   }
 
   private Optional<Integer> pageNumberFromUri(final String uri) {
-    return Optional.ofNullable(uri.replaceAll(".*\\?page=", "").replaceAll("&.*", ""))
-        .filter(string -> string.matches("\\d+"))
-        .map(Integer::parseInt);
+    Pattern pageInQueryPattern = Pattern.compile("page=(\\d+)");
+    Matcher matcher = pageInQueryPattern.matcher(URI.create(uri).getQuery());
+    try {
+      return Optional.of(Integer.parseInt(matcher.group(1)));
+    } catch (NumberFormatException e) {
+      return Optional.empty();
+    }
   }
 }

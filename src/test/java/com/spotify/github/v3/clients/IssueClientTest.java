@@ -121,10 +121,10 @@ public class IssueClientTest {
         Resources.toString(getResource(this.getClass(), "comments_page2.json"), defaultCharset());
     final HttpResponse lastPageResponse = createMockResponse(lastPageLink, lastPageBody);
 
-    when(github.request(format(COMMENTS_URI_NUMBER_TEMPLATE, "someowner", "somerepo", "123")))
+    when(github.request(format(COMMENTS_URI_NUMBER_TEMPLATE + "?per_page=30", "someowner", "somerepo", "123")))
         .thenReturn(completedFuture(firstPageResponse));
     when(github.request(
-            format(COMMENTS_URI_NUMBER_TEMPLATE + "?page=2", "someowner", "somerepo", "123")))
+            format(COMMENTS_URI_NUMBER_TEMPLATE + "?page=2&per_page=30", "someowner", "somerepo", "123")))
         .thenReturn(completedFuture(lastPageResponse));
 
     final List<Comment> listComments = Lists.newArrayList();

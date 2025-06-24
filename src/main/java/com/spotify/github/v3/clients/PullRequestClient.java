@@ -28,6 +28,7 @@ import static com.spotify.github.v3.clients.GitHubClient.LIST_PR_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_REVIEW_REQUEST_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_REVIEW_TYPE_REFERENCE;
 import static java.util.Objects.isNull;
+import static java.lang.Math.toIntExact;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -195,6 +196,12 @@ public class PullRequestClient {
         response -> Json.create().fromJsonUncheckedNotNull(response.bodyString(), LIST_COMMIT_TYPE_REFERENCE));
   }
 
+  public Iterator<AsyncPage<CommitItem>> listCommits(final long prNumber, final int itemsPerPage) {
+    final String path = "";
+
+    return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_COMMIT_TYPE_REFERENCE, itemsPerPage));
+  }
+
   /**
    * List pull request reviews. Reviews are returned in chronological order.
    *
@@ -240,10 +247,9 @@ public class PullRequestClient {
    * @return iterator of reviews
    */
   public Iterator<AsyncPage<Review>> listReviews(final long prNumber, final long itemsPerPage) {
-    // FIXME Use itemsPerPage property
     final String path = String.format(PR_REVIEWS_TEMPLATE, owner, repo, prNumber);
     log.debug("Fetching pull request reviews from " + path);
-    return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_REVIEW_TYPE_REFERENCE));
+    return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_REVIEW_TYPE_REFERENCE, toIntExact(itemsPerPage)));
   }
 
   /**
