@@ -97,6 +97,8 @@ public class GitHubClient {
       new TypeReference<>() {};
   static final TypeReference<List<PullRequestItem>> LIST_PR_TYPE_REFERENCE =
       new TypeReference<>() {};
+  static final TypeReference<List<com.spotify.github.v3.prs.Comment>>
+      LIST_PR_COMMENT_TYPE_REFERENCE = new TypeReference<>() {};
   static final TypeReference<List<Branch>> LIST_BRANCHES = new TypeReference<>() {};
   static final TypeReference<List<Reference>> LIST_REFERENCES = new TypeReference<>() {};
   static final TypeReference<List<RepositoryInvitation>> LIST_REPOSITORY_INVITATION =
@@ -109,8 +111,7 @@ public class GitHubClient {
   static final TypeReference<List<TeamInvitation>> LIST_PENDING_TEAM_INVITATIONS =
       new TypeReference<>() {};
 
-  static final TypeReference<List<FileItem>> LIST_FILE_ITEMS =
-          new TypeReference<>() {};
+  static final TypeReference<List<FileItem>> LIST_FILE_ITEMS = new TypeReference<>() {};
 
   private static final String GET_ACCESS_TOKEN_URL = "app/installations/%s/access_tokens";
 
@@ -1090,7 +1091,8 @@ public class GitHubClient {
               if (response.bodyString() == null) {
                 throw new RuntimeException(
                     String.format(
-                        "Got empty response body when getting an access token from GitHub, HTTP status was: %s",
+                        "Got empty response body when getting an access token from GitHub, HTTP"
+                            + " status was: %s",
                         response.statusMessage()));
               }
               final String text = response.bodyString();

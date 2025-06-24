@@ -438,4 +438,30 @@ public class PullRequestClientTest {
     assertEquals(actualFiles.get(0).filename(), expectedFiles.get(0).filename());
     assertEquals(actualFiles.get(1).filename(), expectedFiles.get(1).filename());
   }
+
+  @Test
+  public void testListComments() throws Throwable {
+    final String expectedBody = "[" + getFixture("pull_request_review_comment_reply.json") + "]";
+
+    final String pageLink =
+        "<https://github.com/api/v3/repos/owner/repo/pulls/1/comments>; rel=\"first\"";
+
+    final HttpResponse firstPageResponse = createMockResponse(pageLink, expectedBody);
+
+    when(mockGithub.request("/repos/owner/repo/pulls/1/comments"))
+        .thenReturn(completedFuture(firstPageResponse));
+
+    when(mockGithub.json()).thenReturn(github.json());
+
+    final PullRequestClient pullRequestClient =
+        PullRequestClient.create(mockGithub, "owner", "repo");
+
+    final Iterable<AsyncPage<Comment>> pageIterator = () -> pullRequestClient.listComments(1L);
+    List<Comment> comments = Async.streamFromPaginatingIterable(pageIterator).collect(toList());
+
+    assertEquals(1, comments.size());
+    assertThat(comments.get(0).body(), is("Great stuff!"));
+    assertThat(comments.get(0).id(), is(10L));
+    assertThat(comments.get(0).user().login(), is("octocat"));
+  }
 }
