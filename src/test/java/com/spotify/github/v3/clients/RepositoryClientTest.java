@@ -153,7 +153,7 @@ public class RepositoryClientTest {
     final String pageBody = getFixture("list_of_repos_for_authenticated_user.json");
     final HttpResponse pageResponse = createMockResponse(pageLink, pageBody);
 
-    when(github.request("/user/repos")).thenReturn(completedFuture(pageResponse));
+    when(github.request("/user/repos?per_page=30")).thenReturn(completedFuture(pageResponse));
 
     final Iterable<AsyncPage<Repository>> pageIterator =
         () ->
@@ -515,10 +515,10 @@ public class RepositoryClientTest {
   @Test
   void listAllBranches() throws Exception {
     final String link =
-        "<https://github.com/api/v3/repos/someowner/somerepo/branches>; rel=\"last\"";
+        "<https://github.com/api/v3/repos/someowner/somerepo/branches?page=1>; rel=\"last\"";
     final HttpResponse response = createMockResponse(link, getFixture("list_branches.json"));
 
-    when(github.request("/repos/someowner/somerepo/branches"))
+    when(github.request("/repos/someowner/somerepo/branches?per_page=30"))
         .thenReturn(completedFuture(response));
     final List<Branch> branches =
         Async.streamFromPaginatingIterable(repoClient::listAllBranches)
@@ -573,14 +573,14 @@ public class RepositoryClientTest {
 
     when(github.request(
             format(
-                STATUS_URI_TEMPLATE,
+                STATUS_URI_TEMPLATE + "?per_page=30",
                 "someowner",
                 "somerepo",
                 "553c2077f0edc3d5dc5d17262f6aa498e69d6f8e")))
         .thenReturn(completedFuture(firstPageResponse));
     when(github.request(
             format(
-                STATUS_URI_TEMPLATE + "?page=2",
+                STATUS_URI_TEMPLATE + "?page=2&per_page=30",
                 "someowner",
                 "somerepo",
                 "553c2077f0edc3d5dc5d17262f6aa498e69d6f8e")))

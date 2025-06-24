@@ -197,7 +197,7 @@ public class PullRequestClient {
   }
 
   public Iterator<AsyncPage<CommitItem>> listCommits(final long prNumber, final int itemsPerPage) {
-    final String path = "";
+    final String path = String.format(PR_COMMITS_TEMPLATE, owner, repo, prNumber);
 
     return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_COMMIT_TYPE_REFERENCE, itemsPerPage));
   }

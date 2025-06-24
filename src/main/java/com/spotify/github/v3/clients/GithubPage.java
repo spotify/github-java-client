@@ -21,7 +21,6 @@
 package com.spotify.github.v3.clients;
 
 import static java.util.Arrays.stream;
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
@@ -36,13 +35,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.ws.rs.core.UriBuilder;
-import okhttp3.HttpUrl;
+import org.apache.http.client.utils.URIBuilder;
 
 /**
  * Async page implementation for github resources
@@ -57,22 +54,17 @@ public class GithubPage<T> implements AsyncPage<T> {
   private final TypeReference<List<T>> typeReference;
   private final int itemsPerPage;
 
-  private String formatPath(String path) {
-    String fullURL = github.urlFor(path);
-    HttpUrl inputUrl = HttpUrl.parse(fullURL);
-
-    assert inputUrl != null;
-    if (isNull(inputUrl.queryParameter("per_page"))) {
-      return inputUrl
-          .newBuilder()
-          .addQueryParameter("per_page", Integer.toString(itemsPerPage))
-          .build()
-          .encodedPath();
-
-
+  private static String formatPath(final String path, final int itemsPerPage) {
+    try {
+      URIBuilder uriBuilder = new URIBuilder(path);
+      if (uriBuilder.getQueryParams().stream().anyMatch(p -> p.getName().equals("per_page"))) {
+        return path;
+      }
+      uriBuilder.addParameter("per_page", Integer.toString(itemsPerPage));
+      return uriBuilder.toString();
+    } catch (Exception e) {
+      return path;
     }
-
-    return path;
   }
 
   /**
@@ -84,10 +76,10 @@ public class GithubPage<T> implements AsyncPage<T> {
    */
   GithubPage(
       final GitHubClient github, final String path, final TypeReference<List<T>> typeReference) {
-    this.github = github;
-    this.path = formatPath(path);
-    this.typeReference = typeReference;
     this.itemsPerPage = ITEM_PER_PAGE_DEFAULT;
+    this.github = github;
+    this.path = formatPath(path, ITEM_PER_PAGE_DEFAULT);
+    this.typeReference = typeReference;
   }
 
   /**
@@ -102,10 +94,10 @@ public class GithubPage<T> implements AsyncPage<T> {
       final String path,
       final TypeReference<List<T>> typeReference,
       final int itemsPerPage) {
-    this.github = github;
-    this.path = formatPath(path);
-    this.typeReference = typeReference;
     this.itemsPerPage = itemsPerPage;
+    this.github = github;
+    this.path = formatPath(path, itemsPerPage);
+    this.typeReference = typeReference;
   }
 
   /** {@inheritDoc} */
@@ -123,7 +115,7 @@ public class GithubPage<T> implements AsyncPage<T> {
                       .map(
                           prevLink ->
                               pageNumberFromUri(prevLink.url().toString())
-                                  .<RuntimeException>orElseThrow(
+                                  .orElseThrow(
                                       () ->
                                           new RuntimeException(
                                               "Could not parse page number from Link header with rel=\"next\"")));
@@ -137,7 +129,7 @@ public class GithubPage<T> implements AsyncPage<T> {
                                   .map(
                                       lastLink ->
                                           pageNumberFromUri(lastLink.url().toString())
-                                              .<RuntimeException>orElseThrow(
+                                              .orElseThrow(
                                                   () ->
                                                       new RuntimeException(
                                                           "Could not parse page number from Link "
@@ -167,7 +159,7 @@ public class GithubPage<T> implements AsyncPage<T> {
                   Optional.ofNullable(linkMap.get("next"))
                       .map(nextLink -> nextLink.url().toString().replaceAll(github.urlFor(""), ""))
                       .orElseThrow(() -> new NoSuchElementException("Page iteration exhausted"));
-              return new GithubPage<>(github, nextPath, typeReference);
+              return new GithubPage<>(github, nextPath, typeReference, itemsPerPage);
             });
   }
 
@@ -180,7 +172,7 @@ public class GithubPage<T> implements AsyncPage<T> {
   /** {@inheritDoc} */
   @Override
   public AsyncPage<T> clone() {
-    return new GithubPage<>(github, path, typeReference);
+    return new GithubPage<>(github, path, typeReference, itemsPerPage);
   }
 
   /** {@inheritDoc} */

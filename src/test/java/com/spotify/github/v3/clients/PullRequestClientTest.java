@@ -44,6 +44,8 @@ import com.google.common.io.Resources;
 import com.spotify.github.async.Async;
 import com.spotify.github.async.AsyncPage;
 import com.spotify.github.http.HttpResponse;
+import com.spotify.github.jackson.Json;
+import com.spotify.github.v3.User;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.git.FileItem;
 import com.spotify.github.v3.git.ImmutableFileItem;
@@ -433,7 +435,7 @@ public class PullRequestClientTest {
 
     final HttpResponse firstPageResponse = createMockResponse(pageLink, expectedBody);
 
-    when(mockGithub.request(format(PR_CHANGED_FILES_TEMPLATE, "owner", "repo", "1")))
+    when(mockGithub.request(format(PR_CHANGED_FILES_TEMPLATE + "?per_page=30", "owner", "repo", "1")))
         .thenReturn(completedFuture(firstPageResponse));
 
     when(mockGithub.json()).thenReturn(github.json());
@@ -480,40 +482,76 @@ public class PullRequestClientTest {
     final int COMMIT_PER_PAGE = 30;
 
     final String firstPageLink =
-        "<https://api.github.com/repositories/10270250/pulls/20463/commits?page=2>; rel=\"next\", <https://api.github.com/repositories/10270250/pulls/20463/commits?page=4>; rel=\"last\"";
+        "<https://api.github.com/repos/owner/repo/pulls/1/commits?page=2>; rel=\"next\", <https://api.github.com/repos/owner/repo/pulls/1/commits?page=4>; rel=\"last\"";
     final String firstPageBody =
         Resources.toString(getResource(this.getClass(), "pull_request_commits_page1.json"), defaultCharset());
     final HttpResponse firstPageResponse = createMockResponse(firstPageLink, firstPageBody);
 
-    final String secondPageLink =
-        "<https://api.github.com/repositories/10270250/pulls/20463/commits?page=1>; rel=\"prev\", <https://api.github.com/repositories/10270250/pulls/20463/commits?page=3>; rel=\"next\", <https://api.github.com/repositories/10270250/pulls/20463/commits?page=3>; rel=\"last\", <https://api.github.com/repositories/10270250/pulls/20463/commits?page=1>; rel=\"first\"";
+    when(mockGithub.request("/repos/owner/repo/pulls/1/commits"))
+        .thenReturn(completedFuture(firstPageResponse));
+
+    final PullRequestClient pullRequestClient = PullRequestClient.create(mockGithub, "owner", "repo");
+
+    // When
+    final List<CommitItem> commits = pullRequestClient.listCommits(1L).get();
+
+    // Then
+    assertThat(commits.size(), is(COMMIT_PER_PAGE));
+    assertThat(
+        commits.get(COMMIT_PER_PAGE - 1).commit().tree().sha(), is("219cb4c1ffada21259876d390df1a85767481617"));
+  }
+
+  @Test
+  public void listCommitsSpecifyingPages() throws Exception {
+    // Given
+    final int COMMIT_PER_PAGE = 30;
+
+    final String firstPageLink = String.format(
+        "<%s/repos/owner/repo/pulls/1/commits?page=2&per_page=30>; rel=\"next\", <%s/repos/owner/repo/pulls/1/commits?page=3&per_page=30>; rel=\"last\"",
+        MOCK_GITHUB_URI,
+        MOCK_GITHUB_URI);
+    final String firstPageBody =
+        Resources.toString(getResource(this.getClass(), "pull_request_commits_page1.json"), defaultCharset());
+    final HttpResponse firstPageResponse = createMockResponse(firstPageLink, firstPageBody);
+
+    final String secondPageLink = String.format(
+        "<%s/repos/owner/repo/pulls/1/commits?page=1&per_page=30>; rel=\"prev\", <%s/repos/owner/repo/pulls/1/commits?page=3&per_page=30>; rel=\"next\", <%s/repos/owner/repo/pulls/1/commits?page=3&per_page=30>; rel=\"last\", <%s/repos/owner/repo/pulls/1/commits?page=1&per_page=30>; rel=\"first\"",
+        MOCK_GITHUB_URI,
+        MOCK_GITHUB_URI,
+        MOCK_GITHUB_URI,
+        MOCK_GITHUB_URI);
     final String secondPageBody =
         Resources.toString(getResource(this.getClass(), "pull_request_commits_page2.json"), defaultCharset());
     final HttpResponse secondPageResponse = createMockResponse(secondPageLink, secondPageBody);
 
     final String thirdPageLink =
-        "<https://api.github.com/repositories/10270250/pulls/20463/commits?page=2>; rel=\"prev\", <https://api.github.com/repositories/10270250/pulls/20463/commits?page=1>; rel=\"first\"";
+        String.format("<%s/repos/owner/repo/pulls/1/commits?page=2&per_page=30>; rel=\"prev\", <%s/repos/owner/repo/pulls/1/commits?page=1&per_page=30>; rel=\"first\"",
+            MOCK_GITHUB_URI,
+            MOCK_GITHUB_URI);
     final String thirdPageBody =
         Resources.toString(getResource(this.getClass(), "pull_request_commits_page3.json"), defaultCharset());
     final HttpResponse thirdPageResponse = createMockResponse(thirdPageLink, thirdPageBody);
 
-    when(mockGithub.request("/repos/owner/repo/pulls/1/commits"))
+    when(mockGithub.urlFor("")).thenReturn(MOCK_GITHUB_URI.toString());
+    when(mockGithub.json()).thenReturn(Json.create());
+    when(mockGithub.request("/repos/owner/repo/pulls/1/commits?per_page=30"))
         .thenReturn(completedFuture(firstPageResponse));
-    when(mockGithub.request("/repos/owner/repo/pulls/1/commits?page=1"))
+    when(mockGithub.request("/repos/owner/repo/pulls/1/commits?page=1&per_page=30"))
         .thenReturn(completedFuture(firstPageResponse));
-    when(mockGithub.request("/repos/owner/repo/pulls/1/commits?page=2"))
+    when(mockGithub.request("/repos/owner/repo/pulls/1/commits?page=2&per_page=30"))
         .thenReturn(completedFuture(secondPageResponse));
-    when(mockGithub.request("/repos/owner/repo/pulls/1/commits?page=3"))
+    when(mockGithub.request("/repos/owner/repo/pulls/1/commits?page=3&per_page=30"))
         .thenReturn(completedFuture(thirdPageResponse));
 
     final PullRequestClient pullRequestClient = PullRequestClient.create(mockGithub, "owner", "repo");
 
-    final List<CommitItem> commits = pullRequestClient.listCommits(1L).get();
-    assertThat(commits.size(), is(COMMIT_PER_PAGE));
+    // When
+    final Iterable<AsyncPage<CommitItem>> pageIterator = () -> pullRequestClient.listCommits(1L, 30);
+    final List<CommitItem> commits = Async.streamFromPaginatingIterable(pageIterator).collect(toList());
+
+    // Then
+    assertThat(commits.size(), is(COMMIT_PER_PAGE * 3));
     assertThat(
         commits.get(COMMIT_PER_PAGE - 1).commit().tree().sha(), is("219cb4c1ffada21259876d390df1a85767481617"));
-    // make this test works for the current situation
-    // make another test for a new method/signature that would return the full list
-    // code the logic to follow the links
   }
 }
