@@ -30,7 +30,6 @@ import com.spotify.github.async.AsyncPage;
 import com.spotify.github.http.ImmutablePagination;
 import com.spotify.github.http.Link;
 import com.spotify.github.http.Pagination;
-import java.net.URI;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +53,7 @@ public class GithubPage<T> implements AsyncPage<T> {
   private final TypeReference<List<T>> typeReference;
   private final int itemsPerPage;
 
-  private static String formatPath(final String path, final int itemsPerPage) {
+  protected static String formatPath(final String path, final int itemsPerPage) {
     try {
       URIBuilder uriBuilder = new URIBuilder(path);
       if (uriBuilder.getQueryParams().stream().anyMatch(p -> p.getName().equals("per_page"))) {
@@ -199,12 +198,13 @@ public class GithubPage<T> implements AsyncPage<T> {
                     .collect(toMap(link -> link.rel().get(), identity())));
   }
 
-  private Optional<Integer> pageNumberFromUri(final String uri) {
-    Pattern pageInQueryPattern = Pattern.compile("page=(\\d+)");
-    Matcher matcher = pageInQueryPattern.matcher(URI.create(uri).getQuery());
+  protected static Optional<Integer> pageNumberFromUri(final String uri) {
+    Pattern pageInQueryPattern = Pattern.compile("(^|\\?|&)page=(?<page>\\d+)", Pattern.CASE_INSENSITIVE);
     try {
-      return Optional.of(Integer.parseInt(matcher.group(1)));
-    } catch (NumberFormatException e) {
+      String query = new URIBuilder(uri).build().getQuery();
+      Matcher matcher = pageInQueryPattern.matcher(query);
+      return matcher.find() ? Optional.of(Integer.parseInt(matcher.group("page"))) : Optional.empty();
+    } catch (Exception e) {
       return Optional.empty();
     }
   }

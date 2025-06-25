@@ -21,14 +21,10 @@
 package com.spotify.github.v3.clients;
 
 import static com.google.common.io.Resources.getResource;
-import static com.spotify.github.MockHelper.createMockHttpResponse;
 import static com.spotify.github.MockHelper.createMockResponse;
-import static com.spotify.github.v3.UserTest.assertUser;
-import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERENCE;
 import static java.lang.String.format;
 import static java.nio.charset.Charset.defaultCharset;
 import static java.util.concurrent.CompletableFuture.completedFuture;
-import static java.util.concurrent.CompletableFuture.completedStage;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -45,7 +41,6 @@ import com.spotify.github.async.Async;
 import com.spotify.github.async.AsyncPage;
 import com.spotify.github.http.HttpResponse;
 import com.spotify.github.jackson.Json;
-import com.spotify.github.v3.User;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.git.FileItem;
 import com.spotify.github.v3.git.ImmutableFileItem;
@@ -63,7 +58,6 @@ import java.io.Reader;
 import java.net.URI;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -80,7 +74,7 @@ import org.mockito.ArgumentCaptor;
 
 public class PullRequestClientTest {
   private static final String MOCK_GITHUB_HOST = "bogus.host";
-  private static final URI MOCK_GITHUB_URI = URI.create(String.format("http://%s/", MOCK_GITHUB_HOST));
+  private static final URI MOCK_GITHUB_URI = URI.create(String.format("http://%s/api/v3", MOCK_GITHUB_HOST));
   private static final URI MOCK_GITHUB_URI_GQL = MOCK_GITHUB_URI.resolve("/graphql");
 
   private static final String PR_CHANGED_FILES_TEMPLATE = "/repos/%s/%s/pulls/%s/files";
