@@ -23,6 +23,7 @@ package com.spotify.github.v3.clients;
 import static com.spotify.github.v3.clients.GitHubClient.IGNORE_RESPONSE_CONSUMER;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_COMMIT_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_FILE_ITEMS;
+import static com.spotify.github.v3.clients.GitHubClient.LIST_PR_COMMENT_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_PR_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_REVIEW_REQUEST_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_REVIEW_TYPE_REFERENCE;
@@ -63,6 +64,7 @@ public class PullRequestClient {
   private static final String PR_NUMBER_TEMPLATE = "/repos/%s/%s/pulls/%s";
   private static final String PR_COMMITS_TEMPLATE = "/repos/%s/%s/pulls/%s/commits";
   private static final String PR_REVIEWS_TEMPLATE = "/repos/%s/%s/pulls/%s/reviews";
+  private static final String PR_COMMENTS_TEMPLATE = "/repos/%s/%s/pulls/%s/comments";
   private static final String PR_CHANGED_FILES_TEMPLATE = "/repos/%s/%s/pulls/%s/files";
   private static final String PR_REVIEW_REQUESTS_TEMPLATE =
       "/repos/%s/%s/pulls/%s/requested_reviewers";
@@ -465,6 +467,17 @@ public class PullRequestClient {
     final String path = String.format(PR_TEMPLATE + parameterPath, owner, repo);
     log.debug("Fetching pull requests from " + path);
     return github.request(path, LIST_PR_TYPE_REFERENCE);
+  }
+
+  /**
+   * List pull request review comments.
+   *
+   * @param prNumber pull request number
+   * @return iterator of comments
+   */
+  public Iterator<AsyncPage<Comment>> listComments(final long prNumber) {
+    final String path = String.format(PR_COMMENTS_TEMPLATE, owner, repo, prNumber);
+    return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_PR_COMMENT_TYPE_REFERENCE));
   }
 
   /**
