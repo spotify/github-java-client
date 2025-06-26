@@ -81,21 +81,26 @@ public class IssueClientTest {
   @Test
   public void testCommentPaginationSpliterator() throws IOException {
     final String firstPageLink =
-        "<https://github.com/api/v3/repos/someowner/somerepo/issues/123/comments?page=2>; rel=\"next\", <https://github.com/api/v3/repos/someowner/somerepo/issues/123/comments?page=2>; rel=\"last\"";
+        "<https://github.com/api/v3/repos/someowner/somerepo/issues/123/comments?page=2&per_page=30>; rel=\"next\", <https://github.com/api/v3/repos/someowner/somerepo/issues/123/comments?page=2&per_page=30>; rel=\"last\"";
     final String firstPageBody =
         Resources.toString(getResource(this.getClass(), "comments_page1.json"), defaultCharset());
     final HttpResponse firstPageResponse = createMockResponse(firstPageLink, firstPageBody);
 
     final String lastPageLink =
-        "<https://github.com/api/v3/repos/someowner/somerepo/issues/123/comments>; rel=\"first\", <https://github.com/api/v3/repos/someowner/somerepo/issues/123/comments>; rel=\"prev\"";
+        "<https://github.com/api/v3/repos/someowner/somerepo/issues/123/comments?page=1&per_page=30>; rel=\"first\", <https://github.com/api/v3/repos/someowner/somerepo/issues/123/comments?page=1&per_page=30>; rel=\"prev\"";
     final String lastPageBody =
         Resources.toString(getResource(this.getClass(), "comments_page2.json"), defaultCharset());
     final HttpResponse lastPageResponse = createMockResponse(lastPageLink, lastPageBody);
 
-    when(github.request(format(COMMENTS_URI_NUMBER_TEMPLATE, "someowner", "somerepo", "123")))
+    when(github.request(
+            format(COMMENTS_URI_NUMBER_TEMPLATE + "?per_page=30", "someowner", "somerepo", "123")))
         .thenReturn(completedFuture(firstPageResponse));
     when(github.request(
-            format(COMMENTS_URI_NUMBER_TEMPLATE + "?page=2", "someowner", "somerepo", "123")))
+            format(
+                COMMENTS_URI_NUMBER_TEMPLATE + "?page=2&per_page=30",
+                "someowner",
+                "somerepo",
+                "123")))
         .thenReturn(completedFuture(lastPageResponse));
 
     final Iterable<AsyncPage<Comment>> pageIterator = () -> issueClient.listComments(123);
@@ -121,10 +126,15 @@ public class IssueClientTest {
         Resources.toString(getResource(this.getClass(), "comments_page2.json"), defaultCharset());
     final HttpResponse lastPageResponse = createMockResponse(lastPageLink, lastPageBody);
 
-    when(github.request(format(COMMENTS_URI_NUMBER_TEMPLATE, "someowner", "somerepo", "123")))
+    when(github.request(
+            format(COMMENTS_URI_NUMBER_TEMPLATE + "?per_page=30", "someowner", "somerepo", "123")))
         .thenReturn(completedFuture(firstPageResponse));
     when(github.request(
-            format(COMMENTS_URI_NUMBER_TEMPLATE + "?page=2", "someowner", "somerepo", "123")))
+            format(
+                COMMENTS_URI_NUMBER_TEMPLATE + "?page=2&per_page=30",
+                "someowner",
+                "somerepo",
+                "123")))
         .thenReturn(completedFuture(lastPageResponse));
 
     final List<Comment> listComments = Lists.newArrayList();
@@ -233,7 +243,8 @@ public class IssueClientTest {
                     .content(CommentReactionContent.HEART)
                     .user(ImmutableUser.builder().login("octocat").build())
                     .build())));
-    final String path = format(COMMENTS_REACTION_TEMPLATE, "someowner", "somerepo", commentId);
+    final String path =
+        format(COMMENTS_REACTION_TEMPLATE + "?per_page=30", "someowner", "somerepo", commentId);
 
     final String firstPageLink =
         format(

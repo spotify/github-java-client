@@ -49,7 +49,7 @@ public class TeamClient {
 
   private static final String MEMBERS_TEMPLATE = "/orgs/%s/teams/%s/members";
 
-  private static final String PAGED_MEMBERS_TEMPLATE = "/orgs/%s/teams/%s/members?per_page=%d";
+  private static final String PAGED_MEMBERS_TEMPLATE = "/orgs/%s/teams/%s/members";
 
   private static final String MEMBERSHIP_TEMPLATE = "/orgs/%s/teams/%s/memberships/%s";
 
@@ -176,9 +176,9 @@ public class TeamClient {
    * @return list of all users in a team
    */
   public Iterator<AsyncPage<User>> listTeamMembers(final String slug, final int pageSize) {
-    final String path = String.format(PAGED_MEMBERS_TEMPLATE, org, slug, pageSize);
+    final String path = String.format(PAGED_MEMBERS_TEMPLATE, org, slug);
     log.debug("Fetching members for: {}", path);
-    return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_TEAM_MEMBERS));
+    return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_TEAM_MEMBERS, pageSize));
   }
 
   /**

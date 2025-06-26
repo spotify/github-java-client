@@ -186,7 +186,7 @@ public class TeamClientTest {
 
     when(github.request(endsWith("/orgs/github/teams/1/members?per_page=1")))
         .thenReturn(completedFuture(firstPageResponse));
-    when(github.request(endsWith("/orgs/github/teams/1/members?page=2")))
+    when(github.request(endsWith("/orgs/github/teams/1/members?page=2&per_page=1")))
         .thenReturn(completedFuture(lastPageResponse));
 
     final Iterable<AsyncPage<User>> pageIterator = () -> teamClient.listTeamMembers("1", 1);
