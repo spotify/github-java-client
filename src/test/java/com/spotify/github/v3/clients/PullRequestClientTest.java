@@ -449,11 +449,11 @@ public class PullRequestClientTest {
     final String expectedBody = "[" + getFixture("pull_request_review_comment_reply.json") + "]";
 
     final String pageLink =
-        "<https://github.com/api/v3/repos/owner/repo/pulls/1/comments>; rel=\"first\"";
+        "<https://github.com/api/v3/repos/owner/repo/pulls/1/comments?page=1&per_page=30>; rel=\"first\"";
 
     final HttpResponse firstPageResponse = createMockResponse(pageLink, expectedBody);
 
-    when(mockGithub.request("/repos/owner/repo/pulls/1/comments"))
+    when(mockGithub.request("/repos/owner/repo/pulls/1/comments?per_page=30"))
         .thenReturn(completedFuture(firstPageResponse));
 
     when(mockGithub.json()).thenReturn(github.json());
