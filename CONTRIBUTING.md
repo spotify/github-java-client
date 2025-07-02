@@ -5,7 +5,7 @@ alternative to the GitHub API.
 
 ## Getting Started
 
-The Github Java Clients's [open issues are here](https://github.com/github-java-client/github-java-client/issues). 
+The Github Java Clients's [open issues are here](https://github.com/spotify/github-java-client/issues). 
 In time, we'll tag issues that would make a good first pull request for new contributors. An easy 
 way to get started helping the project is to *file an issue*. Issues can include bugs to fix, 
 features to add, or documentation that looks outdated.
