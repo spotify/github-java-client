@@ -27,8 +27,8 @@ import static com.spotify.github.v3.clients.GitHubClient.LIST_PR_COMMENT_TYPE_RE
 import static com.spotify.github.v3.clients.GitHubClient.LIST_PR_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_REVIEW_REQUEST_TYPE_REFERENCE;
 import static com.spotify.github.v3.clients.GitHubClient.LIST_REVIEW_TYPE_REFERENCE;
-import static java.util.Objects.isNull;
 import static java.lang.Math.toIntExact;
+import static java.util.Objects.isNull;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -66,6 +66,8 @@ public class PullRequestClient {
   private static final String PR_NUMBER_TEMPLATE = "/repos/%s/%s/pulls/%s";
   private static final String PR_COMMITS_TEMPLATE = "/repos/%s/%s/pulls/%s/commits";
   private static final String PR_REVIEWS_TEMPLATE = "/repos/%s/%s/pulls/%s/reviews";
+  private static final String PR_REVIEW_COMMENTS_TEMPLATE =
+      "/repos/%s/%s/pulls/%s/reviews/%s/comments";
   private static final String PR_COMMENTS_TEMPLATE = "/repos/%s/%s/pulls/%s/comments";
   private static final String PR_CHANGED_FILES_TEMPLATE = "/repos/%s/%s/pulls/%s/files";
   private static final String PR_REVIEW_REQUESTS_TEMPLATE =
@@ -192,14 +194,19 @@ public class PullRequestClient {
   public CompletableFuture<List<CommitItem>> listCommits(final long prNumber) {
     final String path = String.format(PR_COMMITS_TEMPLATE, owner, repo, prNumber);
     log.debug("Fetching pull request commits from " + path);
-    return github.request(path).thenApply(
-        response -> Json.create().fromJsonUncheckedNotNull(response.bodyString(), LIST_COMMIT_TYPE_REFERENCE));
+    return github
+        .request(path)
+        .thenApply(
+            response ->
+                Json.create()
+                    .fromJsonUncheckedNotNull(response.bodyString(), LIST_COMMIT_TYPE_REFERENCE));
   }
 
   public Iterator<AsyncPage<CommitItem>> listCommits(final long prNumber, final int itemsPerPage) {
     final String path = String.format(PR_COMMITS_TEMPLATE, owner, repo, prNumber);
 
-    return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_COMMIT_TYPE_REFERENCE, itemsPerPage));
+    return new GithubPageIterator<>(
+        new GithubPage<>(github, path, LIST_COMMIT_TYPE_REFERENCE, itemsPerPage));
   }
 
   /**
@@ -249,7 +256,8 @@ public class PullRequestClient {
   public Iterator<AsyncPage<Review>> listReviews(final long prNumber, final long itemsPerPage) {
     final String path = String.format(PR_REVIEWS_TEMPLATE, owner, repo, prNumber);
     log.debug("Fetching pull request reviews from " + path);
-    return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_REVIEW_TYPE_REFERENCE, toIntExact(itemsPerPage)));
+    return new GithubPageIterator<>(
+        new GithubPage<>(github, path, LIST_REVIEW_TYPE_REFERENCE, toIntExact(itemsPerPage)));
   }
 
   /**
@@ -505,5 +513,18 @@ public class PullRequestClient {
     final String jsonPayload = github.json().toJsonUnchecked(payload);
     log.debug("Creating reply to PR comment: " + path);
     return github.post(path, jsonPayload, Comment.class);
+  }
+
+  /**
+   * List pull request review comments for a specific review with pagination.
+   *
+   * @param prNumber pull request number
+   * @param reviewId the ID of the review
+   * @return iterator of comments for the review
+   * @see "https://docs.github.com/en/rest/pulls/comments#list-comments-for-a-pull-request-review"
+   */
+  public Iterator<AsyncPage<Comment>> listReviewComments(final long prNumber, final long reviewId) {
+    final String path = String.format(PR_REVIEW_COMMENTS_TEMPLATE, owner, repo, prNumber, reviewId);
+    return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_PR_COMMENT_TYPE_REFERENCE));
   }
 }
