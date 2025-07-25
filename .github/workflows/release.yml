@@ -20,7 +20,7 @@ jobs:
           java-version: 11
           distribution: corretto
           cache: maven
-          server-id: ossrh # Value of distributionManagement.repository.id field of pom.xml
+          server-id: central # Value of distributionManagement.repository.id field of pom.xml
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
           settings-path: ${{ github.workspace }} # Location for settings.xml file
