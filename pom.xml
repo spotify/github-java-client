@@ -34,11 +34,11 @@
     <distributionManagement>
         <snapshotRepository>
             <id>central</id>
-            <url>https://central.sonatype.com/content/repositories/snapshots</url>
+            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
         </snapshotRepository>
         <repository>
             <id>central</id>
-            <url>https://central.sonatype.com/service/local/staging/deploy/maven2/</url>
+            <url>https://central.sonatype.com/repository/maven-releases/</url>
         </repository>
     </distributionManagement>
 
@@ -381,16 +381,15 @@
                         </executions>
                     </plugin>
                     <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.13</version>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.8.0</version>
                         <extensions>true</extensions>
                         <configuration>
-                            <serverId>central</serverId>
-                            <nexusUrl>https://central.sonatype.com/</nexusUrl>
-                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                            <connectTimeout>600000</connectTimeout>
-                            <readTimeout>600000</readTimeout>
+                            <publishingServerId>central</publishingServerId>
+                            <deploymentName>github-java-client</deploymentName>
+                            <autoPublish>true</autoPublish>
+                            <waitUntil>published</waitUntil>
                         </configuration>
                     </plugin>
                 </plugins>
