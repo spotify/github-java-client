@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <name>github-java-client</name>
     <artifactId>github-client</artifactId>
-    <version>0.4.11-SNAPSHOT</version>
+    <version>0.4.11</version>
 
     <parent>
         <groupId>com.spotify</groupId>
@@ -24,7 +23,7 @@
         <connection>scm:git:https://github.com/spotify/github-java-client.git</connection>
         <developerConnection>scm:git:git@github.com:spotify/github-java-client.git</developerConnection>
         <url>scm:https://github.com/spotify/github-java-client/</url>
-        <tag>v0.3.7</tag>
+        <tag>v0.4.11</tag>
     </scm>
 
     <organization>
@@ -68,7 +67,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <project.build.outputTimestamp>1753437226</project.build.outputTimestamp>
+        <project.build.outputTimestamp>1753693618</project.build.outputTimestamp>
         <spotbugs.excludeFilterFile>spotbugsexclude.xml</spotbugs.excludeFilterFile>
         <checkstyle.violationSeverity>error</checkstyle.violationSeverity>
         <checkstyle.config.location>checkstyle.xml</checkstyle.config.location>
@@ -464,7 +463,7 @@
                         <id>enforce</id>
                         <configuration>
                             <rules>
-                                <requireUpperBoundDeps/>
+                                <requireUpperBoundDeps />
                             </rules>
                         </configuration>
                         <goals>
