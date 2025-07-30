@@ -43,7 +43,9 @@ public class IssueClient {
   static final String COMMENTS_URI_TEMPLATE = "/repos/%s/%s/issues/comments";
   static final String COMMENTS_URI_ID_TEMPLATE = "/repos/%s/%s/issues/comments/%s";
   static final String COMMENTS_REACTION_TEMPLATE = "/repos/%s/%s/issues/comments/%s/reactions";
-  static final String COMMENTS_REACTION_ID_TEMPLATE = "/repos/%s/%s/issues/%s/reactions/%s";
+  static final String COMMENTS_REACTION_ID_TEMPLATE = "/repos/%s/%s/issues/comments/%s/reactions/%s";
+  static final String ISSUES_REACTION_TEMPLATE = "/repos/%s/%s/issues/%s/reactions";
+  static final String ISSUES_REACTION_ID_TEMPLATE = "/repos/%s/%s/issues/%s/reactions/%s";
   static final String ISSUES_URI_ID_TEMPLATE = "/repos/%s/%s/issues/%s";
   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -53,7 +55,6 @@ public class IssueClient {
 
   /**
    * Constructs an IssueClient.
-   *
    * @param github the GitHub client
    * @param owner the repository owner
    * @param repo the repository name
@@ -260,14 +261,14 @@ public class IssueClient {
    * href="https://docs.github.com/en/rest/reactions/reactions?apiVersion=2022-11-28#delete-an-issue-comment-reaction">List
    * reactions for an issue comment</a>
    *
-   * @param issueNumber the issue number
+   * @param commentId the comment id
    * @param reactionId the reaction id
    * @return a CompletableFuture containing the HTTP response
    */
   public CompletableFuture<HttpResponse> deleteCommentReaction(
-      final long issueNumber, final long reactionId) {
+      final long commentId, final long reactionId) {
     final String path =
-        String.format(COMMENTS_REACTION_ID_TEMPLATE, owner, repo, issueNumber, reactionId);
+        String.format(COMMENTS_REACTION_ID_TEMPLATE, owner, repo, commentId, reactionId);
     return github.delete(path);
   }
 
@@ -283,5 +284,36 @@ public class IssueClient {
     final String path = String.format(COMMENTS_REACTION_TEMPLATE, owner, repo, commentId);
     return new GithubPageIterator<>(
         new GithubPage<>(github, path, LIST_COMMENT_REACTION_TYPE_REFERENCE));
+  }
+
+  /**
+   * Creates a reaction on an issue.
+   *
+   * @param issueNumber the issue number
+   * @param reaction the reaction content
+   * @return a CompletableFuture containing the created reaction
+   */
+  public CompletableFuture<CommentReaction> createIssueReaction(
+      final long issueNumber, final CommentReactionContent reaction) {
+    final String path = String.format(ISSUES_REACTION_TEMPLATE, owner, repo, issueNumber);
+    final String requestBody =
+        github.json().toJsonUnchecked(ImmutableMap.of("content", reaction.toString()));
+    return github.post(path, requestBody, CommentReaction.class);
+  }
+
+  /**
+   * Deletes a reaction on an issue. See <a
+   * href="https://docs.github.com/en/rest/reactions/reactions?apiVersion=2022-11-28#delete-an-issue-reaction">Delete
+   * an issue reaction</a>
+   *
+   * @param issueNumber the issue number
+   * @param reactionId the reaction id
+   * @return a CompletableFuture containing the HTTP response
+   */
+  public CompletableFuture<HttpResponse> deleteIssueReaction(
+      final long issueNumber, final long reactionId) {
+    final String path =
+        String.format(ISSUES_REACTION_ID_TEMPLATE, owner, repo, issueNumber, reactionId);
+    return github.delete(path);
   }
 }

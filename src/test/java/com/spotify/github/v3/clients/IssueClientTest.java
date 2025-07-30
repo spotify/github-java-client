@@ -217,15 +217,15 @@ public class IssueClientTest {
 
   @Test
   public void testDeleteIssueCommentReaction() {
-    long issueNumber = 42;
+    long commentId = 42;
     long reactionId = 385825;
     final String path =
-        format(COMMENTS_REACTION_ID_TEMPLATE, "someowner", "somerepo", issueNumber, reactionId);
+        format(COMMENTS_REACTION_TEMPLATE + "/%s", "someowner", "somerepo", commentId, reactionId);
     HttpResponse mockResponse = mock(HttpResponse.class);
     when(mockResponse.statusCode()).thenReturn(204);
     when(github.delete(eq(path))).thenReturn(completedFuture(mockResponse));
 
-    final var response = issueClient.deleteCommentReaction(issueNumber, reactionId).join();
+    final var response = issueClient.deleteCommentReaction(commentId, reactionId).join();
 
     assertThat(response.statusCode(), is(204));
     assertThat(response, is(mockResponse));
@@ -269,6 +269,49 @@ public class IssueClientTest {
         listCommentReactions.get(0).content().toString(),
         is(CommentReactionContent.HEART.toString()));
     verify(github, atLeastOnce()).request(eq(path));
+  }
+
+  @ParameterizedTest
+  @EnumSource(CommentReactionContent.class)
+  public void testCreateIssueReaction(CommentReactionContent reaction) {
+    long issueNumber = 42;
+    final CompletableFuture<CommentReaction> reactionResponse =
+        completedFuture(
+            ImmutableCommentReaction.builder()
+                .id(123L)
+                .content(reaction)
+                .user(ImmutableUser.builder().login("octocat").build())
+                .build());
+    final String path = format(ISSUES_REACTION_TEMPLATE, "someowner", "somerepo", issueNumber);
+    final String requestBody =
+        github.json().toJsonUnchecked(ImmutableMap.of("content", reaction.toString()));
+    when(github.post(eq(path), eq(requestBody), eq(CommentReaction.class)))
+        .thenReturn(reactionResponse);
+
+    final var issueReaction = issueClient.createIssueReaction(issueNumber, reaction).join();
+
+    assertThat(issueReaction.id(), is(123L));
+    assertNotNull(issueReaction.user());
+    assertThat(issueReaction.user().login(), is("octocat"));
+    assertThat(issueReaction.content().toString(), is(reaction.toString()));
+    verify(github, times(1)).post(eq(path), eq(requestBody), eq(CommentReaction.class));
+  }
+
+  @Test
+  public void testDeleteIssueReaction() {
+    long issueNumber = 42;
+    long reactionId = 385825;
+    final String path =
+        format(ISSUES_REACTION_ID_TEMPLATE, "someowner", "somerepo", issueNumber, reactionId);
+    HttpResponse mockResponse = mock(HttpResponse.class);
+    when(mockResponse.statusCode()).thenReturn(204);
+    when(github.delete(eq(path))).thenReturn(completedFuture(mockResponse));
+
+    final var response = issueClient.deleteIssueReaction(issueNumber, reactionId).join();
+
+    assertThat(response.statusCode(), is(204));
+    assertThat(response, is(mockResponse));
+    verify(github, times(1)).delete(eq(path));
   }
 
   @Test
