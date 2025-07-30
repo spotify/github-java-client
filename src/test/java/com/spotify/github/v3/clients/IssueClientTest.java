@@ -220,7 +220,7 @@ public class IssueClientTest {
     long commentId = 42;
     long reactionId = 385825;
     final String path =
-        format(COMMENTS_REACTION_TEMPLATE + "/%s", "someowner", "somerepo", commentId, reactionId);
+        format(COMMENTS_REACTION_ID_TEMPLATE, "someowner", "somerepo", commentId, reactionId);
     HttpResponse mockResponse = mock(HttpResponse.class);
     when(mockResponse.statusCode()).thenReturn(204);
     when(github.delete(eq(path))).thenReturn(completedFuture(mockResponse));
