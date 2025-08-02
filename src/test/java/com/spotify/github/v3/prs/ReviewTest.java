@@ -41,6 +41,20 @@ public class ReviewTest {
         Json.create().fromJson(fixture, Review.class);
     assertThat(review.state(), is(ReviewState.APPROVED));
     assertThat(review.commitId(), is("ecdd80bb57125d7ba9641ffaa4d7d2c19d3f3091"));
-    assertThat(review.id(), is(80));
+    assertThat(review.id(), is(80L));
   }
+
+  @Test
+  public void testDeserializationWithLargeId() throws IOException {
+    String fixture =
+        Resources.toString(
+            getResource(this.getClass(), "review_long_id.json"),
+            defaultCharset());
+    final Review review =
+        Json.create().fromJson(fixture, Review.class);
+    assertThat(review.state(), is(ReviewState.APPROVED));
+    assertThat(review.commitId(), is("ecdd80bb57125d7ba9641ffaa4d7d2c19d3f3091"));
+    assertThat(review.id(), is(2459198580L));
+  }
+
 }
