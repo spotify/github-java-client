@@ -78,6 +78,21 @@ public class GithubAppClient {
   }
 
   /**
+   * Gets the owner, throwing a descriptive exception if not present.
+   *
+   * @return the owner string
+   * @throws IllegalStateException if owner is not present
+   */
+  private String requireOwner() {
+    return maybeOwner.orElseThrow(() ->
+      new IllegalStateException(
+        "This operation requires an owner context. "
+        + "Use GitHubClient.createOrganisationClient(owner).createGithubAppClient() "
+        + "or GitHubClient.createRepositoryClient(owner, repo).createGithubAppClient() "
+        + "instead of GitHubClient.createGithubAppClient()"));
+  }
+
+  /**
    * List Installations of an app.
    *
    * @return a list of Installation
@@ -112,7 +127,7 @@ public class GithubAppClient {
    */
   private CompletableFuture<Installation> getRepoInstallation(final String repo) {
     return github.request(
-        String.format(GET_INSTALLATION_REPO_URL, maybeOwner.get(), repo), Installation.class);
+        String.format(GET_INSTALLATION_REPO_URL, requireOwner(), repo), Installation.class);
   }
 
   /**
@@ -122,7 +137,7 @@ public class GithubAppClient {
    */
   private CompletableFuture<Installation> getOrgInstallation() {
     return github.request(
-        String.format(GET_INSTALLATION_ORG_URL, maybeOwner.get()), Installation.class);
+        String.format(GET_INSTALLATION_ORG_URL, requireOwner()), Installation.class);
   }
 
   /**
@@ -132,7 +147,7 @@ public class GithubAppClient {
    */
   public CompletableFuture<Installation> getUserInstallation() {
     return github.request(
-        String.format(GET_INSTALLATION_USER_URL, maybeOwner.get()), Installation.class);
+        String.format(GET_INSTALLATION_USER_URL, requireOwner()), Installation.class);
   }
 
   /**
