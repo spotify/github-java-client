@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,6 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import com.spotify.github.FixtureHelper;
 import com.spotify.github.v3.apps.InstallationRepositoriesResponse;
+import com.spotify.github.v3.checks.App;
 import com.spotify.github.v3.checks.Installation;
 import java.io.File;
 import java.io.IOException;
@@ -110,8 +111,7 @@ public class GithubAppClientTest {
             .setResponseCode(200)
             .setBody(FixtureHelper.loadFixture("githubapp/accessible-repositories.json")));
 
-    InstallationRepositoriesResponse response =
-        client.listAccessibleRepositories(1234).join();
+    InstallationRepositoriesResponse response = client.listAccessibleRepositories(1234).join();
 
     assertThat(response.totalCount(), is(2));
     assertThat(response.repositories().size(), is(2));
@@ -159,5 +159,27 @@ public class GithubAppClientTest {
 
     RecordedRequest recordedRequest = mockServer.takeRequest(1, TimeUnit.MILLISECONDS);
     assertThat(recordedRequest.getRequestUrl().encodedPath(), is("/app/installations/1234"));
+  }
+
+  @Test
+  public void getAuthenticatedApp() throws Exception {
+    mockServer.enqueue(
+        new MockResponse()
+            .setResponseCode(200)
+            .setBody(FixtureHelper.loadFixture("githubapp/authenticated-app.json")));
+
+    App app = client.getAuthenticatedApp().join();
+
+    assertThat(app.id(), is(1));
+    assertThat(app.slug().get(), is("octoapp"));
+    assertThat(app.name(), is("Octocat App"));
+    assertThat(app.clientId().get(), is("Iv1.8a61f9b3a7aba766"));
+    assertThat(app.installationsCount().get(), is(5));
+
+    RecordedRequest recordedRequest = mockServer.takeRequest(1, TimeUnit.MILLISECONDS);
+    assertThat(recordedRequest.getRequestUrl().encodedPath(), is("/app"));
+    assertThat(
+        recordedRequest.getHeaders().values("Authorization").get(0).startsWith("Bearer "),
+        is(true));
   }
 }
