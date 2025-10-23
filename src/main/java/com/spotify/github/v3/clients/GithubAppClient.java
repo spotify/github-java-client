@@ -84,12 +84,13 @@ public class GithubAppClient {
    * @throws IllegalStateException if owner is not present
    */
   private String requireOwner() {
-    return maybeOwner.orElseThrow(() ->
-      new IllegalStateException(
-        "This operation requires an owner context. "
-        + "Use GitHubClient.createOrganisationClient(owner).createGithubAppClient() "
-        + "or GitHubClient.createRepositoryClient(owner, repo).createGithubAppClient() "
-        + "instead of GitHubClient.createGithubAppClient()"));
+    return maybeOwner.orElseThrow(
+        () ->
+            new IllegalStateException(
+                "This operation requires an owner context. "
+                    + "Use GitHubClient.createOrganisationClient(owner).createGithubAppClient() "
+                    + "or GitHubClient.createRepositoryClient(owner, repo).createGithubAppClient() "
+                    + "instead of GitHubClient.createGithubAppClient()"));
   }
 
   /**
