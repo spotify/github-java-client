@@ -195,7 +195,7 @@ public class GitDataClientTest {
         .thenReturn(fixture);
     final Reference reference =
         gitDataClient.updateReference("featureA", "aa218f56b14c9653891f9e74264a383fa43fefbd", false).get();
-    assertThat(reference.ref(), is("featureA"));
+    assertThat(reference.ref(), is("refs/heads/featureA"));
     assertThat(reference.object().sha(), is("aa218f56b14c9653891f9e74264a383fa43fefbd"));
   }
 
