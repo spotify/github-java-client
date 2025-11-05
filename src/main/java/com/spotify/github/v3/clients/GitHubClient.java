@@ -588,6 +588,15 @@ public class GitHubClient {
     return UserClient.create(this, owner);
   }
 
+  /**
+   * Create GitHub App API client
+   *
+   * @return GitHub App API client
+   */
+  public GithubAppClient createGithubAppClient() {
+    return new GithubAppClient(this);
+  }
+
   Json json() {
     return json;
   }
@@ -1017,7 +1026,9 @@ public class GitHubClient {
   }
 
   private boolean isJwtRequest(final String path) {
-    return path.startsWith("/app/installation") || path.endsWith("installation");
+    return path.equals("/app")
+        || path.startsWith("/app/installation")
+        || path.endsWith("installation");
   }
 
   /**

@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,6 +24,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.ImmutableMap;
 import com.spotify.github.v3.apps.InstallationRepositoriesResponse;
 import com.spotify.github.v3.checks.AccessToken;
+import com.spotify.github.v3.checks.App;
 import com.spotify.github.v3.checks.Installation;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ import javax.ws.rs.core.HttpHeaders;
 /** Apps API client */
 public class GithubAppClient {
 
+  private static final String GET_AUTHENTICATED_APP_URL = "/app";
   private static final String GET_INSTALLATION_BY_ID_URL = "/app/installations/%s";
   private static final String GET_ACCESS_TOKEN_URL = "/app/installations/%s/access_tokens";
   private static final String GET_INSTALLATIONS_URL = "/app/installations?per_page=100";
@@ -48,7 +50,7 @@ public class GithubAppClient {
   private static final String GET_INSTALLATION_USER_URL = "/users/%s/installation";
 
   private final GitHubClient github;
-  private final String owner;
+  private final Optional<String> maybeOwner;
   private final Optional<String> maybeRepo;
 
   private final Map<String, String> extraHeaders =
@@ -59,14 +61,36 @@ public class GithubAppClient {
 
   GithubAppClient(final GitHubClient github, final String owner, final String repo) {
     this.github = github;
-    this.owner = owner;
+    this.maybeOwner = Optional.of(owner);
     this.maybeRepo = Optional.of(repo);
   }
 
   GithubAppClient(final GitHubClient github, final String owner) {
     this.github = github;
-    this.owner = owner;
+    this.maybeOwner = Optional.of(owner);
     this.maybeRepo = Optional.empty();
+  }
+
+  GithubAppClient(final GitHubClient github) {
+    this.github = github;
+    this.maybeOwner = Optional.empty();
+    this.maybeRepo = Optional.empty();
+  }
+
+  /**
+   * Gets the owner, throwing a descriptive exception if not present.
+   *
+   * @return the owner string
+   * @throws IllegalStateException if owner is not present
+   */
+  private String requireOwner() {
+    return maybeOwner.orElseThrow(
+        () ->
+            new IllegalStateException(
+                "This operation requires an owner context. "
+                    + "Use GitHubClient.createOrganisationClient(owner).createGithubAppClient() "
+                    + "or GitHubClient.createRepositoryClient(owner, repo).createGithubAppClient() "
+                    + "instead of GitHubClient.createGithubAppClient()"));
   }
 
   /**
@@ -99,29 +123,32 @@ public class GithubAppClient {
 
   /**
    * Get an installation of a repo
+   *
    * @return an Installation
    */
   private CompletableFuture<Installation> getRepoInstallation(final String repo) {
     return github.request(
-        String.format(GET_INSTALLATION_REPO_URL, owner, repo), Installation.class);
+        String.format(GET_INSTALLATION_REPO_URL, requireOwner(), repo), Installation.class);
   }
 
   /**
    * Get an installation of an org
+   *
    * @return an Installation
    */
   private CompletableFuture<Installation> getOrgInstallation() {
     return github.request(
-        String.format(GET_INSTALLATION_ORG_URL, owner), Installation.class);
+        String.format(GET_INSTALLATION_ORG_URL, requireOwner()), Installation.class);
   }
 
-    /**
+  /**
    * Get an installation of a user
+   *
    * @return an Installation
    */
   public CompletableFuture<Installation> getUserInstallation() {
     return github.request(
-        String.format(GET_INSTALLATION_USER_URL, owner), Installation.class);
+        String.format(GET_INSTALLATION_USER_URL, requireOwner()), Installation.class);
   }
 
   /**
@@ -145,5 +172,18 @@ public class GithubAppClient {
 
     return GitHubClient.scopeForInstallationId(github, installationId)
         .request(LIST_ACCESSIBLE_REPOS_URL, InstallationRepositoriesResponse.class, extraHeaders);
+  }
+
+  /**
+   * Get the authenticated GitHub App.
+   *
+   * <p>Returns the authenticated app. You must use a JWT to access this endpoint.
+   *
+   * <p>see https://docs.github.com/en/rest/apps/apps#get-the-authenticated-app
+   *
+   * @return the authenticated App
+   */
+  public CompletableFuture<App> getAuthenticatedApp() {
+    return github.request(GET_AUTHENTICATED_APP_URL, App.class);
   }
 }
