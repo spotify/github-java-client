@@ -189,6 +189,23 @@ public class GitDataClient {
   }
 
   /**
+   * Update a git reference.
+   *
+   * @param ref reference name
+   * @param sha The SHA1 value to set the reference to
+   * @param force Indicates whether to force the update or to make sure the update is a fast-forward update. Setting
+   *              this to false will make sure you're not overwriting work.
+   */
+  public CompletableFuture<Reference> updateReference(final String ref, final String sha, final boolean force) {
+    final String path = format(REFERENCE_URI, owner, repo, ref);
+    final ImmutableMap<String, String> body =
+        of(
+            "sha", sha,
+            "force", Boolean.toString(force));
+    return github.patch(path, github.json().toJsonUnchecked(body), Reference.class);
+  }
+
+  /**
    * Create an annotated tag. First it would create a tag reference and then create annotated tag
    *
    * @param tag tag name

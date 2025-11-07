@@ -181,6 +181,25 @@ public class GitDataClientTest {
   }
 
   @Test
+  public void updateReference() throws Exception {
+    final CompletableFuture<Reference> fixture =
+        completedFuture(json.fromJson(getFixture("branch.json"), Reference.class));
+    final ImmutableMap<String, String> body =
+        of(
+            "sha", "aa218f56b14c9653891f9e74264a383fa43fefbd",
+            "force", "false");
+    when(github.patch(
+        "/repos/someowner/somerepo/git/refs/featureA",
+        github.json().toJsonUnchecked(body),
+        Reference.class))
+        .thenReturn(fixture);
+    final Reference reference =
+        gitDataClient.updateReference("featureA", "aa218f56b14c9653891f9e74264a383fa43fefbd", false).get();
+    assertThat(reference.ref(), is("refs/heads/featureA"));
+    assertThat(reference.object().sha(), is("aa218f56b14c9653891f9e74264a383fa43fefbd"));
+  }
+
+  @Test
   public void createAnnotateTag() throws Exception {
     final String now = Instant.now().toString();
     final ImmutableMap<String, Object> body =
