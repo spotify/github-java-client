@@ -27,10 +27,13 @@ import com.spotify.github.GitHubInstant;
 import com.spotify.github.GithubStyle;
 import com.spotify.github.v3.Milestone;
 import com.spotify.github.v3.User;
+import com.spotify.github.v3.issues.Label;
+
+import javax.annotation.Nullable;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
-import javax.annotation.Nullable;
+
 import org.immutables.value.Value;
 
 /** Pull request item resource represents data returned during pull request list operation */
@@ -130,4 +133,15 @@ public interface PullRequestItem extends PartialPullRequestItem {
   /** Node ID. */
   @Nullable
   String nodeId();
+
+  /** Is Automerge Enabled */
+  @Nullable
+  AutoMerge autoMerge();
+
+  /** Is it a draft PR? */
+  Optional<Boolean> draft();
+
+  /** List of PR labels */
+  @Nullable
+  List<Label> labels();
 }
