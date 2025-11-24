@@ -44,7 +44,7 @@ public interface Review {
 
   /** Id. */
   @Nullable
-  Integer id();
+  Long id();
 
   /** User. */
   @Nullable
