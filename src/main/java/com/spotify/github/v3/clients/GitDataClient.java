@@ -198,10 +198,10 @@ public class GitDataClient {
    */
   public CompletableFuture<Reference> updateReference(final String ref, final String sha, final boolean force) {
     final String path = format(REFERENCE_URI, owner, repo, ref);
-    final ImmutableMap<String, String> body =
+    final ImmutableMap<String, Object> body =
         of(
             "sha", sha,
-            "force", Boolean.toString(force));
+            "force", force);
     return github.patch(path, github.json().toJsonUnchecked(body), Reference.class);
   }
 
