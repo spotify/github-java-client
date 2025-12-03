@@ -184,10 +184,10 @@ public class GitDataClientTest {
   public void updateReference() throws Exception {
     final CompletableFuture<Reference> fixture =
         completedFuture(json.fromJson(getFixture("branch.json"), Reference.class));
-    final ImmutableMap<String, String> body =
+    final ImmutableMap<String, Object> body =
         of(
             "sha", "aa218f56b14c9653891f9e74264a383fa43fefbd",
-            "force", "false");
+            "force", false);
     when(github.patch(
         "/repos/someowner/somerepo/git/refs/featureA",
         github.json().toJsonUnchecked(body),
