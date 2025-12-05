@@ -23,6 +23,7 @@ package com.spotify.github.v3.clients;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.ImmutableMap;
 import com.spotify.github.v3.apps.InstallationRepositoriesResponse;
+import com.spotify.github.v3.apps.requests.AccessTokenRequest;
 import com.spotify.github.v3.checks.AccessToken;
 import com.spotify.github.v3.checks.App;
 import com.spotify.github.v3.checks.Installation;
@@ -155,10 +156,26 @@ public class GithubAppClient {
    * Authenticates as an installation
    *
    * @return an Installation Token
+   * @see #getAccessToken(Integer, AccessTokenRequest) for repository-scoped tokens
    */
   public CompletableFuture<AccessToken> getAccessToken(final Integer installationId) {
     final String path = String.format(GET_ACCESS_TOKEN_URL, installationId);
     return github.post(path, "", AccessToken.class, extraHeaders);
+  }
+
+  /**
+   * Authenticates as an installation with repository scoping.
+   *
+   * @param installationId the installation ID
+   * @param request the access token request with optional repository scoping
+   * @return an Installation Token
+   * @see "https://docs.github.com/en/rest/apps/apps#create-an-installation-access-token-for-an-app"
+   */
+  public CompletableFuture<AccessToken> getAccessToken(
+      final Integer installationId,
+      final AccessTokenRequest request) {
+    final String path = String.format(GET_ACCESS_TOKEN_URL, installationId);
+    return github.post(path, github.json().toJsonUnchecked(request), AccessToken.class, extraHeaders);
   }
 
   /**

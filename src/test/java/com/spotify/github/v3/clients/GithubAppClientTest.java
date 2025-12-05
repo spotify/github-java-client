@@ -24,12 +24,16 @@ import static com.google.common.io.Resources.getResource;
 import static java.nio.charset.Charset.defaultCharset;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.core.Is.is;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
 import com.spotify.github.FixtureHelper;
 import com.spotify.github.v3.apps.InstallationRepositoriesResponse;
+import com.spotify.github.v3.apps.requests.AccessTokenRequest;
+import com.spotify.github.v3.apps.requests.ImmutableAccessTokenRequest;
+import com.spotify.github.v3.checks.AccessToken;
 import com.spotify.github.v3.checks.App;
 import com.spotify.github.v3.checks.Installation;
 import java.io.File;
@@ -181,5 +185,69 @@ public class GithubAppClientTest {
     assertThat(
         recordedRequest.getHeaders().values("Authorization").get(0).startsWith("Bearer "),
         is(true));
+  }
+
+  @Test
+  public void getAccessTokenWithoutScoping() throws Exception {
+    mockServer.enqueue(
+        new MockResponse()
+            .setResponseCode(201)
+            .setBody(FixtureHelper.loadFixture("githubapp/access-token.json")));
+
+    AccessToken token = client.getAccessToken(1234).join();
+
+    assertThat(token.token(), is("ghs_16C7e42F292c6912E7710c838347Ae178B4a"));
+
+    RecordedRequest recordedRequest = mockServer.takeRequest(1, TimeUnit.MILLISECONDS);
+    assertThat(recordedRequest.getMethod(), is("POST"));
+    assertThat(
+        recordedRequest.getRequestUrl().encodedPath(),
+        is("/app/installations/1234/access_tokens"));
+    assertThat(recordedRequest.getBody().readUtf8(), is(""));
+  }
+
+  @Test
+  public void getAccessTokenWithRepositoryScoping() throws Exception {
+    mockServer.enqueue(
+        new MockResponse()
+            .setResponseCode(201)
+            .setBody(FixtureHelper.loadFixture("githubapp/access-token.json")));
+
+    AccessTokenRequest request = ImmutableAccessTokenRequest.builder()
+        .repositories(List.of("Hello-World"))
+        .repositoryIds(List.of(1))
+        .build();
+
+    AccessToken token = client.getAccessToken(1234, request).join();
+
+    assertThat(token.token(), is("ghs_16C7e42F292c6912E7710c838347Ae178B4a"));
+
+    RecordedRequest recordedRequest = mockServer.takeRequest(1, TimeUnit.MILLISECONDS);
+    assertThat(recordedRequest.getMethod(), is("POST"));
+    assertThat(
+        recordedRequest.getRequestUrl().encodedPath(),
+        is("/app/installations/1234/access_tokens"));
+
+    String requestBody = recordedRequest.getBody().readUtf8();
+    assertThat(requestBody, containsString("\"repositories\":[\"Hello-World\"]"));
+    assertThat(requestBody, containsString("\"repository_ids\":[1]"));
+  }
+
+  @Test
+  public void getAccessTokenWithEmptyRequest() throws Exception {
+    mockServer.enqueue(
+        new MockResponse()
+            .setResponseCode(201)
+            .setBody(FixtureHelper.loadFixture("githubapp/access-token.json")));
+
+    AccessTokenRequest emptyRequest = ImmutableAccessTokenRequest.builder().build();
+
+    AccessToken token = client.getAccessToken(1234, emptyRequest).join();
+
+    assertThat(token.token(), is("ghs_16C7e42F292c6912E7710c838347Ae178B4a"));
+
+    RecordedRequest recordedRequest = mockServer.takeRequest(1, TimeUnit.MILLISECONDS);
+    String requestBody = recordedRequest.getBody().readUtf8();
+    assertThat(requestBody, is("{}"));
   }
 }
