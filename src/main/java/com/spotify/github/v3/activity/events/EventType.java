@@ -87,7 +87,8 @@ public enum EventType {
   UNKNOWN,
   ALL;
 
-  String toString() {
+  @Override
+  public String toString() {
     return this.name().toLowerCase();
   }
 }
