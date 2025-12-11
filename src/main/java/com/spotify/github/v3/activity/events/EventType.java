@@ -20,8 +20,6 @@
 
 package com.spotify.github.v3.activity.events;
 
-import java.util.Locale;
-
 public enum EventType {
   BRANCH_PROTECTION_RULE,
   CHECK_RUN,
@@ -88,9 +86,6 @@ public enum EventType {
   WORKFLOW_RUN,
   UNKNOWN,
   ALL;
-
-  private EventType() {
-  }
 
   String toString() {
     return this.name().toLowerCase();
