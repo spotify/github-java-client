@@ -27,4 +27,6 @@ import java.util.LinkedHashMap;
  *
  * @see "https://developer.github.com/v3/repos/#list-languages"
  */
-public class Languages extends LinkedHashMap<String, Integer> {}
+public class Languages extends LinkedHashMap<String, Integer> {
+  private static final long serialVersionUID = 1L;
+}

@@ -18,7 +18,6 @@
  * -/-/-
  */
 
-
 package com.spotify.github.v3.clients;
 
 import static com.spotify.github.v3.clients.GitHubClient.*;
@@ -28,8 +27,10 @@ import com.spotify.github.v3.Team;
 import com.spotify.github.v3.User;
 import com.spotify.github.v3.orgs.Membership;
 import com.spotify.github.v3.orgs.TeamInvitation;
+import com.spotify.github.v3.orgs.requests.ImmutableTeamRepoPermissionUpdate;
 import com.spotify.github.v3.orgs.requests.MembershipCreate;
 import com.spotify.github.v3.orgs.requests.TeamCreate;
+import com.spotify.github.v3.orgs.requests.TeamRepoPermissionUpdate;
 import com.spotify.github.v3.orgs.requests.TeamUpdate;
 import java.lang.invoke.MethodHandles;
 import java.util.Iterator;
@@ -48,11 +49,13 @@ public class TeamClient {
 
   private static final String MEMBERS_TEMPLATE = "/orgs/%s/teams/%s/members";
 
-  private static final String PAGED_MEMBERS_TEMPLATE = "/orgs/%s/teams/%s/members?per_page=%d";
+  private static final String PAGED_MEMBERS_TEMPLATE = "/orgs/%s/teams/%s/members";
 
   private static final String MEMBERSHIP_TEMPLATE = "/orgs/%s/teams/%s/memberships/%s";
 
   private static final String INVITATIONS_TEMPLATE = "/orgs/%s/teams/%s/invitations";
+
+  private static final String REPO_TEMPLATE = "/orgs/%s/teams/%s/repos/%s/%s";
 
   private final GitHubClient github;
 
@@ -75,7 +78,7 @@ public class TeamClient {
    */
   public CompletableFuture<Team> createTeam(final TeamCreate request) {
     final String path = String.format(TEAM_TEMPLATE, org);
-    log.debug("Creating team in: " + path);
+    log.debug("Creating team in: {}", path);
     return github.post(path, github.json().toJsonUnchecked(request), Team.class);
   }
 
@@ -87,7 +90,7 @@ public class TeamClient {
    */
   public CompletableFuture<Team> getTeam(final String slug) {
     final String path = String.format(TEAM_SLUG_TEMPLATE, org, slug);
-    log.debug("Fetching team from " + path);
+    log.debug("Fetching team from {}", path);
     return github.request(path, Team.class);
   }
 
@@ -98,7 +101,7 @@ public class TeamClient {
    */
   public CompletableFuture<List<Team>> listTeams() {
     final String path = String.format(TEAM_TEMPLATE, org);
-    log.debug("Fetching teams from " + path);
+    log.debug("Fetching teams from {}", path);
     return github.request(path, LIST_TEAMS);
   }
 
@@ -111,7 +114,7 @@ public class TeamClient {
    */
   public CompletableFuture<Team> updateTeam(final TeamUpdate request, final String slug) {
     final String path = String.format(TEAM_SLUG_TEMPLATE, org, slug);
-    log.debug("Updating team in: " + path);
+    log.debug("Updating team in: {}", path);
     return github.patch(path, github.json().toJsonUnchecked(request), Team.class);
   }
 
@@ -123,7 +126,7 @@ public class TeamClient {
    */
   public CompletableFuture<Void> deleteTeam(final String slug) {
     final String path = String.format(TEAM_SLUG_TEMPLATE, org, slug);
-    log.debug("Deleting team from: " + path);
+    log.debug("Deleting team from: {}", path);
     return github.delete(path).thenAccept(IGNORE_RESPONSE_CONSUMER);
   }
 
@@ -133,9 +136,10 @@ public class TeamClient {
    * @param request update membership request
    * @return membership
    */
-  public CompletableFuture<Membership> updateMembership(final MembershipCreate request, final String slug, final String username) {
+  public CompletableFuture<Membership> updateMembership(
+      final MembershipCreate request, final String slug, final String username) {
     final String path = String.format(MEMBERSHIP_TEMPLATE, org, slug, username);
-    log.debug("Updating membership in: " + path);
+    log.debug("Updating membership in: {}", path);
     return github.put(path, github.json().toJsonUnchecked(request), Membership.class);
   }
 
@@ -148,7 +152,7 @@ public class TeamClient {
    */
   public CompletableFuture<Membership> getMembership(final String slug, final String username) {
     final String path = String.format(MEMBERSHIP_TEMPLATE, org, slug, username);
-    log.debug("Fetching membership for: " + path);
+    log.debug("Fetching membership for: {}", path);
     return github.request(path, Membership.class);
   }
 
@@ -160,7 +164,7 @@ public class TeamClient {
    */
   public CompletableFuture<List<User>> listTeamMembers(final String slug) {
     final String path = String.format(MEMBERS_TEMPLATE, org, slug);
-    log.debug("Fetching members for: " + path);
+    log.debug("Fetching members for: {}", path);
     return github.request(path, LIST_TEAM_MEMBERS);
   }
 
@@ -172,9 +176,9 @@ public class TeamClient {
    * @return list of all users in a team
    */
   public Iterator<AsyncPage<User>> listTeamMembers(final String slug, final int pageSize) {
-    final String path = String.format(PAGED_MEMBERS_TEMPLATE, org, slug, pageSize);
-    log.debug("Fetching members for: " + path);
-    return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_TEAM_MEMBERS));
+    final String path = String.format(PAGED_MEMBERS_TEMPLATE, org, slug);
+    log.debug("Fetching members for: {}", path);
+    return new GithubPageIterator<>(new GithubPage<>(github, path, LIST_TEAM_MEMBERS, pageSize));
   }
 
   /**
@@ -185,7 +189,7 @@ public class TeamClient {
    */
   public CompletableFuture<Void> deleteMembership(final String slug, final String username) {
     final String path = String.format(MEMBERSHIP_TEMPLATE, org, slug, username);
-    log.debug("Deleting membership from: " + path);
+    log.debug("Deleting membership from: {}", path);
     return github.delete(path).thenAccept(IGNORE_RESPONSE_CONSUMER);
   }
 
@@ -197,7 +201,31 @@ public class TeamClient {
    */
   public CompletableFuture<List<TeamInvitation>> listPendingTeamInvitations(final String slug) {
     final String path = String.format(INVITATIONS_TEMPLATE, org, slug);
-    log.debug("Fetching pending invitations for: " + path);
+    log.debug("Fetching pending invitations for: {}", path);
     return github.request(path, LIST_PENDING_TEAM_INVITATIONS);
+  }
+
+  /**
+   * Update permissions for a team on a specific repository.
+   *
+   * @param slug the team slug
+   * @param repo the repository name
+   * @param permission the permission level (pull, push, maintain, triage, admin, or a custom repo defined role name)
+   * @return void status code 204 if successful
+   */
+  public CompletableFuture<Void> updateTeamPermissions(
+      final String slug, final String repo, final String permission) {
+    final String path = String.format(REPO_TEMPLATE, org, slug, org, repo);
+    final TeamRepoPermissionUpdate request =
+        ImmutableTeamRepoPermissionUpdate.builder()
+            .org(org)
+            .repo(repo)
+            .teamSlug(slug)
+            .permission(permission)
+            .build();
+    log.debug("Updating team permissions for: {}", path);
+    return github
+        .put(path, github.json().toJsonUnchecked(request))
+        .thenAccept(IGNORE_RESPONSE_CONSUMER);
   }
 }

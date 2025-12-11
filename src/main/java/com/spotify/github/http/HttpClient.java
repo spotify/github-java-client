@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,16 +18,12 @@
  * -/-/-
  */
 
-package com.spotify.github;
+package com.spotify.github.http;
 
-public interface Span extends AutoCloseable {
+import com.spotify.github.tracing.Tracer;
+import java.util.concurrent.CompletableFuture;
 
-    Span success();
-
-    Span failure(Throwable t);
-
-    /** Close span. Must be called for any opened span. */
-    @Override
-    void close();
+public interface HttpClient {
+  CompletableFuture<HttpResponse> send(HttpRequest request);
+  void setTracer(Tracer tracer);
 }
-

@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -33,17 +33,16 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import com.google.common.io.Resources;
-import com.spotify.github.Tracer;
+import com.spotify.github.http.HttpRequest;
+import com.spotify.github.tracing.Span;
+import com.spotify.github.tracing.Tracer;
 import com.spotify.github.v3.checks.CheckSuiteResponseList;
 import com.spotify.github.v3.checks.Installation;
 import com.spotify.github.v3.exceptions.ReadOnlyRepositoryException;
 import com.spotify.github.v3.exceptions.RequestNotOkException;
 import com.spotify.github.v3.repos.CommitItem;
 import com.spotify.github.v3.repos.RepositoryInvitation;
-import com.spotify.github.v3.workflows.WorkflowsResponse;
-import com.spotify.github.v3.workflows.WorkflowsState;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -52,6 +51,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+
+import com.spotify.github.v3.workflows.WorkflowsResponse;
+import com.spotify.github.v3.workflows.WorkflowsState;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Headers;
@@ -61,6 +63,7 @@ import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -70,7 +73,8 @@ public class GitHubClientTest {
 
   private GitHubClient github;
   private OkHttpClient client;
-  private Tracer tracer = mock(Tracer.class);
+  private final Tracer tracer = mock(Tracer.class);
+  private final Span mockSpan = mock(Span.class);
 
   private static String getFixture(String resource) throws IOException {
     return Resources.toString(getResource(GitHubClientTest.class, resource), defaultCharset());
@@ -80,6 +84,7 @@ public class GitHubClientTest {
   public void setUp() {
     client = mock(OkHttpClient.class);
     github = GitHubClient.create(client, URI.create("http://bogus"), "token");
+    when(tracer.span(any())).thenReturn(mockSpan);
   }
 
   @Test
@@ -89,7 +94,9 @@ public class GitHubClientTest {
 
   @Test
   public void testWithScopedInstallationId() throws URISyntaxException {
-    GitHubClient org = GitHubClient.create(new URI("http://apa.bepa.cepa"), "some_key_content".getBytes(), null, null);
+    GitHubClient org =
+        GitHubClient.create(
+            new URI("http://apa.bepa.cepa"), "some_key_content".getBytes(), null, null);
     GitHubClient scoped = org.withScopeForInstallationId(1);
     Assertions.assertTrue(scoped.getPrivateKey().isPresent());
     Assertions.assertEquals(org.getPrivateKey().get(), scoped.getPrivateKey().get());
@@ -128,10 +135,9 @@ public class GitHubClientTest {
 
     CompletableFuture<Void> maybeSucceeded = issueClient.editComment(1, "some comment");
     capture.getValue().onResponse(call, response);
-    verify(tracer,times(1)).span(anyString(), anyString(),any());
+    verify(tracer, times(1)).span(any(HttpRequest.class));
 
-    Exception exception = assertThrows(ExecutionException.class,
-        maybeSucceeded::get);
+    Exception exception = assertThrows(ExecutionException.class, maybeSucceeded::get);
     Assertions.assertEquals(ReadOnlyRepositoryException.class, exception.getCause().getClass());
   }
 
@@ -141,18 +147,17 @@ public class GitHubClientTest {
     final ArgumentCaptor<Callback> capture = ArgumentCaptor.forClass(Callback.class);
     doNothing().when(call).enqueue(capture.capture());
 
-    final Response response = new okhttp3.Response.Builder()
-        .code(409) // Conflict
-        .headers(Headers.of("x-ratelimit-remaining", "0"))
-        .body(
-            ResponseBody.create(
-                MediaType.get("application/json"),
-                "{\n  \"message\": \"Merge Conflict\"\n}"
-            ))
-        .message("")
-        .protocol(Protocol.HTTP_1_1)
-        .request(new Request.Builder().url("http://localhost/").build())
-        .build();
+    final Response response =
+        new okhttp3.Response.Builder()
+            .code(409) // Conflict
+            .headers(Headers.of("x-ratelimit-remaining", "0"))
+            .body(
+                ResponseBody.create(
+                    MediaType.get("application/json"), "{\n  \"message\": \"Merge Conflict\"\n}"))
+            .message("")
+            .protocol(Protocol.HTTP_1_1)
+            .request(new Request.Builder().url("http://localhost/").build())
+            .build();
 
     when(client.newCall(any())).thenReturn(call);
     RepositoryClient repoApi = github.createRepositoryClient("testorg", "testrepo");
@@ -196,8 +201,8 @@ public class GitHubClientTest {
             .request(new Request.Builder().url("http://localhost/").build())
             .build();
 
-    CompletableFuture<RepositoryInvitation> future = github.put("collaborators/", "",
-        RepositoryInvitation.class);
+    CompletableFuture<RepositoryInvitation> future =
+        github.put("collaborators/", "", RepositoryInvitation.class);
     callbackCapture.getValue().onResponse(call, response);
 
     RepositoryInvitation invitation = future.get();
@@ -213,15 +218,17 @@ public class GitHubClientTest {
     final ArgumentCaptor<Callback> callbackCapture = ArgumentCaptor.forClass(Callback.class);
     doNothing().when(call).enqueue(callbackCapture.capture());
 
-    final Response response = new okhttp3.Response.Builder()
-        .code(200)
-        .body(
-            ResponseBody.create(
-                MediaType.get("application/json"), getFixture("../checks/check-suites-response.json")))
-        .message("")
-        .protocol(Protocol.HTTP_1_1)
-        .request(new Request.Builder().url("http://localhost/").build())
-        .build();
+    final Response response =
+        new okhttp3.Response.Builder()
+            .code(200)
+            .body(
+                ResponseBody.create(
+                    MediaType.get("application/json"),
+                    getFixture("../checks/check-suites-response.json")))
+            .message("")
+            .protocol(Protocol.HTTP_1_1)
+            .request(new Request.Builder().url("http://localhost/").build())
+            .build();
 
     when(client.newCall(any())).thenReturn(call);
     ChecksClient client = github.createChecksClient("testorg", "testrepo");
@@ -232,7 +239,6 @@ public class GitHubClientTest {
 
     assertThat(result.totalCount(), is(1));
     assertThat(result.checkSuites().get(0).app().get().slug().get(), is("octoapp"));
-
   }
 
   @Test
@@ -241,20 +247,25 @@ public class GitHubClientTest {
     final ArgumentCaptor<Callback> callbackCapture = ArgumentCaptor.forClass(Callback.class);
     doNothing().when(call).enqueue(callbackCapture.capture());
 
-    final Response response = new okhttp3.Response.Builder()
-        .code(200)
-        .body(
-            ResponseBody.create(
-                MediaType.get("application/json"),
-                getFixture("../workflows/workflows-get-workflow-response.json")))
-        .message("")
-        .protocol(Protocol.HTTP_1_1)
-        .request(new Request.Builder().url("http://localhost/").build())
-        .build();
+    final Response response =
+        new okhttp3.Response.Builder()
+            .code(200)
+            .body(
+                ResponseBody.create(
+                    MediaType.get("application/json"),
+                    getFixture("../workflows/workflows-get-workflow-response.json")))
+            .message("")
+            .protocol(Protocol.HTTP_1_1)
+            .request(new Request.Builder().url("http://localhost/").build())
+            .build();
 
     when(client.newCall(any())).thenReturn(call);
-    WorkflowsClient client = github.withTracer(tracer).createRepositoryClient("testorg", "testrepo")
-        .createActionsClient().createWorkflowsClient();
+    WorkflowsClient client =
+        github
+            .withTracer(tracer)
+            .createRepositoryClient("testorg", "testrepo")
+            .createActionsClient()
+            .createWorkflowsClient();
 
     CompletableFuture<WorkflowsResponse> future = client.getWorkflow(161335);
     callbackCapture.getValue().onResponse(call, response);
@@ -274,7 +285,8 @@ public class GitHubClientTest {
 
     var appClientMock = mock(GithubAppClient.class);
     when(orgClientMock.createGithubAppClient()).thenReturn(appClientMock);
-    when(appClientMock.getInstallation()).thenReturn(failedFuture(new RequestNotOkException("", "", 404, "", new HashMap<>())));
+    when(appClientMock.getInstallation())
+        .thenReturn(failedFuture(new RequestNotOkException("", "", 404, "", new HashMap<>())));
 
     var userClientMock = mock(UserClient.class);
     when(githubSpy.createUserClient("owner")).thenReturn(userClientMock);
@@ -303,7 +315,8 @@ public class GitHubClientTest {
 
     var appClientMock = mock(GithubAppClient.class);
     when(orgClientMock.createGithubAppClient()).thenReturn(appClientMock);
-    when(appClientMock.getInstallation()).thenReturn(failedFuture(new RequestNotOkException("", "", 404, "", new HashMap<>())));
+    when(appClientMock.getInstallation())
+        .thenReturn(failedFuture(new RequestNotOkException("", "", 404, "", new HashMap<>())));
 
     var userClientMock = mock(UserClient.class);
     when(githubSpy.createUserClient("owner")).thenReturn(userClientMock);
@@ -312,7 +325,8 @@ public class GitHubClientTest {
     when(userClientMock.createGithubAppClient()).thenReturn(appClientMock2);
 
     var installationMock = mock(Installation.class);
-    when(appClientMock2.getUserInstallation()).thenReturn(failedFuture(new RequestNotOkException("", "", 404, "", new HashMap<>())));
+    when(appClientMock2.getUserInstallation())
+        .thenReturn(failedFuture(new RequestNotOkException("", "", 404, "", new HashMap<>())));
     when(installationMock.id()).thenReturn(1);
 
     var maybeScopedClient = githubSpy.asAppScopedClient("owner").toCompletableFuture().join();

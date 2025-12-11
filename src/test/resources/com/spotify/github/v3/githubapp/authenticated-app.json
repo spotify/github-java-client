@@ -1,0 +1,43 @@
+{
+  "id": 1,
+  "slug": "octoapp",
+  "node_id": "MDExOkludGVncmF0aW9uMQ==",
+  "owner": {
+    "login": "github",
+    "id": 1,
+    "node_id": "MDEyOk9yZ2FuaXphdGlvbjE=",
+    "url": "https://api.github.com/orgs/github",
+    "repos_url": "https://api.github.com/orgs/github/repos",
+    "events_url": "https://api.github.com/orgs/github/events",
+    "avatar_url": "https://github.com/images/error/octocat_happy.gif",
+    "gravatar_id": "",
+    "html_url": "https://github.com/github",
+    "followers_url": "https://api.github.com/users/github/followers",
+    "following_url": "https://api.github.com/users/github/following{/other_user}",
+    "gists_url": "https://api.github.com/users/github/gists{/gist_id}",
+    "starred_url": "https://api.github.com/users/github/starred{/owner}{/repo}",
+    "subscriptions_url": "https://api.github.com/users/github/subscriptions",
+    "organizations_url": "https://api.github.com/users/github/orgs",
+    "received_events_url": "https://api.github.com/users/github/received_events",
+    "type": "User",
+    "site_admin": true
+  },
+  "name": "Octocat App",
+  "description": "Test GitHub App",
+  "external_url": "https://example.com",
+  "html_url": "https://github.com/apps/octoapp",
+  "created_at": "2017-07-08T16:18:44-04:00",
+  "updated_at": "2017-07-08T16:18:44-04:00",
+  "permissions": {
+    "metadata": "read",
+    "contents": "read",
+    "issues": "write",
+    "single_file": "write"
+  },
+  "events": ["push", "pull_request"],
+  "installations_count": 5,
+  "client_id": "Iv1.8a61f9b3a7aba766",
+  "client_secret": "1726be1638095a19edd134c77bde3aa2ece1e5d8",
+  "webhook_secret": "e340154128314309424b7c8e90325147d99fdafa",
+  "pem": "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEAuEPzOUE+kiEH1WLiMeBytTEF856j0hgg...\n-----END RSA PRIVATE KEY-----"
+}

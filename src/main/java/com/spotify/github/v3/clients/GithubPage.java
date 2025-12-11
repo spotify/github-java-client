@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,7 +20,6 @@
 
 package com.spotify.github.v3.clients;
 
-import static com.spotify.github.v3.clients.GitHubClient.responseBodyUnchecked;
 import static java.util.Arrays.stream;
 import static java.util.Objects.nonNull;
 import static java.util.function.Function.identity;
@@ -37,8 +36,9 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
-import okhttp3.ResponseBody;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.apache.http.client.utils.URIBuilder;
 
 /**
  * Async page implementation for github resources
@@ -47,12 +47,27 @@ import okhttp3.ResponseBody;
  */
 public class GithubPage<T> implements AsyncPage<T> {
 
+  static final int ITEM_PER_PAGE_DEFAULT = 30;
   private final GitHubClient github;
   private final String path;
   private final TypeReference<List<T>> typeReference;
+  private final int itemsPerPage;
+
+  protected static String formatPath(final String path, final int itemsPerPage) {
+    try {
+      URIBuilder uriBuilder = new URIBuilder(path);
+      if (uriBuilder.getQueryParams().stream().anyMatch(p -> p.getName().equals("per_page"))) {
+        return path;
+      }
+      uriBuilder.addParameter("per_page", Integer.toString(itemsPerPage));
+      return uriBuilder.toString();
+    } catch (Exception e) {
+      return path;
+    }
+  }
 
   /**
-   * C'tor.
+   * Constructor.
    *
    * @param github github client
    * @param path resource page path
@@ -60,8 +75,27 @@ public class GithubPage<T> implements AsyncPage<T> {
    */
   GithubPage(
       final GitHubClient github, final String path, final TypeReference<List<T>> typeReference) {
+    this.itemsPerPage = ITEM_PER_PAGE_DEFAULT;
     this.github = github;
-    this.path = path;
+    this.path = formatPath(path, ITEM_PER_PAGE_DEFAULT);
+    this.typeReference = typeReference;
+  }
+
+  /**
+   * Constructor.
+   *
+   * @param github github client
+   * @param path resource page path
+   * @param typeReference type reference for deserialization
+   */
+  GithubPage(
+      final GitHubClient github,
+      final String path,
+      final TypeReference<List<T>> typeReference,
+      final int itemsPerPage) {
+    this.itemsPerPage = itemsPerPage;
+    this.github = github;
+    this.path = formatPath(path, itemsPerPage);
     this.typeReference = typeReference;
   }
 
@@ -80,7 +114,7 @@ public class GithubPage<T> implements AsyncPage<T> {
                       .map(
                           prevLink ->
                               pageNumberFromUri(prevLink.url().toString())
-                                  .<RuntimeException>orElseThrow(
+                                  .orElseThrow(
                                       () ->
                                           new RuntimeException(
                                               "Could not parse page number from Link header with rel=\"next\"")));
@@ -94,7 +128,7 @@ public class GithubPage<T> implements AsyncPage<T> {
                                   .map(
                                       lastLink ->
                                           pageNumberFromUri(lastLink.url().toString())
-                                              .<RuntimeException>orElseThrow(
+                                              .orElseThrow(
                                                   () ->
                                                       new RuntimeException(
                                                           "Could not parse page number from Link "
@@ -124,7 +158,7 @@ public class GithubPage<T> implements AsyncPage<T> {
                   Optional.ofNullable(linkMap.get("next"))
                       .map(nextLink -> nextLink.url().toString().replaceAll(github.urlFor(""), ""))
                       .orElseThrow(() -> new NoSuchElementException("Page iteration exhausted"));
-              return new GithubPage<>(github, nextPath, typeReference);
+              return new GithubPage<>(github, nextPath, typeReference, itemsPerPage);
             });
   }
 
@@ -137,7 +171,7 @@ public class GithubPage<T> implements AsyncPage<T> {
   /** {@inheritDoc} */
   @Override
   public AsyncPage<T> clone() {
-    return new GithubPage<>(github, path, typeReference);
+    return new GithubPage<>(github, path, typeReference, itemsPerPage);
   }
 
   /** {@inheritDoc} */
@@ -147,9 +181,7 @@ public class GithubPage<T> implements AsyncPage<T> {
         .request(path)
         .thenApply(
             response ->
-                github
-                    .json()
-                    .fromJsonUncheckedNotNull(responseBodyUnchecked(response), typeReference))
+                github.json().fromJsonUncheckedNotNull(response.bodyString(), typeReference))
         .join()
         .iterator();
   }
@@ -158,20 +190,22 @@ public class GithubPage<T> implements AsyncPage<T> {
     return github
         .request(path)
         .thenApply(
-            response -> {
-                Optional.ofNullable(response.body()).ifPresent(ResponseBody::close);
-                return Optional.ofNullable(response.headers().get("Link"))
-                    .map(linkHeader -> stream(linkHeader.split(",")))
-                    .orElseGet(Stream::empty)
+            response ->
+                Optional.ofNullable(response.header("Link")).stream()
+                    .flatMap(linkHeader -> stream(linkHeader.split(",")))
                     .map(linkString -> Link.from(linkString.split(";")))
                     .filter(link -> link.rel().isPresent())
-                    .collect(toMap(link -> link.rel().get(), identity()));
-            });
+                    .collect(toMap(link -> link.rel().get(), identity())));
   }
 
-  private Optional<Integer> pageNumberFromUri(final String uri) {
-    return Optional.ofNullable(uri.replaceAll(".*\\?page=", "").replaceAll("&.*", ""))
-        .filter(string -> string.matches("\\d+"))
-        .map(Integer::parseInt);
+  protected static Optional<Integer> pageNumberFromUri(final String uri) {
+    Pattern pageInQueryPattern = Pattern.compile("(^|\\?|&)page=(?<page>\\d+)", Pattern.CASE_INSENSITIVE);
+    try {
+      String query = new URIBuilder(uri).build().getQuery();
+      Matcher matcher = pageInQueryPattern.matcher(query);
+      return matcher.find() ? Optional.of(Integer.parseInt(matcher.group("page"))) : Optional.empty();
+    } catch (Exception e) {
+      return Optional.empty();
+    }
   }
 }

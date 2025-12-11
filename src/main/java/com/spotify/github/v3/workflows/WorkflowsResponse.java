@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.spotify.github.GithubStyle;
 import org.immutables.value.Value;
 
+import javax.annotation.Nullable;
 import java.time.ZonedDateTime;
 
 @Value.Immutable
@@ -68,7 +69,7 @@ public interface WorkflowsResponse {
      *
      * @return The time when the workflow was deleted
      */
-    ZonedDateTime deletedAt();
+    @Nullable ZonedDateTime deletedAt();
 
     /**
      * Url string.

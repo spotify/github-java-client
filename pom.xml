@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
+    <name>github-java-client</name>
     <artifactId>github-client</artifactId>
-    <version>0.3.3-SNAPSHOT</version>
+    <version>0.5.5-SNAPSHOT</version>
 
     <parent>
         <groupId>com.spotify</groupId>
@@ -23,41 +23,24 @@
         <connection>scm:git:https://github.com/spotify/github-java-client.git</connection>
         <developerConnection>scm:git:git@github.com:spotify/github-java-client.git</developerConnection>
         <url>scm:https://github.com/spotify/github-java-client/</url>
-        <tag>HEAD</tag>
+        <tag>v0.3.7</tag>
     </scm>
 
     <organization>
         <name>Spotify AB</name>
-        <url>http://www.spotify.com</url>
+        <url>https://www.spotify.com</url>
     </organization>
 
     <distributionManagement>
         <snapshotRepository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <id>central</id>
+            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
         </snapshotRepository>
         <repository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+            <id>central</id>
+            <url>https://central.sonatype.com/repository/maven-releases/</url>
         </repository>
     </distributionManagement>
-
-    <developers>
-        <developer>
-            <id>henriquetruta</id>
-            <name>Henrique Truta</name>
-            <email>henriquet@spotify.com</email>
-            <organization>Spotify AB</organization>
-            <organizationUrl>http://www.spotify.com</organizationUrl>
-        </developer>
-        <developer>
-            <id>hewhomustnotbenamed</id>
-            <name>Abhimanyu Shegokar</name>
-            <email>abhimanyus@spotify.com</email>
-            <organization>Spotify AB</organization>
-            <organizationUrl>http://www.spotify.com</organizationUrl>
-        </developer>
-    </developers>
 
     <repositories>
         <repository>
@@ -84,7 +67,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <project.build.outputTimestamp>1726146382</project.build.outputTimestamp>
+        <project.build.outputTimestamp>1764943421</project.build.outputTimestamp>
         <spotbugs.excludeFilterFile>spotbugsexclude.xml</spotbugs.excludeFilterFile>
         <checkstyle.violationSeverity>error</checkstyle.violationSeverity>
         <checkstyle.config.location>checkstyle.xml</checkstyle.config.location>
@@ -97,13 +80,12 @@
         <slf4j-api.version>1.7.36</slf4j-api.version>
         <mockito-core.version>5.6.0</mockito-core.version>
         <commons-io.version>2.6</commons-io.version>
-        <jackson.version>2.15.3</jackson.version>
+        <jackson.version>2.20.1</jackson.version>
         <immutables.version>2.9.3</immutables.version>
         <objenesis.version>3.3</objenesis.version>
         <opencensus.version>0.31.1</opencensus.version>
         <okhttp.version>4.11.0</okhttp.version>
-
-        <shade.id>${project.groupId}.githubclient.shade</shade.id>
+        <opentelemetry.version>1.51.0</opentelemetry.version>
     </properties>
 
     <dependencyManagement>
@@ -119,6 +101,13 @@
                 <version>${jackson.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-bom</artifactId>
+                <version>${opentelemetry.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -150,6 +139,11 @@
             <version>${jsr311-api.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5.14</version>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
         </dependency>
@@ -178,6 +172,30 @@
             <groupId>io.opencensus</groupId>
             <artifactId>opencensus-api</artifactId>
             <version>${opencensus.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-testing</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-okhttp-3.0</artifactId>
+            <version>2.8.0-alpha</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.14.0</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
@@ -210,6 +228,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>com.github.npathai</groupId>
+            <artifactId>hamcrest-optional</artifactId>
+            <version>2.0.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
             <version>${junit.version}</version>
@@ -218,6 +242,12 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
@@ -256,60 +286,60 @@
 
     <profiles>
         <profile>
-        <id>coverage</id>
-        <build>
-          <plugins>
-            <plugin>
-              <groupId>org.jacoco</groupId>
-              <artifactId>jacoco-maven-plugin</artifactId>
-              <version>0.8.5</version>
-              <configuration>
-                <!--Configure to work on codecov-->
-                <!--https://github.com/codecov/example-java/blob/master/pom.xml-->
-                <excludes>
-                  <exclude>**/*Builder*</exclude>
-                  <exclude>**/*Immutable*</exclude>
-                  <exclude>**/*_Factory*</exclude>
-                  <exclude>**/*_*Factory*.*</exclude>
-                  <exclude>**/generated-sources*.*</exclude>
-                </excludes>
-                <rules>
-                  <rule implementation="org.jacoco.maven.RuleConfiguration">
-                    <element>BUNDLE</element>
-                    <limits>
-                      <limit implementation="org.jacoco.report.check.Limit">
-                        <counter>INSTRUCTION</counter>
-                        <value>COVEREDRATIO</value>
-                        <minimum>0.60</minimum>
-                      </limit>
-                    </limits>
-                  </rule>
-                </rules>
-              </configuration>
-              <executions>
-                <execution>
-                  <id>pre-test</id>
-                  <goals>
-                    <goal>prepare-agent</goal>
-                  </goals>
-                </execution>
-                <execution>
-                  <id>default-check</id>
-                  <goals>
-                    <goal>check</goal>
-                  </goals>
-                </execution>
-                <execution>
-                  <id>post-unit-test</id>
-                  <phase>test</phase>
-                  <goals>
-                    <goal>report</goal>
-                  </goals>
-                </execution>
-              </executions>
-            </plugin>
-          </plugins>
-        </build>
+            <id>coverage</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>0.8.5</version>
+                        <configuration>
+                            <!--Configure to work on codecov-->
+                            <!--https://github.com/codecov/example-java/blob/master/pom.xml-->
+                            <excludes>
+                                <exclude>**/*Builder*</exclude>
+                                <exclude>**/*Immutable*</exclude>
+                                <exclude>**/*_Factory*</exclude>
+                                <exclude>**/*_*Factory*.*</exclude>
+                                <exclude>**/generated-sources*.*</exclude>
+                            </excludes>
+                            <rules>
+                                <rule implementation="org.jacoco.maven.RuleConfiguration">
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit implementation="org.jacoco.report.check.Limit">
+                                            <counter>INSTRUCTION</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.60</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>pre-test</id>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>default-check</id>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>post-unit-test</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
 
         <profile>
@@ -329,9 +359,11 @@
                                     <goal>sign</goal>
                                 </goals>
                                 <configuration>
+                                    <!-- Prevent gpg from using pinentry programs -->
                                     <gpgArguments>
                                         <arg>--pinentry-mode</arg>
                                         <arg>loopback</arg>
+                                        <arg>--no-tty</arg>
                                     </gpgArguments>
                                 </configuration>
                             </execution>
@@ -351,25 +383,35 @@
                         </executions>
                     </plugin>
                     <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.13</version>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.8.0</version>
                         <extensions>true</extensions>
                         <configuration>
-                            <serverId>ossrh</serverId>
-                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                            <publishingServerId>central</publishingServerId>
+                            <deploymentName>github-java-client</deploymentName>
+                            <autoPublish>true</autoPublish>
+                            <waitUntil>published</waitUntil>
                         </configuration>
                     </plugin>
                 </plugins>
             </build>
         </profile>
-        </profiles>
+    </profiles>
 
     <build>
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-compile</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
                     <source>11</source>
                     <target>11</target>
@@ -415,7 +457,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-enforcer-plugin</artifactId>
-                <version>1.4.1</version>
+                <version>3.6.2</version>
                 <executions>
                     <execution>
                         <id>enforce</id>
@@ -453,39 +495,8 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.2.3</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <artifactSet>
-                                <includes>
-                                    <include>${project.groupId}:${project.artifactId}</include>
-                                    <include>com.squareup.okhttp3</include>
-                                    <include>com.squareup.okio</include>
-                                </includes>
-                            </artifactSet>
-                            <relocations>
-                                <relocation>
-                                    <pattern>okhttp3</pattern>
-                                    <shadedPattern>${shade.id}.okhttp3</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>okio</pattern>
-                                    <shadedPattern>${shade.id}.okio</shadedPattern>
-                                </relocation>
-                            </relocations>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.3.1</version>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
@@ -497,6 +508,16 @@
                 <configuration>
                     <release>11</release>
                     <doclint>none</doclint>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-scm-publish-plugin</artifactId>
+                <version>1.0</version>
+                <configuration>
+                    <content>target/site/apidocs</content>
+                    <pubScmUrl>scm:git:git@github.com:spotify/github-java-client.git</pubScmUrl>
+                    <scmBranch>gh-pages</scmBranch>
                 </configuration>
             </plugin>
         </plugins>

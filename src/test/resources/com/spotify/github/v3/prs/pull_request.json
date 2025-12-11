@@ -69,6 +69,16 @@
     "closed_at": "2013-02-12T13:22:01Z",
     "due_on": "2012-10-09T23:39:01Z"
   },
+  "labels": [
+    {
+      "id": 42,
+      "node_id": "MDU6TGFiZWw0Mg==",
+      "url": "https://api.github.com/repos/batterseapower/pinyin-toolkit/labels/bug",
+      "name": "bug",
+      "color": "ff0000",
+      "default": true
+    }
+  ],
   "locked": false,
   "created_at": "2011-01-26T19:01:12Z",
   "updated_at": "2011-01-26T19:01:12Z",

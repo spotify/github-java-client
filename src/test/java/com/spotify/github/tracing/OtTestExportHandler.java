@@ -18,17 +18,19 @@
  * -/-/-
  */
 
-package com.spotify.github.opencensus;
+package com.spotify.github.tracing;
 
-import io.opencensus.trace.export.SpanData;
-import io.opencensus.trace.export.SpanExporter;
+import io.opentelemetry.sdk.common.CompletableResultCode;
+import io.opentelemetry.sdk.trace.data.SpanData;
+import io.opentelemetry.sdk.trace.export.SpanExporter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A dummy SpanExporter.Handler which keeps any exported Spans in memory, so we can query against
@@ -39,18 +41,29 @@ import org.slf4j.LoggerFactory;
  * forever until the given number of spans is exported, which could be never. So instead we define
  * our own very simple implementation.
  */
-class TestExportHandler extends SpanExporter.Handler {
-    private static final Logger LOG = LoggerFactory.getLogger(TestExportHandler.class);
+class OtTestExportHandler implements SpanExporter {
+    private static final Logger LOG = LoggerFactory.getLogger(OtTestExportHandler.class);
 
     private final List<SpanData> receivedSpans = new ArrayList<>();
     private final Object lock = new Object();
-
     @Override
-    public void export(final Collection<SpanData> spanDataList) {
+    public CompletableResultCode export(Collection<SpanData> spanDataList) {
         synchronized (lock) {
             receivedSpans.addAll(spanDataList);
             LOG.info("received {} spans, {} total", spanDataList.size(), receivedSpans.size());
         }
+        return CompletableResultCode.ofSuccess();
+    }
+
+    @Override
+    public CompletableResultCode flush() {
+        this.receivedSpans.clear();
+        return CompletableResultCode.ofSuccess();
+    }
+
+    @Override
+    public CompletableResultCode shutdown() {
+        return CompletableResultCode.ofSuccess();
     }
 
     List<SpanData> receivedSpans() {
@@ -61,8 +74,6 @@ class TestExportHandler extends SpanExporter.Handler {
 
     /** Wait up to waitTime for at least `count` spans to be exported */
     List<SpanData> waitForSpansToBeExported(final int count) throws InterruptedException {
-        // opencensus is hardcoded to export batches every 5 seconds (see
-        // io.opencensus.implcore.trace.export.ExportComponentImpl), so wait slightly longer than that
         Duration waitTime = Duration.ofSeconds(7);
         Instant deadline = Instant.now().plus(waitTime);
 

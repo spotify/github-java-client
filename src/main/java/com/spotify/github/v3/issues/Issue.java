@@ -41,18 +41,16 @@ public interface Issue extends CloseTracking {
 
   /** ID. */
   @Nullable
-  Integer id();
+  Long id();
 
   /** URL. */
   @Nullable
   URI url();
 
   /** Events URL. */
-  @Nullable
   Optional<URI> eventsUrl();
 
   /** Repository URL. */
-  @Nullable
   Optional<URI> repositoryUrl();
 
   /** Labels URL template. */
@@ -69,7 +67,7 @@ public interface Issue extends CloseTracking {
 
   /** Number. */
   @Nullable
-  Integer number();
+  Long number();
 
   /** Indicates the state of the issues to return. Can be either open, closed, or all. */
   @Nullable
@@ -80,7 +78,6 @@ public interface Issue extends CloseTracking {
   String title();
 
   /** The contents of the issue. */
-  @Nullable
   Optional<String> body();
 
   /** User. */

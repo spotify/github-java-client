@@ -40,7 +40,7 @@ public class PullRequestReviewEventTest {
     final PullRequestReviewEvent statusEvent =
         Json.create().fromJson(fixture, PullRequestReviewEvent.class);
     assertThat(statusEvent.action(), is("submitted"));
-    assertThat(statusEvent.pullRequest().number(), is(8));
+    assertThat(statusEvent.pullRequest().number(), is(8L));
     assertThat(statusEvent.review().state(), is(ReviewState.APPROVED));
   }
 }

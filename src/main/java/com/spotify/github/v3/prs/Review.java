@@ -44,14 +44,13 @@ public interface Review {
 
   /** Id. */
   @Nullable
-  Integer id();
+  Long id();
 
   /** User. */
   @Nullable
   User user();
 
   /** Body. */
-  @Nullable
   Optional<String> body();
 
   /** Submitted at. */

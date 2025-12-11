@@ -32,9 +32,12 @@
       },
       "labels": [
         {
+          "id": 42,
+          "node_id": "MDU6TGFiZWw0Mg==",
           "url": "https://api.github.com/repos/batterseapower/pinyin-toolkit/labels/bug",
           "name": "bug",
-          "color": "ff0000"
+          "color": "ff0000",
+          "default": true
         }
       ],
       "state": "open",
