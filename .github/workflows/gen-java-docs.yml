@@ -28,8 +28,10 @@ jobs:
       # Publishes Javadocs to GitHub Pages by pushing to `gh-pages` branch
       - name: Deploy Javadocs to GitHub Pages
         run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           mvn scm-publish:publish-scm
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
