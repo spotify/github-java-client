@@ -70,5 +70,9 @@ public interface FileItem {
   @Nullable
   String patch();
 
+  @Nullable
+  @JsonProperty("previous_filename")
+  String previousFilename();
+
 }
 
