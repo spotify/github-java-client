@@ -1,3 +1,6 @@
+# WE ARE NO LONGER ACCEPTING CHANGES TO THIS REPOSITORY AND WILL BE DISCONTINUING SUPPORT FOR THIS PROJECT END OF JAN 2026
+Please see alternatives such as a https://github.com/hub4j/github-api
+
 ![release pipeline](https://github.com/spotify/github-java-client/actions/workflows/release.yml/badge.svg)
 [![codecov](https://codecov.io/gh/spotify/github-java-client/branch/master/graph/badge.svg?token=ADHNCIESSL)](https://codecov.io/gh/spotify/github-java-client)[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![lifecycle: beta](https://img.shields.io/badge/lifecycle-beta-509bf5.svg)

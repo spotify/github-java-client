@@ -24,5 +24,6 @@ package com.spotify.github.v3.checks;
 public enum CheckRunStatus {
   queued,
   in_progress,
-  completed
+  completed,
+  pending
 }
